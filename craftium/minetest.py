@@ -52,7 +52,7 @@ class Minetest():
             vsync=False,
             fps_max=1000,
             fps_max_unfocused=1000,
-            undersampling=1000,
+            undersampling=1,
             # fov=self.fov_y,
             # game_dir=self.game_dir,
 
@@ -123,8 +123,8 @@ class Minetest():
         link_dir("fonts")
         link_dir("locale")
         link_dir("textures")
-        link_dir("bin")
 
+        copy_dir("bin")
         copy_dir("worlds")
         copy_dir("games")
         copy_dir("client")
