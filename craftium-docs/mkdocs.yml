@@ -2,5 +2,6 @@ site_name: Craftium
 
 nav:
   - Home: index.md
+  - Troubleshooting: troubleshooting.md
 
 theme: readthedocs
