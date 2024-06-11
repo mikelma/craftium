@@ -1,0 +1,27 @@
+site_name: Craftium
+
+docs_dir: craftium-docs
+
+nav:
+  - Home: docs/index.md
+  - Installation: docs/installation.md
+  - Getting started: docs/getting-started.md
+  - Observations and actions: docs/obs-and-acts.md
+  - Troubleshooting: docs/troubleshooting.md
+  - API Reference: docs/reference.md
+
+theme: readthedocs
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            docstring_style: sphinx
+extra:
+    version: 0.1
+    links:
+        - https://github.com/mkdocs
+        - https://docs.readthedocs.org/en/latest/builds.html#mkdocs
+        - http://www.mkdocs.org/

@@ -13,6 +13,15 @@ from gymnasium.spaces import Dict, Discrete, Box
 
 
 class CraftiumEnv(Env):
+    """The main class implementing Gymnasium's [Env](https://gymnasium.farama.org/api/env/) API.
+
+    :param obs_width: The width of the observation image in pixels.
+    :param obs_height: The height of the observation image in pixels.
+    :param init_frames: The number of frames to wait for Minetest to load.
+    :param render_mode: Render mode ("human" or "rgb_array"), see [Env.render](https://gymnasium.farama.org/api/env/#gymnasium.Env.render).
+    :param max_timesteps: Maximum number of timesteps until episode termination. Disabled if set to `None`.
+    :param run_dir: Path to save the artifacts created by the run. Will be automatically generated if not provided.
+    """
     metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 30}
 
     def __init__(
@@ -89,6 +98,13 @@ class CraftiumEnv(Env):
         seed: Optional[int] = None,
         options: Optional[dict] = None,
     ):
+        """Resets the environment to an initial internal state, returning an initial observation and info.
+
+        See [Env.reset](https://gymnasium.farama.org/api/env/#gymnasium.Env.reset) in the Gymnasium docs.
+
+        :param seed: The random seed.
+        :param options: Options dictionary.
+        """
         super().reset(seed=seed)
         self.timesteps = 0
 
@@ -120,6 +136,12 @@ class CraftiumEnv(Env):
         return observation, info
 
     def step(self, action):
+        """Run one timestep of the environment’s dynamics using the agent actions.
+
+        See [Env.step](https://gymnasium.farama.org/api/env/#gymnasium.Env.step) in the Gymnasium docs.
+
+        :param action: An action provided by the agent.
+        """
         self.timesteps += 1
 
         # convert the action dict to a format to be sent to MT through mt_client
