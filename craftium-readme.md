@@ -1,6 +1,6 @@
 # Craftium
 
-<img src="craftium-docs/docs/imgs/Craftium_Logo.png" alt="Craftium logo" width="400">
+<img src="../craftium-docs/docs/imgs/Craftium_Logo.png" alt="Craftium logo" width="400">
 
 Craftium is a fully open source research platform for Reinforcement Learning (RL) research. Craftium provides a [Gymnasium](https://gymnasium.farama.org/index.html) wrapper for the [Minetest](https://www.minetest.net/) voxel game engine.
 
