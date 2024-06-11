@@ -229,8 +229,11 @@ void Client::pyServerListener() {
     W = dims.Width;
     H = dims.Height;
 
-    /* W*H*3 for the WxH RGB image and +8 for the reward value (a double) */
-    obs_rwd_buffer_size = W*H*3 + 8;
+    /*
+      W*H*3 for the WxH RGB image, +8 for the reward value (a double),
+      and +1 for the episode termination flag
+    */
+    obs_rwd_buffer_size = W*H*3 + 8 + 1;
 
     /* If obs_rwd_buffer is not initialized, allocate memory for it now */
     if (!obs_rwd_buffer) {
@@ -257,6 +260,14 @@ void Client::pyServerListener() {
     for (int j=0; j<8; j++) {
         obs_rwd_buffer[i] = rewardBytes[j];
         i++;
+    }
+
+    /* Encode the termination signal */
+    if (g_termination) {
+        g_termination = false;  /* Reset the flag to false */
+        obs_rwd_buffer[i] = 1;
+    } else {
+        obs_rwd_buffer[i] = 0;
     }
 
     /* Send the obs_rwd_buffer over TCP to Python */

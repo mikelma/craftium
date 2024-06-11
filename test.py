@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 
 if __name__ == "__main__":
     env = CraftiumEnv(
-        # render_mode="human",
+        render_mode="human",
         # max_timesteps=15,
     )
     iters = 100
@@ -16,9 +16,9 @@ if __name__ == "__main__":
 
     start = time.time()
     for i in range(iters):
-        # plt.clf()
-        # plt.imshow(np.transpose(observation, (1, 0, 2)))
-        # plt.pause(1e-7)
+        plt.clf()
+        plt.imshow(np.transpose(observation, (1, 0, 2)))
+        plt.pause(1e-7)
 
         # action = env.action_space.sample()
         action = dict()

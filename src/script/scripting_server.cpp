@@ -81,9 +81,11 @@ ServerScripting::ServerScripting(Server* server):
 	lua_newtable(L);
 	lua_setfield(L, -2, "luaentities");
 
-        /* Functions to get/set the global reward value */
+        /* Functions to get/set the global reward and termination values */
         lua_register(L, "set_reward", lua_set_reward);
         lua_register(L, "get_reward", lua_get_reward);
+        lua_register(L, "set_termination", lua_set_termination);
+        lua_register(L, "get_termination", lua_get_termination);
 
 	// Initialize our lua_api modules
 	InitializeModApi(L, top);

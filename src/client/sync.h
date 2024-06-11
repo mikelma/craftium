@@ -142,11 +142,12 @@ inline void syncClientStep() {
 
 /*
 
-  Reward system
-  ~~~~~~~~~~~~~
+  Reward and termination signal system
+  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 */
 inline double g_reward = 0.0; /* Global variable of the reward value */
+inline bool g_termination = false; /* Global variable with the termination flag */
 
 extern "C" {
 #include <lualib.h>
@@ -161,5 +162,16 @@ inline static int lua_set_reward(lua_State *L) {
 
 inline static int lua_get_reward(lua_State *L) {
     lua_pushnumber(L, g_reward);
+    return 1; /* number of results */
+}
+
+/* Implementation of the Lua functions to get/set the global termination flag */
+inline static int lua_set_termination(lua_State *L) {
+    g_termination = true;
+    return 0; /* number of results */
+}
+
+inline static int lua_get_termination(lua_State *L) {
+    lua_pushnumber(L, (int)g_termination);
     return 1; /* number of results */
 }

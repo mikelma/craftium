@@ -125,10 +125,10 @@ class CraftiumEnv(Env):
 
         # HACK skip some frames to let the game initialize
         for _ in range(self.init_frames):
-            _observation, _reward = self.client.receive()
+            _observation, _reward, _term = self.client.receive()
             self.client.send([0]*21, 0, 0)  # nop action
 
-        observation, _reward = self.client.receive()
+        observation, _reward, _term = self.client.receive()
         self.last_observation = observation
 
         info = self._get_info()
@@ -158,16 +158,14 @@ class CraftiumEnv(Env):
         self.client.send(keys, mouse_x, mouse_y)
 
         # receive the new info from minetest
-        observation, reward = self.client.receive()
+        observation, reward, termination = self.client.receive()
         self.last_observation = observation
 
         info = self._get_info()
 
-        # TODO Get the real termination info
-        terminated = False
         truncated = self.max_timesteps is not None and self.timesteps >= self.max_timesteps
 
-        return observation, reward, terminated, truncated, info
+        return observation, reward, termination, truncated, info
 
     def render(self):
         if self.render_mode == "rgb_array":
