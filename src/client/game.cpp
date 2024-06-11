@@ -19,6 +19,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #include "game.h"
 
+#include <cstdio>
 #include <iomanip>
 #include <cmath>
 #include "client/renderingengine.h"
@@ -83,6 +84,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #if USE_SOUND
 	#include "client/sound/sound_openal.h"
 #endif
+
+#include "sync.h"
 
 /*
 	Text input system
@@ -1226,9 +1229,12 @@ void Game::run()
 		updateFrame(&graph, &stats, dtime, cam_view);
 		updateProfilerGraphs(&graph);
 
+                /* When running headless we assume that the window is always focused, thus, this block is never run */
+                /*
 		if (m_does_lost_focus_pause_game && !device->isWindowFocused() && !isMenuActive()) {
 			showPauseMenu();
 		}
+                */
 	}
 
 	RenderingEngine::autosaveScreensizeAndCo(initial_screen_size, initial_window_maximized);
@@ -1445,7 +1451,7 @@ void Game::copyServerClientCache()
 {
 	// It would be possible to let the client directly read the media files
 	// from where the server knows they are. But aside from being more complicated
-	// it would also *not* fill the media cache and cause slower joining of 
+	// it would also *not* fill the media cache and cause slower joining of
 	// remote servers.
 	// (Imagine that you launch a game once locally and then connect to a server.)
 
@@ -2008,7 +2014,9 @@ void Game::updateStats(RunStats *stats, const FpsControl &draw_times,
 void Game::processUserInput(f32 dtime)
 {
 	// Reset input if window not active or some menu is active
-	if (!device->isWindowActive() || isMenuActive() || guienv->hasFocus(gui_chat_console)) {
+        // bool win_active = device->isWindowActive();
+        bool win_active = true; // Assume window is always active when running in headless mode
+	if (!win_active || isMenuActive() || guienv->hasFocus(gui_chat_console)) {
 		if (m_game_focused) {
 			m_game_focused = false;
 			infostream << "Game lost focus" << std::endl;
@@ -2629,8 +2637,11 @@ void Game::updateCameraDirection(CameraOrientation *cam, float dtime)
 	if (cur_control)
 		cur_control->setRelativeMode(!g_touchscreengui && !isMenuActive());
 
-	if ((device->isWindowActive() && device->isWindowFocused()
-			&& !isMenuActive()) || input->isRandom()) {
+        /* Simulate window is active and focused when running headless */
+        // bool window_active = device->isWindowActive() && device->isWindowFocused();
+        bool window_active = true;
+
+	if ((window_active && !isMenuActive()) || input->isRandom()) {
 
 		if (cur_control && !input->isRandom()) {
 			// Mac OSX gets upset if this is set every frame
@@ -2764,9 +2775,14 @@ void Game::updatePauseState()
 inline void Game::step(f32 dtime)
 {
 	if (server) {
+
+                /* Simulate window is active and focused when running headless */
+                float fps_max = g_settings->getFloat("fps_max");
+                /*
 		float fps_max = (!device->isWindowFocused() || g_menumgr.pausesGame()) ?
 				g_settings->getFloat("fps_max_unfocused") :
 				g_settings->getFloat("fps_max");
+                */
 		fps_max = std::max(fps_max, 1.0f);
 		/*
 		 * Unless you have a barebones game, running the server at more than 60Hz
@@ -2785,7 +2801,7 @@ inline void Game::step(f32 dtime)
 	}
 
 	if (!m_is_paused)
-		client->step(dtime);
+            client->step(dtime);
 }
 
 static void pauseNodeAnimation(PausedNodesList &paused, scene::ISceneNode *node) {

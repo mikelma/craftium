@@ -489,6 +489,15 @@ private:
 	MtEventManager *m_event;
 	RenderingEngine *m_rendering_engine;
 
+        /* Python API server related */
+        int pyserv_port = 4343;
+        int pyserv_sockfd = 0;
+        int pyserv_conn = 0;
+        struct sockaddr_in *pyserv_servaddr = nullptr;
+        struct sockaddr_in *pyserv_cliaddr = nullptr;
+        unsigned char *obs_rwd_buffer = 0;
+        void startPyServer();
+        void pyServerListener();
 
 	std::unique_ptr<MeshUpdateManager> m_mesh_update_manager;
 	ClientEnvironment m_env;

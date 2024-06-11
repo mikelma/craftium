@@ -25,6 +25,13 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "keycode.h"
 #include "renderingengine.h"
 
+// For the python API server
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <netinet/in.h>
+
+#include "sync.h"
+
 class InputHandler;
 
 /****************************************************************************
@@ -285,11 +292,11 @@ public:
 
 	virtual bool isKeyDown(GameKeyType k)
 	{
-		return m_receiver->IsKeyDown(keycache.key[k]) || joystick.isKeyDown(k);
+		return m_receiver->IsKeyDown(keycache.key[k]) || joystick.isKeyDown(k) || virtual_key_presses[k];
 	}
 	virtual bool wasKeyDown(GameKeyType k)
 	{
-		return m_receiver->WasKeyDown(keycache.key[k]) || joystick.wasKeyDown(k);
+		return m_receiver->WasKeyDown(keycache.key[k]) || joystick.wasKeyDown(k) || virtual_key_presses[k];
 	}
 	virtual bool wasKeyPressed(GameKeyType k)
 	{
@@ -330,8 +337,15 @@ public:
 	virtual v2s32 getMousePos()
 	{
 		auto control = RenderingEngine::get_raw_device()->getCursorControl();
+
+                m_mousepos.X += virtual_mouse_x;
+                m_mousepos.Y += virtual_mouse_y;
+
 		if (control) {
-			return control->getPosition();
+                    auto pos = control->getPosition();
+                    pos.X += virtual_mouse_x;
+                    pos.Y += virtual_mouse_y;
+                    return pos;
 		}
 
 		return m_mousepos;
@@ -365,7 +379,7 @@ public:
 	}
 
 private:
-	MyEventReceiver *m_receiver = nullptr;
+        MyEventReceiver *m_receiver = nullptr;
 	v2s32 m_mousepos;
 };
 

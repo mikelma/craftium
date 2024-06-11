@@ -1,0 +1,6 @@
+site_name: Craftium
+
+nav:
+  - Home: index.md
+
+theme: readthedocs

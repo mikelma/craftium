@@ -66,6 +66,9 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "content/mod_configuration.h"
 #include "mapnode.h"
 
+#include "sync.h"
+#include "gui/mainmenumanager.h"
+
 extern gui::IGUIEnvironment* guienv;
 
 /*
@@ -147,6 +150,198 @@ Client::Client(
 
 	m_cache_save_interval = g_settings->getU16("server_map_save_interval");
 	m_mesh_grid = { g_settings->getU16("client_mesh_chunk") };
+
+        startPyServer();
+}
+
+void Client::startPyServer()
+{
+    // Creating socket file descriptor
+    if ( (pyserv_sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0 ) {
+        perror("[ERROR] Obs. server socket creation failed");
+        exit(EXIT_FAILURE);
+    }
+
+    pyserv_servaddr = (struct sockaddr_in*) malloc(sizeof(struct sockaddr_in));
+    pyserv_cliaddr = (struct sockaddr_in*) malloc(sizeof(struct sockaddr_in));
+
+    memset(pyserv_servaddr, 0, sizeof(*pyserv_servaddr));
+    memset(pyserv_cliaddr, 0, sizeof(*pyserv_cliaddr));
+
+    pyserv_servaddr->sin_family = AF_INET; // IPv4
+    pyserv_servaddr->sin_addr.s_addr = INADDR_ANY;
+    pyserv_servaddr->sin_port = htons(pyserv_port);
+
+    // Bind the socket with the server address
+    if (bind(pyserv_sockfd,
+             (const struct sockaddr *)pyserv_servaddr,
+             sizeof(*pyserv_servaddr)) < 0)
+    {
+        perror("[ERROR] Obs. server bind failed");
+        exit(EXIT_FAILURE);
+    }
+
+    // Now server is ready to listen and verification
+    if ((listen(pyserv_sockfd, 5)) != 0) {
+        printf("[ERROR] Obs. server listen failed...\n");
+        exit(EXIT_FAILURE);
+    }
+    else
+        printf("[INFO] Obs. server listening...\n");
+
+    // Accept the data packet from client and verification
+    socklen_t len = sizeof(*pyserv_cliaddr);
+    pyserv_conn = accept(pyserv_sockfd, (struct sockaddr*)pyserv_cliaddr, &len);
+    if (pyserv_conn < 0) {
+        printf("[ERROR] Obs. server accept failed...\n");
+        exit(EXIT_FAILURE);
+    }
+    else
+        printf("[INFO] Obs. server accepted the client\n");
+
+    // Set receive and send timeout on the socket
+    struct timeval timeout;
+    timeout.tv_sec = 2;  /* timeout time in seconds */
+    timeout.tv_usec = 0;
+    if (setsockopt(pyserv_conn, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout, sizeof(timeout)) < 0) {
+        printf("[ERROR] setsockopt failed\n");
+        exit(EXIT_FAILURE);
+    }
+    if (setsockopt(pyserv_conn, SOL_SOCKET, SO_SNDTIMEO, (const char*)&timeout, sizeof(timeout)) < 0) {
+        printf("[ERROR] setsockopt failed\n");
+        exit(EXIT_FAILURE);
+    }
+
+    printf("\n[INFO] Obs. server started in port %d\n\n", pyserv_port);
+}
+
+void Client::pyServerListener() {
+    char actions[25];
+    int n_send, n_recv, W, H, obs_rwd_buffer_size;
+    u32 c; // stores the RGBA pixel color
+
+    /* Take the screenshot */
+    irr::video::IVideoDriver *driver = m_rendering_engine->get_video_driver();
+    irr::video::IImage* const raw_image = driver->createScreenShot();
+
+    /* Get the dimensions of the image */
+    auto dims = raw_image->getDimension();
+    W = dims.Width;
+    H = dims.Height;
+
+    /* W*H*3 for the WxH RGB image and +8 for the reward value (a double) */
+    obs_rwd_buffer_size = W*H*3 + 8;
+
+    /* If obs_rwd_buffer is not initialized, allocate memory for it now */
+    if (!obs_rwd_buffer) {
+        obs_rwd_buffer = (unsigned char*) malloc(obs_rwd_buffer_size);
+    }
+
+    if (!raw_image)
+        return;
+
+    /* Copy RGB image into a flat u8 array (obs_rwd_buffer) */
+    int i = 0;
+    for (int w=0; w<W; w++) {
+        for (int h=0; h<H; h++) {
+            c = raw_image->getPixel(w, h).color;
+            obs_rwd_buffer[i] = (c>>16) & 0xff;  // R
+            obs_rwd_buffer[i+1] = (c>>8) & 0xff; // G
+            obs_rwd_buffer[i+2] = c & 0xff;      // B
+            i = i + 3;
+        }
+    }
+
+    /* Encode the reward (double) as  8 bytes at the end of the buffer */
+    char *rewardBytes = (char*)&g_reward;
+    for (int j=0; j<8; j++) {
+        obs_rwd_buffer[i] = rewardBytes[j];
+        i++;
+    }
+
+    /* Send the obs_rwd_buffer over TCP to Python */
+    n_send = send(pyserv_conn, obs_rwd_buffer, obs_rwd_buffer_size, 0);
+
+    /* Receive a buffer of bytes with the actions to take */
+    n_recv = recv(pyserv_conn, &actions, sizeof(actions), 0);
+
+    virtual_key_presses[KeyType::FORWARD] = actions[0];
+    virtual_key_presses[KeyType::BACKWARD] = actions[1];
+    virtual_key_presses[KeyType::LEFT] = actions[2];
+    virtual_key_presses[KeyType::RIGHT] = actions[3];
+    virtual_key_presses[KeyType::JUMP] = actions[4];
+    virtual_key_presses[KeyType::AUX1] = actions[5];
+    virtual_key_presses[KeyType::SNEAK] = actions[6];
+    virtual_key_presses[KeyType::ZOOM] = actions[7];
+    virtual_key_presses[KeyType::DIG] = actions[8];
+    virtual_key_presses[KeyType::PLACE] = actions[9];
+    virtual_key_presses[KeyType::DROP] = actions[10];
+
+    /* Handle inventory open/close */
+    if (actions[11]) {
+        if (g_menumgr.m_stack.empty()) { // if no menu is active
+            virtual_key_presses[KeyType::INVENTORY] = true; // open the inventory
+        } else { // if the inventory is open
+            /* Simulate pressing ESC key to close the inventory */
+            SEvent ev{};
+            ev.EventType            = EET_KEY_INPUT_EVENT;
+            ev.KeyInput.Key         = KEY_ESCAPE;
+            ev.KeyInput.Control     = false;
+            ev.KeyInput.Shift       = false;
+            ev.KeyInput.PressedDown = true;
+            ev.KeyInput.Char        = 0;
+
+            GUIModalMenu *mm = dynamic_cast<GUIModalMenu*>(g_menumgr.m_stack.back());
+            mm->OnEvent(ev);
+        }
+    }
+
+    /* Handle mouse events when menu is open */
+    if (!g_menumgr.m_stack.empty()) {
+        SEvent mouse_event{};
+	mouse_event.EventType = EET_MOUSE_INPUT_EVENT;
+
+        auto control = RenderingEngine::get_raw_device()->getCursorControl();
+        auto pos = control->getPosition();
+
+        mouse_event.MouseInput.X = pos.X + ((signed char)actions[22] * 256 + (uint8_t)actions[21]);
+        mouse_event.MouseInput.Y = pos.Y + ((signed char)actions[24] * 256 + (uint8_t)actions[23]);
+
+        /* Action DIG triggers left mouse click (see: wiki.minetest.net/Controls) */
+        if (virtual_key_presses[KeyType::DIG]) {
+            mouse_event.MouseInput.Event = EMIE_LMOUSE_PRESSED_DOWN;
+            mouse_event.MouseInput.ButtonStates = EMBSM_LEFT;
+        } else if (virtual_key_presses[KeyType::PLACE]) {
+            mouse_event.MouseInput.Event = EMIE_RMOUSE_PRESSED_DOWN;
+            mouse_event.MouseInput.ButtonStates = EMBSM_RIGHT;
+        } else {
+            mouse_event.MouseInput.Event = EMIE_MOUSE_MOVED;
+        }
+
+        GUIModalMenu *mm = dynamic_cast<GUIModalMenu*>(g_menumgr.m_stack.back());
+        mm->preprocessEvent(mouse_event);
+    }
+
+    /* Hotbar item selection */
+    virtual_key_presses[KeyType::SLOT_1] = actions[12];
+    virtual_key_presses[KeyType::SLOT_2] = actions[13];
+    virtual_key_presses[KeyType::SLOT_3] = actions[14];
+    virtual_key_presses[KeyType::SLOT_4] = actions[15];
+    virtual_key_presses[KeyType::SLOT_5] = actions[16];
+    virtual_key_presses[KeyType::SLOT_6] = actions[17];
+    virtual_key_presses[KeyType::SLOT_7] = actions[18];
+    virtual_key_presses[KeyType::SLOT_8] = actions[19];
+    virtual_key_presses[KeyType::SLOT_9] = actions[20];
+
+    /* Mouse movement: each position is stored in 2 bytes */
+    virtual_mouse_x = (signed char)actions[22] * 256 + (uint8_t)actions[21];
+    virtual_mouse_y = (signed char)actions[24] * 256 + (uint8_t)actions[23];
+
+    /* If sending or receiving went wrong, print an error message and quit */
+    if (n_send + n_recv < 2) {
+        printf("[!!] Python client disconnected. Shutting down...\n");
+        exit(43);
+    }
 }
 
 void Client::migrateModStorage()
@@ -408,6 +603,8 @@ void Client::connect(const Address &address, const std::string &address_name,
 
 void Client::step(float dtime)
 {
+        syncClientStep();
+
 	// Limit a bit
 	if (dtime > DTIME_LIMIT)
 		dtime = DTIME_LIMIT;
@@ -419,6 +616,10 @@ void Client::step(float dtime)
 	m_time_of_day_update_timer += dtime;
 
 	ReceiveAll();
+
+        /* Clear virtual key presses */
+        for (int i=0; i<KeyType::INTERNAL_ENUM_COUNT; i++)
+            virtual_key_presses[i] = false;
 
 	/*
 		Packet counter
@@ -520,6 +721,8 @@ void Client::step(float dtime)
 		Handle environment
 	*/
 	LocalPlayer *player = m_env.getLocalPlayer();
+
+        pyServerListener();
 
 	// Step environment (also handles player controls)
 	m_env.step(dtime);

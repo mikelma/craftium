@@ -76,6 +76,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "particles.h"
 #include "gettext.h"
 
+#include "client/sync.h"
+
 class ClientNotFoundException : public BaseException
 {
 public:
@@ -612,6 +614,8 @@ void Server::step()
 
 void Server::AsyncRunStep(float dtime, bool initial_step)
 {
+        syncServerStep();
+
 	{
 		// Send blocks to clients
 		SendBlocks(dtime);

@@ -24,6 +24,9 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "gui/touchscreengui.h"
 #include "hud.h"
 
+#include "sync.h"
+#include <cstdio>
+
 void KeyCache::populate_nonchanging()
 {
 	key[KeyType::ESC] = EscapeKey;
@@ -192,12 +195,13 @@ bool MyEventReceiver::OnEvent(const SEvent &event)
 /*
  * RealInputHandler
  */
+
 float RealInputHandler::getMovementSpeed()
 {
-	bool f = m_receiver->IsKeyDown(keycache.key[KeyType::FORWARD]),
-		b = m_receiver->IsKeyDown(keycache.key[KeyType::BACKWARD]),
-		l = m_receiver->IsKeyDown(keycache.key[KeyType::LEFT]),
-		r = m_receiver->IsKeyDown(keycache.key[KeyType::RIGHT]);
+	bool f = m_receiver->IsKeyDown(keycache.key[KeyType::FORWARD]) || virtual_key_presses[KeyType::FORWARD],
+		b = m_receiver->IsKeyDown(keycache.key[KeyType::BACKWARD]) || virtual_key_presses[KeyType::BACKWARD],
+		l = m_receiver->IsKeyDown(keycache.key[KeyType::LEFT]) || virtual_key_presses[KeyType::LEFT],
+		r = m_receiver->IsKeyDown(keycache.key[KeyType::RIGHT]) || virtual_key_presses[KeyType::RIGHT];
 	if (f || b || l || r)
 	{
 		// if contradictory keys pressed, stay still
@@ -219,13 +223,13 @@ float RealInputHandler::getMovementDirection()
 	float x = 0, z = 0;
 
 	/* Check keyboard for input */
-	if (m_receiver->IsKeyDown(keycache.key[KeyType::FORWARD]))
+	if (m_receiver->IsKeyDown(keycache.key[KeyType::FORWARD]) || virtual_key_presses[KeyType::FORWARD])
 		z += 1;
-	if (m_receiver->IsKeyDown(keycache.key[KeyType::BACKWARD]))
+	if (m_receiver->IsKeyDown(keycache.key[KeyType::BACKWARD]) || virtual_key_presses[KeyType::BACKWARD])
 		z -= 1;
-	if (m_receiver->IsKeyDown(keycache.key[KeyType::RIGHT]))
+	if (m_receiver->IsKeyDown(keycache.key[KeyType::RIGHT]) || virtual_key_presses[KeyType::RIGHT])
 		x += 1;
-	if (m_receiver->IsKeyDown(keycache.key[KeyType::LEFT]))
+	if (m_receiver->IsKeyDown(keycache.key[KeyType::LEFT]) || virtual_key_presses[KeyType::LEFT])
 		x -= 1;
 
 	if (x != 0 || z != 0) /* If there is a keyboard event, it takes priority */
