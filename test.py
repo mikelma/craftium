@@ -7,10 +7,11 @@ import matplotlib.pyplot as plt
 
 if __name__ == "__main__":
     env = CraftiumEnv(
-        render_mode="human",
+        env_dir="craftium-envs/chop-tree",
+        # render_mode="human",
         # max_timesteps=15,
     )
-    iters = 100
+    iters = 10
 
     observation, info = env.reset()
 
@@ -25,8 +26,6 @@ if __name__ == "__main__":
         observation, reward, terminated, truncated, _info = env.step(action)
 
         print(i, reward, terminated, truncated)
-
-        # time.sleep(1)
 
         if terminated or truncated:
             observation, info = env.reset()

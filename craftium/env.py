@@ -15,7 +15,7 @@ from gymnasium.spaces import Dict, Discrete, Box
 class CraftiumEnv(Env):
     """The main class implementing Gymnasium's [Env](https://gymnasium.farama.org/api/env/) API.
 
-    :param world_name: The name of the world to load.
+    :param env_dir: Directory of the environment to load (should contain `worlds` and `games` directories).
     :param obs_width: The width of the observation image in pixels.
     :param obs_height: The height of the observation image in pixels.
     :param init_frames: The number of frames to wait for Minetest to load.
@@ -24,12 +24,13 @@ class CraftiumEnv(Env):
     :param run_dir: Path to save the artifacts created by the run. Will be automatically generated if not provided.
     :param run_dir_prefix: Prefix path to add to the automatically generated `run_dir`. This value is only used if `run_dir` is `None`.
     :param game_id: The name of the game to load. Defaults to the "original" minetest game.
+    :param world_name: The name of the world to load. Defaults to "world".
     """
     metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 30}
 
     def __init__(
             self,
-            world_name: str,
+            env_dir: os.PathLike,
             obs_width: int = 640,
             obs_height: int = 360,
             init_frames: int = 15,
@@ -38,6 +39,7 @@ class CraftiumEnv(Env):
             run_dir: Optional[os.PathLike] = None,
             run_dir_prefix: Optional[os.PathLike] = None,
             game_id: str = "minetest",
+            world_name: str = "world",
     ):
         super(CraftiumEnv, self).__init__()
 
@@ -91,6 +93,7 @@ class CraftiumEnv(Env):
             headless=render_mode != "human",
             seed=None,
             game_id=game_id,
+            sync_dir=env_dir,
         )
 
         # variable initialized in the `reset` method

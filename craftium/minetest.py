@@ -4,7 +4,7 @@ import subprocess
 import multiprocessing
 from uuid import uuid4
 import shutil
-from distutils.dir_util import copy_tree
+# from distutils.dir_util import copy_tree
 
 
 def launch_process(cmd: str, cwd: Optional[os.PathLike] = None):
@@ -20,12 +20,13 @@ def launch_process(cmd: str, cwd: Optional[os.PathLike] = None):
 class Minetest():
     def __init__(
             self,
-            world_name: str,
             run_dir: Optional[os.PathLike] = None,
             run_dir_prefix: Optional[os.PathLike] = None,
             headless: bool = False,
             seed: Optional[int] = None,
             game_id: str = "minetest",
+            world_name: str = "world",
+            sync_dir: Optional[os.PathLike] = None,
     ):
         # create a dedicated directory for this run
         if run_dir is None:
@@ -86,7 +87,7 @@ class Minetest():
         root_path = os.path.dirname(os.path.dirname(__file__))
 
         # create the directory tree structure needed by minetest
-        self._create_mt_dirs(root_dir=root_path, target_dir=self.run_dir)
+        self._create_mt_dirs(root_dir=root_path, target_dir=self.run_dir, sync_dir=sync_dir)
 
         # compose the launch command
         self.launch_cmd = [
@@ -118,13 +119,20 @@ class Minetest():
             for key, value in config.items():
                 f.write(f"{key} = {value}\n")
 
-    def _create_mt_dirs(self, root_dir: os.PathLike, target_dir: os.PathLike):
+    def _create_mt_dirs(
+            self,
+            root_dir:
+            os.PathLike,
+            target_dir: os.PathLike,
+            sync_dir: Optional[os.PathLike] = None
+    ):
         def link_dir(name):
             os.symlink(os.path.join(root_dir, name),
                        os.path.join(target_dir, name))
         def copy_dir(name):
-            copy_tree(os.path.join(root_dir, name),
-                      os.path.join(target_dir, name))
+            shutil.copytree(os.path.join(root_dir, name),
+                            os.path.join(target_dir, name),
+                            dirs_exist_ok=True)
 
         link_dir("builtin")
         link_dir("fonts")
@@ -132,6 +140,17 @@ class Minetest():
         link_dir("textures")
 
         copy_dir("bin")
-        copy_dir("worlds")
-        copy_dir("games")
         copy_dir("client")
+
+        if sync_dir is not None:
+            for item in os.listdir(sync_dir):
+                src = os.path.join(sync_dir, item)
+                tgt = os.path.join(target_dir, item)
+                if os.path.isfile(item):  # if it's a file
+                    shutil.copy(src, tgt)
+                else: # is a directory
+                    shutil.copytree(src, tgt, dirs_exist_ok=True)
+        else:
+            print("* WARNING: `sync_dir` not given, copying worlds and games dirs from craftium installation dir")
+            copy_dir("worlds")
+            copy_dir("games")
