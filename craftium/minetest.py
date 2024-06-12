@@ -20,10 +20,12 @@ def launch_process(cmd: str, cwd: Optional[os.PathLike] = None):
 class Minetest():
     def __init__(
             self,
+            world_name: str,
             run_dir: Optional[os.PathLike] = None,
             run_dir_prefix: Optional[os.PathLike] = None,
             headless: bool = False,
             seed: Optional[int] = None,
+            game_id: str = "minetest",
     ):
         # create a dedicated directory for this run
         if run_dir is None:
@@ -54,7 +56,6 @@ class Minetest():
             fps_max_unfocused=1000,
             undersampling=1,
             # fov=self.fov_y,
-            # game_dir=self.game_dir,
 
             # Adapt HUD size to display size, based on (1024, 600) default
             # hud_scaling=self.display_size[0] / 1024,
@@ -87,7 +88,13 @@ class Minetest():
         # create the directory tree structure needed by minetest
         self._create_mt_dirs(root_dir=root_path, target_dir=self.run_dir)
 
-        self.launch_cmd = ["./bin/minetest", "--go"]
+        # compose the launch command
+        self.launch_cmd = [
+            "./bin/minetest",
+            "--go",  # Disable main menu, directly start the game
+            "--gameid", game_id,  # Select the game ID
+            "--worldname", world_name,
+        ]
 
         # set the env. variables to execute mintest in headless mode
         if headless:
