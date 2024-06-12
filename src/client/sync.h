@@ -147,6 +147,11 @@ inline void syncClientStep() {
 
 */
 inline double g_reward = 0.0; /* Global variable of the reward value */
+
+/* Values used by `lua_set_reward_once`: */
+inline bool g_reward_reset = false;  /* Whether to reset the reward value after one iteration */
+inline double g_reward_reset_value = 0.0; /* The value to reset the reward to */
+
 inline bool g_termination = false; /* Global variable with the termination flag */
 
 extern "C" {
@@ -157,6 +162,18 @@ extern "C" {
 inline static int lua_set_reward(lua_State *L) {
     double d = lua_tonumber(L, 1);  /* get argument */
     g_reward = d;
+    return 0; /* number of results */
+}
+
+inline static int lua_set_reward_once(lua_State *L) {
+    /* get the two arguments */
+    double val = lua_tonumber(L, 1);
+    double reset_val = lua_tonumber(L, 2);
+
+    g_reward = val;
+    g_reward_reset_value = reset_val;
+    g_reward_reset = true;
+
     return 0; /* number of results */
 }
 

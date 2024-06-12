@@ -11,7 +11,7 @@ if __name__ == "__main__":
         # render_mode="human",
         # max_timesteps=15,
     )
-    iters = 10
+    iters = 100
 
     observation, info = env.reset()
 

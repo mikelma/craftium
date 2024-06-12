@@ -262,6 +262,12 @@ void Client::pyServerListener() {
         i++;
     }
 
+    /* Reset the reward for the next iteration if needed */
+    if (g_reward_reset) {
+        g_reward_reset = false;
+        g_reward = g_reward_reset_value;
+    }
+
     /* Encode the termination signal */
     if (g_termination) {
         g_termination = false;  /* Reset the flag to false */
