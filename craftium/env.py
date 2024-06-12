@@ -80,7 +80,7 @@ class CraftiumEnv(Env):
             "slot_3", "slot_4", "slot_5", "slot_6", "slot_7", "slot_8", "slot_9",
         ]
 
-        self.observation_space = Box(low=0, high=255, shape=(obs_width, obs_height, 3))
+        self.observation_space = Box(low=0, high=255, shape=(obs_width, obs_height, 3), dtype=np.uint8)
 
         assert render_mode is None or render_mode in self.metadata["render_modes"]
         self.render_mode = render_mode
@@ -164,7 +164,7 @@ class CraftiumEnv(Env):
         mouse_x, mouse_y = 0, 0
         for k, v in action.items():
             if k == "mouse":
-                x, y = v[0], v[1]
+                x, y = v[0], -v[1]
                 mouse_x = int(x*(self.obs_width // 2))
                 mouse_y = int(y*(self.obs_height // 2))
             else:
