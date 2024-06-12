@@ -27,6 +27,8 @@ class Minetest():
             game_id: str = "minetest",
             world_name: str = "world",
             sync_dir: Optional[os.PathLike] = None,
+            screen_w: int = 640,
+            screen_h: int = 360,
     ):
         # create a dedicated directory for this run
         if run_dir is None:
@@ -50,8 +52,8 @@ class Minetest():
             enable_client_modding=True,
             csm_restriction_flags=0,
             enable_mod_channels=True,
-            screen_w=640,
-            screen_h=360,
+            screen_w=screen_w,
+            screen_h=screen_h,
             vsync=False,
             fps_max=1000,
             fps_max_unfocused=1000,

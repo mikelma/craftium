@@ -94,6 +94,8 @@ class CraftiumEnv(Env):
             seed=None,
             game_id=game_id,
             sync_dir=env_dir,
+            screen_w=obs_width,
+            screen_h=obs_height,
         )
 
         # variable initialized in the `reset` method
