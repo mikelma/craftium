@@ -4,11 +4,14 @@ docs_dir: craftium-docs
 
 nav:
   - Home: docs/index.md
-  - Installation: docs/installation.md
-  - Getting started: docs/getting-started.md
-  - Observations and actions: docs/obs-and-acts.md
-  - Troubleshooting: docs/troubleshooting.md
-  - API Reference: docs/reference.md
+  - User Guide:
+      - Installation: docs/installation.md
+      - Getting started: docs/getting-started.md
+  - General Information:
+      - Observations and actions: docs/obs-and-acts.md
+  - Misc:
+    - Troubleshooting: docs/troubleshooting.md
+    - API Reference: docs/reference.md
 
 theme: readthedocs
 
