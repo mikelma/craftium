@@ -1,0 +1,12 @@
+enable_damage = false
+creative_mode = true
+mod_storage_backend = sqlite3
+auth_backend = sqlite3
+player_backend = sqlite3
+backend = sqlite3
+gameid = minetest
+world_name = room
+server_announce = false
+load_mod_superflat = mods/superflat
+load_mod_proba = false
+load_mod_basenodes = false
