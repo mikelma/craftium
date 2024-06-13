@@ -13,14 +13,15 @@ class MtClient():
 
         self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-        try:
-            self.s.connect((MT_IP, MT_PORT))
-        except Exception as e:
-            print("\n\n[!] Error connecting to Minetest. Minetest probably failed to launch.")
-            print("  => Run's scratch directory should be available, containing stderr.txt and stdout.txt useful for checking what went wrong.")
-            print("\nThe original error message in case it's useful:")
-            print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n")
-            print(e)
+        # try:
+        self.s.connect((MT_IP, MT_PORT))
+        # except Exception as e:
+        #     print("\n\n[!] Error connecting to Minetest. Minetest probably failed to launch.")
+        #     print("  => Run's scratch directory should be available, containing stderr.txt and stdout.txt useful for checking what went wrong.")
+        #     print("\nThe original error message in case it's useful:")
+        #     print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n")
+        #     print(e)
+        #     raise e
 
         # pre-compute the number of bytes that we should receive from MT.
         # the RGB image + 8 bytes of the reward + 1 byte of the termination flag

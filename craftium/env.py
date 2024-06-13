@@ -133,10 +133,24 @@ class CraftiumEnv(Env):
         time.sleep(2)  # wait for MT to initialize (TODO Improve this)
 
         # connect the client to the MT process
-        self.client = MtClient(
-            img_width=self.obs_width,
-            img_height=self.obs_height,
-        )
+        try:
+            self.client = MtClient(
+                img_width=self.obs_width,
+                img_height=self.obs_height,
+            )
+        except Exception as e:
+            print("\n\n[!] Error connecting to Minetest. Minetest probably failed to launch.")
+            print("  => Run's scratch directory should be available, containing stderr.txt and stdout.txt useful for checking what went wrong.")
+            print("     Content of the stderr.txt file in the run's sratch directory:")
+            print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n")
+            with open(f"{self.mt.run_dir}/stderr.txt", "r") as f:
+                print(f.read())
+            print("\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+            print("The raised exception (in case it's useful):")
+            print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n")
+            print(e)
+            quit(1)
+
 
         # HACK skip some frames to let the game initialize
         for _ in range(self.init_frames):
