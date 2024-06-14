@@ -490,7 +490,7 @@ private:
 	RenderingEngine *m_rendering_engine;
 
         /* Python API server related */
-        int pyserv_port = 4343;
+        int pyserv_port = 0; /* Port value selected in the startPyServer method */
         int pyserv_sockfd = 0;
         int pyserv_conn = 0;
         struct sockaddr_in *pyserv_servaddr = nullptr;

@@ -1,27 +1,19 @@
 import socket
 import struct
+from typing import Optional
 
 import numpy as np
 
 MT_IP = "127.0.0.1"
-MT_PORT = 4343
+MT_DEFAULT_PORT = 4343
 
 class MtClient():
-    def __init__(self, img_width: int, img_height: int):
+    def __init__(self, img_width: int, img_height: int, port: Optional[int] = None):
         self.img_width = img_width
         self.img_height = img_height
 
         self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
-        # try:
-        self.s.connect((MT_IP, MT_PORT))
-        # except Exception as e:
-        #     print("\n\n[!] Error connecting to Minetest. Minetest probably failed to launch.")
-        #     print("  => Run's scratch directory should be available, containing stderr.txt and stdout.txt useful for checking what went wrong.")
-        #     print("\nThe original error message in case it's useful:")
-        #     print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n")
-        #     print(e)
-        #     raise e
+        self.s.connect((MT_IP, MT_DEFAULT_PORT if port is None else port))
 
         # pre-compute the number of bytes that we should receive from MT.
         # the RGB image + 8 bytes of the reward + 1 byte of the termination flag

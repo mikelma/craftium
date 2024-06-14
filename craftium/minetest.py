@@ -4,13 +4,27 @@ import subprocess
 import multiprocessing
 from uuid import uuid4
 import shutil
+import random
 # from distutils.dir_util import copy_tree
 
 
-def launch_process(cmd: str, cwd: Optional[os.PathLike] = None):
+def is_port_in_use(port: int) -> bool:
+    import socket
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        return s.connect_ex(('localhost', port)) == 0
+
+
+def launch_process(cmd: str, cwd: Optional[os.PathLike] = None, env_vars: dict[str, str] = dict()):
+    print(env_vars)
     def launch_fn():
+        # set env vars
+        for key, value in env_vars.items():
+            os.environ[key] = value
+
+        # open files for piping stderr and stdout into
         stderr = open(os.path.join(cwd, "stderr.txt"), "w")
         stdout = open(os.path.join(cwd, "stdout.txt"), "w")
+
         subprocess.run(cmd, cwd=cwd, stderr=stderr, stdout=stdout)
     process = multiprocessing.Process(target=launch_fn, args=[])
     process.start()
@@ -99,14 +113,26 @@ class Minetest():
             "--worldname", world_name,
         ]
 
-        # set the env. variables to execute mintest in headless mode
-        if headless:
-            os.environ["SDL_VIDEODRIVER"] = "offscreen"
+        self.proc = None  # will hold the mintest's process
 
-        self.proc = None
+        # set the env. variables to execute mintest in headless mode
+        # if headless:
+        #   os.environ["SDL_VIDEODRIVER"] = "offscreen"
+
+        self.mt_env = {}
+
+        if headless:
+            self.mt_env["SDL_VIDEODRIVER"] = "offscreen"
+
+        # select a free port for the craftium <-> minetest communication
+        while True:
+            self.port = random.randint(4_000, 6_000)
+            if not is_port_in_use(self.port):
+                break
+        self.mt_env["CRAFTIUM_PORT"] = str(self.port)
 
     def start_process(self):
-        self.proc = launch_process(self.launch_cmd, self.run_dir)
+        self.proc = launch_process(self.launch_cmd, self.run_dir, env_vars=self.mt_env)
 
     def kill_process(self):
         self.proc.terminate()

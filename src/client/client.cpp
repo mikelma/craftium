@@ -17,6 +17,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
+#include <cstddef>
 #include <iostream>
 #include <algorithm>
 #include <sstream>
@@ -156,7 +157,16 @@ Client::Client(
 
 void Client::startPyServer()
 {
-    // Creating socket file descriptor
+    // Get the craftium port from the env. var.
+    char* port_s = getenv(CRAFTIUM_PORT_ENV_VAR);
+    if (port_s == NULL)
+        pyserv_port = CRAFTIUM_DEFAULT_PORT;
+    else
+        pyserv_port = atoi(port_s);
+
+    printf("[*] Minetest using port %d to communicate with craftium\n", pyserv_port);
+
+    // Create socket file descriptor
     if ( (pyserv_sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0 ) {
         perror("[ERROR] Obs. server socket creation failed");
         exit(EXIT_FAILURE);

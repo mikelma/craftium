@@ -137,6 +137,7 @@ class CraftiumEnv(Env):
             self.client = MtClient(
                 img_width=self.obs_width,
                 img_height=self.obs_height,
+                port=self.mt.port
             )
         except Exception as e:
             print("\n\n[!] Error connecting to Minetest. Minetest probably failed to launch.")
