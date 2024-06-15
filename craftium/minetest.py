@@ -126,7 +126,7 @@ class Minetest():
 
         # select a free port for the craftium <-> minetest communication
         while True:
-            self.port = random.randint(4_000, 6_000)
+            self.port = random.randint(49152, 65535)
             if not is_port_in_use(self.port):
                 break
         self.mt_env["CRAFTIUM_PORT"] = str(self.port)
