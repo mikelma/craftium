@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=42", "wheel", "scikit-build"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "craftium"
+version = "0.0.1"
+authors = [
+  { name="Mikel Malagón", email="mikelma7@gmail.com" },
+]
+description = "A Gymnasium wrapper for the Minetest voxel game engine"
+readme = "craftium-readme.md"
+requires-python = ">=3.8"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: Linux",
+]
+
+dependencies = [
+    "numpy",
+    "matplotlib",
+    "torch",
+    "stable_baselines3",
+    "gymnasium"
+]
+
+[project.urls]
+Homepage = "https://github.com/mikelma/craftium"
+Issues = "https://github.com/mikelma/craftium/issues"
