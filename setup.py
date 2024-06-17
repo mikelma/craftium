@@ -1,11 +1,24 @@
 import os
+import shutil
 from skbuild import setup
 from setuptools import find_packages
 
 # Default to using all available CPU cores except two
 num_cores = os.getenv("BUILD_THREADS", max(os.cpu_count()-2, 2))
+os.environ["SKBUILD_BUILD_OPTIONS"] = f"-j{num_cores}"  # will call `make` with `-j`
 
-os.environ["SKBUILD_BUILD_OPTIONS"] = f"-j{num_cores}"
+def setup_irr_shaders_dir():
+    # remove the original link
+    path = "client/shaders/Irrlicht"
+    if os.path.islink(path):
+        os.unlink(path)
+
+        # copy the old linked files to `path`
+        src = "irr/media/Shaders"
+        print(f"\n[*] Copying {src} to {path} \n")
+        shutil.copytree(src, path)
+
+setup_irr_shaders_dir()
 
 setup(
     name="craftium",
@@ -20,4 +33,7 @@ setup(
         "-DCMAKE_BUILD_TYPE=Release",
     ],
     python_requires=">=3.9",
+    options={
+        "bdist_egg": {"unpack_source": True}
+    }
 )

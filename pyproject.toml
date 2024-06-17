@@ -18,11 +18,11 @@ classifiers = [
 ]
 
 dependencies = [
-    "numpy",
-    "matplotlib",
-    "torch",
+    # "numpy",
+    # "matplotlib",
+    # "torch",
     "stable_baselines3",
-    "gymnasium"
+    # "gymnasium"
 ]
 
 [project.urls]
