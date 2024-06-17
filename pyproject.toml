@@ -7,7 +7,7 @@ name = "craftium"
 version = "0.0.1"
 description = "A Gymnasium wrapper for the minetest game engine"
 readme = "craftium-readme.md"
-license = "LICENSE.txt"
+license = {file = "LICENSE.txt"}
 keywords = ["gymnasium", "minetest", "minecraft", "reinforcement learning"]
 
 dependencies = [
