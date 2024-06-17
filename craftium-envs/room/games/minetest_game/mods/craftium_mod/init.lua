@@ -5,10 +5,11 @@ end
 -- Executed when the player joins the game
 minetest.register_on_joinplayer(function(player, _last_login)
       -- Place the player in a random position inside the rooom
-      player:set_pos({x = rand(-13.2, 4.2), z = rand(-24.2, -10,0), y = 6 })
+      player:set_pos({x = rand(-13.2, 4.2), z = rand(-24.2, -0.8), y = 6 })
 
       --- Spawn a red block inside the room in a random position
-      target_pos = {x = rand(-13.2, 4.2), z = rand(-9.0, -0.8), y = 5.5 }
+      target_pos = {x = rand(-13.2, 4.2), z = rand(-24.2, -0.8), y = 5.5 }
+
       minetest.set_node(target_pos, { name = "default:coral_orange" })
 
       -- Disable HUD elements
@@ -32,13 +33,13 @@ minetest.register_globalstep(function(dtime)
 
       local player_pos = player:get_pos()
 
-      distance = math.pow(target_pos.x-player_pos.x, 2) +
-         math.pow(target_pos.z-player_pos.z, 2)
+      -- distance = math.pow(target_pos.x-player_pos.x, 2) +
+      --    math.pow(target_pos.z-player_pos.z, 2)
 
-      set_reward(0.1*(1-(distance/850.32)))
+      set_reward(-1.0)
 
-      if distance < 2.0 then
-         set_reward(100.0)
+      if distance < 20.0 then
+         -- set_reward(100.0)
          set_termination()
       end
 end)
