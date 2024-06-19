@@ -1,7 +1,6 @@
 import os
 import shutil
-from setuptools import setup, Command
-from setuptools.command.build_ext import build_ext as _build_ext
+from setuptools import setup
 import subprocess
 
 
@@ -13,13 +12,6 @@ def build_minetest():
 
     # run make
     subprocess.check_call(["make", f"-j{num_cores}"])
-
-
-class CustomBuildExt(_build_ext):
-    def run(self):
-        self.run_command("build_cpp")
-        _build_ext.run(self)
-
 
 def create_data_dir():
     data_dir = "craftium/"
@@ -44,6 +36,7 @@ def setup_irr_shaders_dir():
         src = "irr/media/Shaders"
         print(f"\n[*] Copying {src} to {path} \n")
         shutil.copytree(src, path)
+
 
 build_minetest()
 
