@@ -25,6 +25,7 @@ class CraftiumEnv(Env):
     :param run_dir_prefix: Prefix path to add to the automatically generated `run_dir`. This value is only used if `run_dir` is `None`.
     :param game_id: The name of the game to load. Defaults to the "original" minetest game.
     :param world_name: The name of the world to load. Defaults to "world".
+    :param minetest_dir: Path to the craftium's minetest build directory. If not given, defaults to the directory where craftium is installed. This option is intended for debugging purposes.
     """
     metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 30}
 
@@ -40,6 +41,7 @@ class CraftiumEnv(Env):
             run_dir_prefix: Optional[os.PathLike] = None,
             game_id: str = "minetest",
             world_name: str = "world",
+            minetest_dir: Optional[str] = None,
     ):
         super(CraftiumEnv, self).__init__()
 
@@ -96,6 +98,7 @@ class CraftiumEnv(Env):
             sync_dir=env_dir,
             screen_w=obs_width,
             screen_h=obs_height,
+            minetest_dir=minetest_dir,
         )
 
         # variable initialized in the `reset` method

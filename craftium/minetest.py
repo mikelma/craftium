@@ -43,6 +43,7 @@ class Minetest():
             sync_dir: Optional[os.PathLike] = None,
             screen_w: int = 640,
             screen_h: int = 360,
+            minetest_dir: Optional[str] = None,
     ):
         # create a dedicated directory for this run
         if run_dir is None:
@@ -100,7 +101,7 @@ class Minetest():
         self._write_config(config, os.path.join(self.run_dir, "minetest.conf"))
 
         # get the path location of the parent of this module (where all the minetest stuff is located)
-        root_path = os.path.dirname(os.path.dirname(__file__))
+        root_path = os.path.dirname(__file__) if minetest_dir is None else minetest_dir
 
         # create the directory tree structure needed by minetest
         self._create_mt_dirs(root_dir=root_path, target_dir=self.run_dir, sync_dir=sync_dir)
