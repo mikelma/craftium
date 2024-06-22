@@ -5,13 +5,14 @@ docs_dir: craftium-docs
 nav:
   - Home: docs/index.md
   - User Guide:
-      - Installation: docs/installation.md
-      - Getting started: docs/getting-started.md
+      - docs/installation.md
+      - docs/getting-started.md
+      - docs/creating-envs.md
   - General Information:
       - Observations and actions: docs/obs-and-acts.md
   - Misc:
-    - Troubleshooting: docs/troubleshooting.md
-    - API Reference: docs/reference.md
+    - docs/troubleshooting.md
+    - docs/reference.md
 
 theme: readthedocs
 
