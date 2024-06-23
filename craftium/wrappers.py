@@ -6,6 +6,13 @@ from .env import ACTION_ORDER
 
 
 class DiscreteActionWrapper(ActionWrapper):
+    """A Gymnasium `ActionWrapper` that translates craftium's `Dict` action space into a binary (discretized) action space.
+    Specifically into the `MultiDiscrete` space.
+
+    :param env: The environment to wrap.
+    :param actions: A list of strings containing the names of the actions that will consititute the new action space.
+    :params mouse_mov: Magnitude of the mouse movement. Must be in the [0, 1] range, else it will be clipped.
+    """
     def __init__(self, env: Env, actions: list[str], mouse_mov: float = 0.5):
         ActionWrapper.__init__(self, env)
 

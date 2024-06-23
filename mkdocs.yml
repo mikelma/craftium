@@ -23,6 +23,7 @@ plugins:
         python:
           options:
             docstring_style: sphinx
+
 extra:
     version: 0.1
     links:
