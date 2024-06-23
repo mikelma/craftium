@@ -1,60 +1,51 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from stable_baselines3 import PPO
-from gymnasium import ActionWrapper, Env
-from gymnasium.spaces import MultiDiscrete
-
-from craftium import CraftiumEnv
-
-
-class DiscreteActionWrapper(ActionWrapper):
-    def __init__(self, env: Env):
-        ActionWrapper.__init__(self, env)
-
-        # actions:
-        #  forward, backward, left, right, jump, dig,
-        #  mouse -x, mouse +x, mouse -y, mouse +y
-        self.action_space = MultiDiscrete(np.full(10, 2))
-        self.mouse_mov = 0.8
-
-    def action(self, action):
-        r = self.mouse_mov
-
-        mouse = [0, 0]
-
-        if action[6] == 1:
-            mouse[0] += r
-        if action[7] == 1:
-            mouse[0] += -r
-        if action[8] == 1:
-            mouse[1] += r
-        if action[9] == 1:
-            mouse[1] += -r
-
-        return {
-            "forward": action[0],
-            "backward": action[1],
-            "left": action[2],
-            "right": action[3],
-            "jump": action[4],
-            "dig": action[5],
-            "mouse": mouse,
-        }
+from stable_baselines3 import A2C #, PPO
+from stable_baselines3.common import logger
+from craftium import CraftiumEnv, DiscreteActionWrapper
+from uuid import uuid4
+import os
 
 
-if __name__ == "__main__":
+def make_env():
     env = CraftiumEnv(
-        env_dir="craftium-envs/chop-tree",
-        max_timesteps=200,
+        env_dir="craftium-envs/room",
+        max_timesteps=500,
+        init_frames=200,
         obs_width=64,
         obs_height=64,
-        render_mode="human",
+        # render_mode="human",
+        minetest_dir=os.getcwd(),
     )
 
-    env = DiscreteActionWrapper(env)
+    env = DiscreteActionWrapper(
+        env,
+        actions=["forward", "mouse x+", "mouse x-"],
+        mouse_mov=0.5,
+    )
 
-    model = PPO("CnnPolicy", env, verbose=1)
-    model.learn(total_timesteps=10_000)
+    return env
 
-    model.save("ppo_chop-tree")
+if __name__ == "__main__":
+    env = make_env()
+
+    log_path = f"./run-logs/{str(uuid4())}/"
+    new_logger = logger.configure(log_path, ["stdout", "csv"])
+
+    model = A2C("CnnPolicy", env, verbose=1)
+    model.set_logger(new_logger)
+    model.learn(total_timesteps=100_000)
+
+    # # Enjoy trained agent
+    # vec_env = model.get_env()
+    # obs = vec_env.reset()
+    # for i in range(1000):
+    #     print(i)
+    #     action, _states = model.predict(obs, deterministic=True)
+    #     obs, rewards, dones, info = vec_env.step(action)
+    #     print(rewards)
+    #     plt.clf()
+    #     plt.imshow(np.transpose(obs[0], (2, 1, 0)))
+    #     plt.pause(1e-7)
+
     env.close()
