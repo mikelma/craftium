@@ -7,9 +7,16 @@ from .minetest import Minetest
 
 import numpy as np
 
-# import gymnasium as gym
 from gymnasium import Env
 from gymnasium.spaces import Dict, Discrete, Box
+
+# names of the actions in the order they must be sent to MT
+ACTION_ORDER = [
+    "forward", "backward", "left", "right", "jump", "aux1", "sneak",
+    "zoom", "dig", "place", "drop", "inventory", "slot_1", "slot_2",
+    "slot_3", "slot_4", "slot_5", "slot_6", "slot_7", "slot_8", "slot_9",
+    "mouse"
+]
 
 
 class CraftiumEnv(Env):
@@ -50,6 +57,7 @@ class CraftiumEnv(Env):
         self.init_frames = init_frames
         self.max_timesteps = max_timesteps
 
+        # TODO replace strings (keys) with values from ACTION_ORDER
         self.action_space = Dict({
             "forward": Discrete(2),
             "backward": Discrete(2),
@@ -74,13 +82,6 @@ class CraftiumEnv(Env):
             "slot_9": Discrete(2),
             "mouse": Box(low=-1, high=1, shape=(2,), dtype=np.float32),
         })
-
-        # names of the actions in the order they must be sent to MT
-        self.action_order = [
-            "forward", "backward", "left", "right", "jump", "aux1", "sneak",
-            "zoom", "dig", "place", "drop", "inventory", "slot_1", "slot_2",
-            "slot_3", "slot_4", "slot_5", "slot_6", "slot_7", "slot_8", "slot_9",
-        ]
 
         self.observation_space = Box(low=0, high=255, shape=(obs_width, obs_height, 3), dtype=np.uint8)
 
@@ -186,7 +187,7 @@ class CraftiumEnv(Env):
                 mouse_x = int(x*(self.obs_width // 2))
                 mouse_y = int(y*(self.obs_height // 2))
             else:
-                keys[self.action_order.index(k)] = v
+                keys[ACTION_ORDER.index(k)] = v
         # send the action to MT
         self.client.send(keys, mouse_x, mouse_y)
 

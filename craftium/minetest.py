@@ -15,7 +15,6 @@ def is_port_in_use(port: int) -> bool:
 
 
 def launch_process(cmd: str, cwd: Optional[os.PathLike] = None, env_vars: dict[str, str] = dict()):
-    print(env_vars)
     def launch_fn():
         # set env vars
         for key, value in env_vars.items():
