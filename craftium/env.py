@@ -33,6 +33,7 @@ class CraftiumEnv(Env):
     :param game_id: The name of the game to load. Defaults to the "original" minetest game.
     :param world_name: The name of the world to load. Defaults to "world".
     :param minetest_dir: Path to the craftium's minetest build directory. If not given, defaults to the directory where craftium is installed. This option is intended for debugging purposes.
+    :param tcp_port: Port number used to communicate with minetest. If not provided a random free port in the range [49152, 65535] is selected.
     """
     metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 30}
 
@@ -49,6 +50,7 @@ class CraftiumEnv(Env):
             game_id: str = "minetest",
             world_name: str = "world",
             minetest_dir: Optional[str] = None,
+            tcp_port: Optional[int] = None,
     ):
         super(CraftiumEnv, self).__init__()
 
@@ -100,6 +102,7 @@ class CraftiumEnv(Env):
             screen_w=obs_width,
             screen_h=obs_height,
             minetest_dir=minetest_dir,
+            tcp_port=tcp_port,
         )
 
         # variable initialized in the `reset` method
@@ -141,7 +144,7 @@ class CraftiumEnv(Env):
             self.client = MtClient(
                 img_width=self.obs_width,
                 img_height=self.obs_height,
-                port=self.mt.port
+                port=self.mt.port,
             )
         except Exception as e:
             print("\n\n[!] Error connecting to Minetest. Minetest probably failed to launch.")

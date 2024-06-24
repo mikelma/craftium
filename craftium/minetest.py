@@ -43,6 +43,7 @@ class Minetest():
             screen_w: int = 640,
             screen_h: int = 360,
             minetest_dir: Optional[str] = None,
+            tcp_port: Optional[int] = None,
     ):
         # create a dedicated directory for this run
         if run_dir is None:
@@ -124,11 +125,14 @@ class Minetest():
         if headless:
             self.mt_env["SDL_VIDEODRIVER"] = "offscreen"
 
-        # select a free port for the craftium <-> minetest communication
-        while True:
-            self.port = random.randint(49152, 65535)
-            if not is_port_in_use(self.port):
-                break
+        if tcp_port is None:
+            # select a (random) free port for the craftium <-> minetest communication
+            while True:
+                self.port = random.randint(49152, 65535)
+                if not is_port_in_use(self.port):
+                    break
+        else:
+            self.port = tcp_port
         self.mt_env["CRAFTIUM_PORT"] = str(self.port)
 
     def start_process(self):
@@ -149,8 +153,7 @@ class Minetest():
 
     def _create_mt_dirs(
             self,
-            root_dir:
-            os.PathLike,
+            root_dir: os.PathLike,
             target_dir: os.PathLike,
             sync_dir: Optional[os.PathLike] = None
     ):
