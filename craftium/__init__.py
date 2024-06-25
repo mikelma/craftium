@@ -51,14 +51,14 @@ register(
             name="DiscreteActionWrapper",
             entry_point="craftium.wrappers:DiscreteActionWrapper",
             kwargs=dict(
-                actions=["forward", "dig", "mouse x+", "mouse x-"],
+                actions=["forward", "dig", "mouse x+", "mouse x-", "mouse y+", "mouse y-"],
                 mouse_mov=0.5,
             ),
         )
     ],
     # kwargs
     kwargs=dict(
-        env_dir=os.path.join(root_path, "craftium-envs/room"),
+        env_dir=os.path.join(root_path, "craftium-envs/chop-tree"),
         obs_width=64,
         obs_height=64,
         max_timesteps=2_000,
