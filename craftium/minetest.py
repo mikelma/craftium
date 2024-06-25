@@ -29,6 +29,14 @@ def launch_process(cmd: str, cwd: Optional[os.PathLike] = None, env_vars: dict[s
     process.start()
     return process
 
+def is_minetest_build_dir(path: os.PathLike) -> bool:
+    # list of directories required by craftium to exist in the a minetest build directory
+    req_dirs = ["builtin", "fonts", "locale", "textures", "bin", "client"]
+    for rd in req_dirs:
+        if not os.path.exists(os.path.join(path, rd)):
+            return False
+    return True
+
 
 class Minetest():
     def __init__(
@@ -100,8 +108,19 @@ class Minetest():
 
         self._write_config(config, os.path.join(self.run_dir, "minetest.conf"))
 
-        # get the path location of the parent of this module (where all the minetest stuff is located)
-        root_path = os.path.dirname(__file__) if minetest_dir is None else minetest_dir
+        # get the craftium's root directory, the place where all the data
+        # needed by craftium's is located
+        if minetest_dir is None:
+            # check if the current directory is a minetest build directory
+            if is_minetest_build_dir(os.getcwd()):
+                root_path = os.getcwd()
+            else:  # in this case, this module might be running as an installed python package
+                # get the path location of the parent of this module
+                root_path = os.path.dirname(__file__)
+        else:
+            root_path = minetest_dir
+
+        print(f"** Craftium's root path is: {root_path}")
 
         # create the directory tree structure needed by minetest
         self._create_mt_dirs(root_dir=root_path, target_dir=self.run_dir, sync_dir=sync_dir)
