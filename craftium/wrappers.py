@@ -2,7 +2,7 @@ import numpy as np
 from gymnasium import ActionWrapper, Env
 from gymnasium.spaces import MultiDiscrete
 
-from .env import ACTION_ORDER
+from .craftium_env import ACTION_ORDER
 
 
 class DiscreteActionWrapper(ActionWrapper):
