@@ -16,8 +16,6 @@ Craftium is a fully open source research platform for Reinforcement Learning (RL
 
 ## Installation
 
-# Installation
-
 First, clone craftium and `cd` into the project's main directory:
 
 ```bash

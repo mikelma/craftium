@@ -26,4 +26,4 @@ and,
 pip install .
 ```
 
-This last command should compile minetest, install python dependencies, and, finally, craftium. If the installation process fails, please consider submitting an issue [here](https://github.com/mikelma/craftium/issues).
+This last command should compile minetest, install python dependencies and, finally, craftium. If the installation process fails, please consider submitting an issue [here](https://github.com/mikelma/craftium/issues).
