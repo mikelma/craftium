@@ -1,3 +1,6 @@
+
+> ✨ *Imagine the features of Minecraft: open world, procedural generation, fully destructible voxel environments... but open source, without Java, easily extensible in [Lua](https://www.lua.org), and with a modern [Gymnasium API](https://gymnasium.farama.org/index.html) designed for RL... This is* **Craftium!** ✨
+
 <center>
 <img src="imgs/Craftium_Logo.png" alt="Craftium logo" width="400" align="right">
 </center>
