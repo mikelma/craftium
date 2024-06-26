@@ -140,7 +140,6 @@ class CraftiumEnv(Env):
 
         # start the new MT process
         self.mt.start_process()  # launch the new MT process
-        time.sleep(2)  # wait for MT to initialize (TODO Improve this)
 
         # connect the client to the MT process
         try:

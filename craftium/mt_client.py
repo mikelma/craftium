@@ -1,5 +1,6 @@
 import socket
 import struct
+import time
 from typing import Optional
 
 import numpy as np
@@ -8,12 +9,25 @@ MT_IP = "127.0.0.1"
 MT_DEFAULT_PORT = 4343
 
 class MtClient():
-    def __init__(self, img_width: int, img_height: int, port: Optional[int] = None):
+    def __init__(self, img_width: int, img_height: int, port: Optional[int] = None, connect_timeout: int = 30):
         self.img_width = img_width
         self.img_height = img_height
 
+        # create client's socket
         self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.s.connect((MT_IP, MT_DEFAULT_PORT if port is None else port))
+
+        # make some trials to connect to the minetest server
+        trial_start = time.time()
+        while True:
+            time.sleep(1)  # wait some time after each trial
+            try:
+                self.s.connect((MT_IP, MT_DEFAULT_PORT if port is None else port))
+                break
+            except Exception as e:
+                # check if the timeout is reached
+                if (time.time() - trial_start) >= connect_timeout:
+                    print("[*] Craftium client reached timeout while waiting for minetest's server")
+                    raise e
 
         # pre-compute the number of bytes that we should receive from MT.
         # the RGB image + 8 bytes of the reward + 1 byte of the termination flag
