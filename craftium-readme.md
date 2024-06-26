@@ -6,6 +6,10 @@
 
 Craftium is a fully open-source research platform for Reinforcement Learning (RL) research that provides a [Gymnasium](https://gymnasium.farama.org/index.html) wrapper for the [Minetest](https://www.minetest.net/) voxel game engine.
 
+📑 If you use craftium in your projects or research please consider [citing](#citing-craftium) the project, and don't hesitate to let us know what have you created using the library! 🤗
+
+**TODO:** Link to the documentation page.
+
 ## Features ✨
 
 - **Super extensible 🧩:** Minetest is built with modding in mind! The game engine is completely extensible using the [Lua](https://www.lua.org) programming language. Easily create mods to implement the environment that suits the needs of your research!
@@ -16,7 +20,7 @@ Craftium is a fully open-source research platform for Reinforcement Learning (RL
 
 - **No more Java ⚡:** The Minecraft game is written in Java, not a very friendly language for clusters and high-performance applications. Contrarily, Minetest is written in C++, much more friendly for clusters, and highly performant!
 
-## Installation
+## Installation ⚙️
 
 First, clone craftium and `cd` into the project's main directory:
 
@@ -45,7 +49,7 @@ pip install .
 
 This last command should compile minetest, install python dependencies, and, finally, craftium. If the installation process fails, please consider submitting an issue [here](https://github.com/mikelma/craftium/issues).
 
-## Getting started
+## Getting started 💡
 
 Craftium implements [Gymnasium's](https://gymnasium.farama.org/) [`Env`](https://gymnasium.farama.org/api/env/) API, making it compatible with many popular reinforcement learning libraries and tools like [stable-baselines3](https://stable-baselines3.readthedocs.io/en/master/index.html) and [CleanRL](https://github.com/vwxyzjn/cleanrl).
 
@@ -90,10 +94,18 @@ env.close()
 
 This example trains a CNN-based agent for 10K timesteps in the `Craftium/ChopTree-v0` environment using PPO. Additionally, we set up a custom logger that records training statistics to a CSV file inside the `logs-ppo-agent/` directory.
 
-## Contributing
+## Citing Craftium 📑
+
+TODO
+
+## Contributing 🏋️
 
 We really appreciate contributions to craftium! craftium is in an early development stage, so many possible improvements and bugs are expected. If you have found a bug or have a suggestion, please consider opening an [issue](https://github.com/mikelma/craftium/issues) if it isn't already covered. In case you want to submit a fix or an improvement to the library, [pull requests](https://github.com/mikelma/craftium/pulls) are also very welcome!
 
-## Citing Craftium
+## License 📖
 
-TODO
+Craftium is based on [minetest](https://github.com/minetest/minetest) and its source code is distributed with this library. Craftium maintains the same licenses as minetest:  MIT for code and CC-BY-SA 3.0 for content.
+
+## Acknowledgements 🤗
+
+We want to thank the minetest and gymnasium developers and community for maintaining such an excellent open-source project over the years. We also thank [minerl](minerl.readthedocs.io/) and other projects integrating minetest and gymnasium ([here](https://github.com/EleutherAI/minetest) and [here](https://github.com/Astera-org/minetest)) for serving as inspiration for this project.
