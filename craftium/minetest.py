@@ -52,6 +52,7 @@ class Minetest():
             screen_h: int = 360,
             minetest_dir: Optional[str] = None,
             tcp_port: Optional[int] = None,
+            minetest_conf: dict[str, Any] = dict(),
     ):
         # create a dedicated directory for this run
         if run_dir is None:
@@ -103,6 +104,11 @@ class Minetest():
             emergequeue_limit_diskonly=1000000,
             emergequeue_limit_generate=1000000,
         )
+
+        # overwrite config settings with those set via minetest_conf
+        for key, value in minetest_conf.items():
+            config[key] = value
+
         if seed is not None:
             config["fixed_map_seed"] = seed
 

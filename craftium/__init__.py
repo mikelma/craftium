@@ -63,5 +63,9 @@ register(
         obs_height=64,
         max_timesteps=2_000,
         init_frames=200,
+        minetest_conf=dict(
+            give_initial_stuff=True,
+            initial_stuff="default:axe_steel",
+        ),
     )
 )
