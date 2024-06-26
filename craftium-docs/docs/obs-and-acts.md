@@ -57,3 +57,5 @@ In a nutshell, actions in Craftium are a dictionary of some key commands and mou
 ```
 
 This action would cause the player to jump forward and rotate the mouse to the left. Note that it isn't neccessary to provide a value for each possible key. If the value for a key is not given, its default value will be used: `0` ("off") for keys and `[0, 0]` (no movement) for mouse movements.
+
+Note that the craftium's default `Dict` action space might be too complex for many tasks, where useful actions might be a subset of the original space. For this purpose, craftium comes with different `ActionWrappers` that can be used to customize and simplify the default action space. Check the dedicated [page](./wrappers.md) on wrappers and the API [reference](./reference.md) for more info.

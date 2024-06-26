@@ -1,5 +1,5 @@
 from .craftium_env import CraftiumEnv
-from .wrappers import BinaryActionWrapper
+from .wrappers import BinaryActionWrapper, DiscreteActionWrapper
 
 from gymnasium.envs.registration import register, WrapperSpec
 
@@ -25,8 +25,8 @@ register(
     entry_point="craftium.craftium_env:CraftiumEnv",
     additional_wrappers=[
         WrapperSpec(
-            name="BinaryActionWrapper",
-            entry_point="craftium.wrappers:BinaryActionWrapper",
+            name="DiscreteActionWrapper",
+            entry_point="craftium.wrappers:DiscreteActionWrapper",
             kwargs=dict(
                 actions=["forward", "mouse x+", "mouse x-"],
                 mouse_mov=0.5,
@@ -48,8 +48,8 @@ register(
     entry_point="craftium.craftium_env:CraftiumEnv",
     additional_wrappers=[
         WrapperSpec(
-            name="BinaryActionWrapper",
-            entry_point="craftium.wrappers:BinaryActionWrapper",
+            name="DiscreteActionWrapper",
+            entry_point="craftium.wrappers:DiscreteActionWrapper",
             kwargs=dict(
                 actions=["forward", "dig", "mouse x+", "mouse x-", "mouse y+", "mouse y-"],
                 mouse_mov=0.5,

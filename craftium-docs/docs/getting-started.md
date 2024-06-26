@@ -49,6 +49,8 @@ env.close()
 
 The code above just starts an episode calling `env.reset`, then samples a random action, plots the current observation, and executes the action using `env.step`. If the episode finishes, `env.reset` is called again to start a new episode. Finally, when the loop ends, `env.close` cleanly closes the environment.
 
+Finally, check the [page](./obs-and-acts.md) on obervations and actions for a complete description of the craftium's default observation and action spaces.
+
 ## Using `CraftiumEnv`
 
 The example above employs Gymnasium's `make` utility to load the environments registered by craftium. In this section we explain how to load environments without using the `make` utility, directly employing `CraftiumEnv`. `CraftiumEnv` is craftium's main class, wrapping the modified minetest game in the Gymnasium API.
@@ -74,34 +76,11 @@ The first parameter, `env_dir` is the single mandatory parameter and specifies t
 
 The rest of the parameters are optional, where the ones in the code section above are the most common. `render_mode` is a common parameter in Gymnasium environments (see [docs](https://gymnasium.farama.org/api/env/#gymnasium.Env.render) for more info) is used to set the rendering mode of the environment. Finally, `obs_width` and `obs_height` specify the size of the observations in pixels.
 
-## Action wrappers
+## Next steps
 
-Note that `CraftiumEnv` environments define a fairly large action space with discrete and continuous values. For a complete specification on the default action space see the dedicated [page](./obs-and-acts.md#action-space).
+These are some resources that might be interesting for your next steps!
 
-However, many tasks don't require the complete action space and can be greatly simplified by considering only the relevant actions to solve the task at hand. For this reason, craftium comes with [`BinaryActionWrapper`](./reference.md), that can be used to convert the default [`Dict`](https://gymnasium.farama.org/api/spaces/composite/#dict) action space into a simplified [`MultiBinary`](https://gymnasium.farama.org/api/spaces/fundamental/#gymnasium.spaces.MultiBinary) space.
-
-For example,
-
-```python
-from craftium.wrappers import BinaryActionWrapper
-
-env = BinaryActionWrapper(
-        env,
-        actions=["forward", "mouse x+", "mouse x-"],
-        mouse_mov=0.5,
-    )
-```
-
-`BinaryActionWrapper` takes the `CraftiumEnv` to wrap as the first argument. Then, the `actions` parameters can be used to select the set of actions from the original action space that will be available in the wrapped environment (see the section on the [action space](./obs-and-acts.md#action-space) for the list of all available action names). In this example, the wrapped environment will only have 3 discrete actions: forward, move the mouse left, and move the mouse right. The last parameter, `mouse_mov` defines the magnitude of the mouse movement (must be in the [0, 1] range).
-
-If we print `env.action_space` before applying the wrapper, we get the following Gymnasium space:
-```python
-Dict('aux1': Discrete(2), 'backward': Discrete(2), 'dig': Discrete(2), 'drop': Discrete(2), 'forward': Discrete(2), 'inventory': Discrete(2), 'jump': Discrete(2), 'left': Discrete(2), 'mouse': Box(-1.0, 1.0, (2,), float32), 'place': Discrete(2), 'right': Discrete(2), 'slot_1': Discrete(2), 'slot_2': Discrete(2), 'slot_3': Discrete(2), 'slot_4': Discrete(2), 'slot_5': Discrete(2), 'slot_6': Discrete(2), 'slot_7': Discrete(2), 'slot_8': Discrete(2), 'slot_9': Discrete(2), 'sneak': Discrete(2), 'zoom': Discrete(2))
-```
-
-After wrapping `env` with `BinaryActionWrapper`, we get that `env.action_space` is:
-```python
-MultiBinary(3)
-```
-
-Much simpler! The default action space has been reduced to a binary vector of only 3 elements. Finally, note that many of the [environments provided](./environments.md) by craftium employ `BinaryActionWrapper` to simplify their optimization.
+- [Creating custom environments](./creating-envs.md) page.
+- [Wrappers](./wrappers.md) page.
+- [Craftium's training example](https://github.com/mikelma/craftium/blob/main/train_agent.py).
+- [Craftium's environment implementations](https://github.com/mikelma/craftium/tree/main/craftium-envs).

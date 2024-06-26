@@ -5,6 +5,9 @@
 ::: craftium.craftium_env.CraftiumEnv
 
 <br>
+
 ## Wrappers
 
 ::: craftium.wrappers.BinaryActionWrapper
+
+::: craftium.wrappers.DiscreteActionWrapper

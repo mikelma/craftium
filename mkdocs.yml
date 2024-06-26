@@ -11,6 +11,7 @@ nav:
   - General Information:
       - Observations and actions: docs/obs-and-acts.md
       - docs/environments.md
+      - Wrappers: docs/wrappers.md
   - Misc:
     - docs/troubleshooting.md
     - API Reference: docs/reference.md
