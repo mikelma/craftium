@@ -61,31 +61,13 @@ class CraftiumEnv(Env):
         self.init_frames = init_frames
         self.max_timesteps = max_timesteps
 
-        # TODO replace strings (keys) with values from ACTION_ORDER
-        self.action_space = Dict({
-            "forward": Discrete(2),
-            "backward": Discrete(2),
-            "left": Discrete(2),
-            "right": Discrete(2),
-            "jump": Discrete(2),
-            "aux1": Discrete(2),
-            "sneak": Discrete(2),
-            "zoom": Discrete(2),
-            "dig": Discrete(2),
-            "place": Discrete(2),
-            "drop": Discrete(2),
-            "inventory": Discrete(2),
-            "slot_1": Discrete(2),
-            "slot_2": Discrete(2),
-            "slot_3": Discrete(2),
-            "slot_4": Discrete(2),
-            "slot_5": Discrete(2),
-            "slot_6": Discrete(2),
-            "slot_7": Discrete(2),
-            "slot_8": Discrete(2),
-            "slot_9": Discrete(2),
-            "mouse": Box(low=-1, high=1, shape=(2,), dtype=np.float32),
-        })
+        # define the action space
+        action_dict = {}
+        for act in ACTION_ORDER[:-1]:  # all actions except the last ("mouse")
+            action_dict[act] = Discrete(2)  # 1/0: key pressed/not pressed
+        # define the mouse action
+        action_dict[ACTION_ORDER[-1]] = Box(low=-1, high=1, shape=(2,), dtype=np.float32)
+        self.action_space = Dict(action_dict)
 
         self.observation_space = Box(low=0, high=255, shape=(obs_width, obs_height, 3), dtype=np.uint8)
 
