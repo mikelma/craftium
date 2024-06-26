@@ -10,9 +10,10 @@ nav:
       - docs/creating-envs.md
   - General Information:
       - Observations and actions: docs/obs-and-acts.md
+      - docs/environments.md
   - Misc:
     - docs/troubleshooting.md
-    - docs/reference.md
+    - API Reference: docs/reference.md
 
 theme: readthedocs
 
@@ -30,3 +31,6 @@ extra:
         - https://github.com/mkdocs
         - https://docs.readthedocs.org/en/latest/builds.html#mkdocs
         - http://www.mkdocs.org/
+
+markdown_extensions:
+- admonition

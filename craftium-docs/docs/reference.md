@@ -2,8 +2,9 @@
 
 ## CraftiumEnv
 
-::: craftium.env.CraftiumEnv
+::: craftium.craftium_env.CraftiumEnv
 
+<br>
 ## Wrappers
 
 ::: craftium.wrappers.DiscreteActionWrapper
