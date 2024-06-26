@@ -15,11 +15,12 @@ class MtClient():
 
         # create client's socket
         self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.s.settimeout(10)
 
         # make some trials to connect to the minetest server
         trial_start = time.time()
         while True:
-            time.sleep(1)  # wait some time after each trial
+            time.sleep(0.1)  # wait some time after each trial
             try:
                 self.s.connect((MT_IP, MT_DEFAULT_PORT if port is None else port))
                 break
