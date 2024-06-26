@@ -1,5 +1,5 @@
 from .craftium_env import CraftiumEnv
-from .wrappers import DiscreteActionWrapper
+from .wrappers import BinaryActionWrapper
 
 from gymnasium.envs.registration import register, WrapperSpec
 
@@ -25,8 +25,8 @@ register(
     entry_point="craftium.craftium_env:CraftiumEnv",
     additional_wrappers=[
         WrapperSpec(
-            name="DiscreteActionWrapper",
-            entry_point="craftium.wrappers:DiscreteActionWrapper",
+            name="BinaryActionWrapper",
+            entry_point="craftium.wrappers:BinaryActionWrapper",
             kwargs=dict(
                 actions=["forward", "mouse x+", "mouse x-"],
                 mouse_mov=0.5,
@@ -48,8 +48,8 @@ register(
     entry_point="craftium.craftium_env:CraftiumEnv",
     additional_wrappers=[
         WrapperSpec(
-            name="DiscreteActionWrapper",
-            entry_point="craftium.wrappers:DiscreteActionWrapper",
+            name="BinaryActionWrapper",
+            entry_point="craftium.wrappers:BinaryActionWrapper",
             kwargs=dict(
                 actions=["forward", "dig", "mouse x+", "mouse x-", "mouse y+", "mouse y-"],
                 mouse_mov=0.5,
@@ -61,7 +61,7 @@ register(
         env_dir=os.path.join(root_path, "craftium-envs/chop-tree"),
         obs_width=64,
         obs_height=64,
-        max_timesteps=2_000,
+        max_timesteps=500,
         init_frames=200,
         minetest_conf=dict(
             give_initial_stuff=True,

@@ -1,13 +1,12 @@
 import numpy as np
 from gymnasium import ActionWrapper, Env
-from gymnasium.spaces import MultiDiscrete
+from gymnasium.spaces import MultiBinary
 
 from .craftium_env import ACTION_ORDER
 
 
-class DiscreteActionWrapper(ActionWrapper):
-    """A Gymnasium `ActionWrapper` that translates craftium's `Dict` action space into a binary (discretized) action space.
-    Specifically into the `MultiDiscrete` space.
+class BinaryActionWrapper(ActionWrapper):
+    """A Gymnasium `ActionWrapper` that translates craftium's `Dict` action space into a binary (discretized) action space [`MultiBiniary`](https://gymnasium.farama.org/api/spaces/fundamental/#gymnasium.spaces.MultiBinary).
 
     :param env: The environment to wrap.
     :param actions: A list of strings containing the names of the actions that will consititute the new action space.
@@ -28,7 +27,7 @@ class DiscreteActionWrapper(ActionWrapper):
             f"Invalid action given. Valid actions are: {valid_actions}"
 
         # define the action space for gymnasium
-        self.action_space = MultiDiscrete(np.full(len(actions), 2))
+        self.action_space = MultiBinary(len(actions))
 
         # clip the mouse movement if needed
         self.mouse_mov = np.clip(mouse_mov, 0., 1.)

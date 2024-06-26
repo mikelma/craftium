@@ -7,4 +7,4 @@
 <br>
 ## Wrappers
 
-::: craftium.wrappers.DiscreteActionWrapper
+::: craftium.wrappers.BinaryActionWrapper
