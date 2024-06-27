@@ -25,6 +25,6 @@ Check the [installation](./installation.md) instructions and the [getting starte
 
 TODO
 
-## Contributing
+## Contributing 🏋️
 
-TODO
+We really appreciate contributions to craftium! craftium is in an early development stage, so many possible improvements and bugs are expected. If you have found a bug or have a suggestion, please consider opening an [issue](https://github.com/mikelma/craftium/issues) if it isn't already covered. In case you want to submit a fix or an improvement to the library, [pull requests](https://github.com/mikelma/craftium/pulls) are also very welcome!
