@@ -168,6 +168,15 @@ void Client::startPyServer()
         exit(EXIT_FAILURE);
     }
 
+    int opt = 1;
+
+    // Forcefully attaching socket to the port
+    if (setsockopt(pyserv_sockfd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt))) {
+        perror("[ERROR] Failed to set SO_REUSEADDR in server's socket");
+        close(pyserv_sockfd);
+        exit(EXIT_FAILURE);
+    }
+
     pyserv_servaddr = (struct sockaddr_in*) malloc(sizeof(struct sockaddr_in));
     pyserv_cliaddr = (struct sockaddr_in*) malloc(sizeof(struct sockaddr_in));
 
