@@ -21,8 +21,8 @@ def launch_process(cmd: str, cwd: Optional[os.PathLike] = None, env_vars: dict[s
             os.environ[key] = value
 
         # open files for piping stderr and stdout into
-        stderr = open(os.path.join(cwd, "stderr.txt"), "w")
-        stdout = open(os.path.join(cwd, "stdout.txt"), "w")
+        stderr = open(os.path.join(cwd, "stderr.txt"), "a")
+        stdout = open(os.path.join(cwd, "stdout.txt"), "a")
 
         subprocess.run(cmd, cwd=cwd, stderr=stderr, stdout=stdout)
     process = multiprocessing.Process(target=launch_fn, args=[])
