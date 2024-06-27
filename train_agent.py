@@ -3,7 +3,7 @@ from uuid import uuid4
 import os
 from stable_baselines3 import A2C, PPO
 from stable_baselines3.common import logger
-from stable_baselines3.common.vec_env import DummyVecEnv
+from stable_baselines3.common.vec_env import DummyVecEnv, VecMonitor
 import gymnasium as gym
 import craftium
 
@@ -32,13 +32,14 @@ def parse_args():
 if __name__ == "__main__":
     args = parse_args()
 
-    envs = DummyVecEnv([lambda: gym.make(args.env_id) for _ in range(args.num_envs)])
-
     run_name = str(uuid4()) if args.run_name is None else args.run_name
     log_path = os.path.join(args.runs_dir, run_name)
 
     print(f"** Storing run's data in {log_path}")
     new_logger = logger.configure(log_path, ["stdout", "csv"])
+
+    envs = DummyVecEnv([lambda: gym.make(args.env_id) for _ in range(args.num_envs)])
+    envs = VecMonitor(envs)
 
     method_class = PPO if args.method == "ppo" else A2C
     model = method_class("CnnPolicy", envs, verbose=1)
