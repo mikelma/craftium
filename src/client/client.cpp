@@ -157,12 +157,8 @@ Client::Client(
 
 void Client::startPyServer()
 {
-    // Get the craftium port from the env. var.
-    char* port_s = getenv(CRAFTIUM_PORT_ENV_VAR);
-    if (port_s == NULL)
-        pyserv_port = CRAFTIUM_DEFAULT_PORT;
-    else
-        pyserv_port = atoi(port_s);
+    // Get the craftium port from the config file
+    pyserv_port = g_settings->getU32("craftium_port");
 
     printf("[*] Minetest using port %d to communicate with craftium\n", pyserv_port);
 

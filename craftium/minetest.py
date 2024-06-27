@@ -64,10 +64,18 @@ class Minetest():
         # delete the directory if it already exists
         if os.path.exists(self.run_dir):
             shutil.rmtree(self.run_dir)
-        # create the directory
         os.mkdir(self.run_dir)
 
         print(f"==> Creating Minetest run directory: {self.run_dir}")
+
+        if tcp_port is None:
+            # select a (random) free port for the craftium <-> minetest communication
+            while True:
+                self.port = random.randint(49152, 65535)
+                if not is_port_in_use(self.port):
+                    break
+        else:
+            self.port = tcp_port
 
         config = dict(
             # Base config
@@ -83,6 +91,8 @@ class Minetest():
             fps_max_unfocused=1000,
             undersampling=1,
             # fov=self.fov_y,
+
+            craftium_port=self.port,
 
             # Adapt HUD size to display size, based on (1024, 600) default
             # hud_scaling=self.display_size[0] / 1024,
@@ -126,8 +136,6 @@ class Minetest():
         else:
             root_path = minetest_dir
 
-        print(f"** Craftium's root path is: {root_path}")
-
         # create the directory tree structure needed by minetest
         self._create_mt_dirs(root_dir=root_path, target_dir=self.run_dir, sync_dir=sync_dir)
 
@@ -141,30 +149,20 @@ class Minetest():
 
         self.proc = None  # will hold the mintest's process
 
-        # set the env. variables to execute mintest in headless mode
-        # if headless:
-        #   os.environ["SDL_VIDEODRIVER"] = "offscreen"
-
         self.mt_env = {}
-
         if headless:
             self.mt_env["SDL_VIDEODRIVER"] = "offscreen"
 
-        if tcp_port is None:
-            # select a (random) free port for the craftium <-> minetest communication
-            while True:
-                self.port = random.randint(49152, 65535)
-                if not is_port_in_use(self.port):
-                    break
-        else:
-            self.port = tcp_port
-        self.mt_env["CRAFTIUM_PORT"] = str(self.port)
-
     def start_process(self):
-        self.proc = launch_process(self.launch_cmd, self.run_dir, env_vars=self.mt_env)
+        self.proc = launch_process(
+            self.launch_cmd,
+            self.run_dir,
+            env_vars=self.mt_env
+        )
 
     def kill_process(self):
-        self.proc.terminate()
+        if self.proc is not None:
+            self.proc.terminate()
 
     def clear(self):
         # delete the run's directory

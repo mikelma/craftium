@@ -10,9 +10,6 @@
 #include <string.h>
 #include <arpa/inet.h>
 
-#define CRAFTIUM_PORT_ENV_VAR "CRAFTIUM_PORT"
-#define CRAFTIUM_DEFAULT_PORT 4343
-
 /*
 
   "Virtual" keyboard input handling
