@@ -51,7 +51,7 @@ extern "C" {
 #include <lualib.h>
 }
 
-#include "../client/sync.h"
+#include "../client/craftium.h"
 
 ServerScripting::ServerScripting(Server* server):
 		ScriptApiBase(ScriptingType::Server),

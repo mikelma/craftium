@@ -76,7 +76,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "particles.h"
 #include "gettext.h"
 
-#include "client/sync.h"
+#include "client/craftium.h"
 
 class ClientNotFoundException : public BaseException
 {

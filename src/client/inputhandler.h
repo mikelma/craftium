@@ -30,7 +30,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <arpa/inet.h>
 #include <netinet/in.h>
 
-#include "sync.h"
+#include "craftium.h"
 
 class InputHandler;
 

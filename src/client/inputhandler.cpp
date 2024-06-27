@@ -25,7 +25,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "gui/touchscreengui.h"
 #include "hud.h"
 
-#include "sync.h"
+#include "craftium.h"
 #include <cstdio>
 
 void KeyCache::populate_nonchanging()

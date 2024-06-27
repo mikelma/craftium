@@ -67,7 +67,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "content/mod_configuration.h"
 #include "mapnode.h"
 
-#include "sync.h"
+#include "craftium.h"
 #include "gui/mainmenumanager.h"
 
 extern gui::IGUIEnvironment* guienv;

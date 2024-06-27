@@ -85,7 +85,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 	#include "client/sound/sound_openal.h"
 #endif
 
-#include "sync.h"
+#include "craftium.h"
 
 /*
 	Text input system
