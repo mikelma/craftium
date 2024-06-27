@@ -489,15 +489,13 @@ private:
 	MtEventManager *m_event;
 	RenderingEngine *m_rendering_engine;
 
-        /* Python API server related */
-        int pyserv_port = 0; /* Port value selected in the startPyServer method */
-        int pyserv_sockfd = 0;
-        int pyserv_conn = 0;
-        struct sockaddr_in *pyserv_servaddr = nullptr;
-        struct sockaddr_in *pyserv_cliaddr = nullptr;
+        /* Craftium's communication channel related */
+        int py_port = 0;
+        int py_sockfd = 0;
+        struct sockaddr_in *py_servaddr = nullptr;
         unsigned char *obs_rwd_buffer = 0;
-        void startPyServer();
-        void pyServerListener();
+        void startPyConn();
+        void pyConnStep();
 
 	std::unique_ptr<MeshUpdateManager> m_mesh_update_manager;
 	ClientEnvironment m_env;

@@ -152,85 +152,40 @@ Client::Client(
 	m_cache_save_interval = g_settings->getU16("server_map_save_interval");
 	m_mesh_grid = { g_settings->getU16("client_mesh_chunk") };
 
-        startPyServer();
+        startPyConn();
 }
 
-void Client::startPyServer()
+void Client::startPyConn()
 {
     // Get the craftium port from the config file
-    pyserv_port = g_settings->getU32("craftium_port");
+    py_port = g_settings->getU32("craftium_port");
 
-    printf("[*] Minetest using port %d to communicate with craftium\n", pyserv_port);
+    printf("[*] Minetest using port %d to communicate with craftium\n", py_port);
 
     // Create socket file descriptor
-    if ( (pyserv_sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0 ) {
-        perror("[ERROR] Obs. server socket creation failed");
+    if ( (py_sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0 ) {
+        perror("[ERROR] PyConn socket creation failed");
         exit(EXIT_FAILURE);
     }
 
-    int opt = 1;
+    py_servaddr = (struct sockaddr_in*) malloc(sizeof(struct sockaddr_in));
 
-    // Forcefully attaching socket to the port
-    if (setsockopt(pyserv_sockfd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt))) {
-        perror("[ERROR] Failed to set SO_REUSEADDR in server's socket");
-        close(pyserv_sockfd);
+    memset(py_servaddr, 0, sizeof(*py_servaddr));
+
+    py_servaddr->sin_family = AF_INET; // IPv4
+    py_servaddr->sin_addr.s_addr = inet_addr("127.0.0.1");
+    py_servaddr->sin_port = htons(py_port);
+
+    // sending connection request
+    if (::connect(py_sockfd, (struct sockaddr*)py_servaddr, sizeof(struct sockaddr_in)) < 0) {
+        perror("[ERROR] PyConn failed to connect to server");
         exit(EXIT_FAILURE);
     }
 
-    pyserv_servaddr = (struct sockaddr_in*) malloc(sizeof(struct sockaddr_in));
-    pyserv_cliaddr = (struct sockaddr_in*) malloc(sizeof(struct sockaddr_in));
-
-    memset(pyserv_servaddr, 0, sizeof(*pyserv_servaddr));
-    memset(pyserv_cliaddr, 0, sizeof(*pyserv_cliaddr));
-
-    pyserv_servaddr->sin_family = AF_INET; // IPv4
-    pyserv_servaddr->sin_addr.s_addr = INADDR_ANY;
-    pyserv_servaddr->sin_port = htons(pyserv_port);
-
-    // Bind the socket with the server address
-    if (bind(pyserv_sockfd,
-             (const struct sockaddr *)pyserv_servaddr,
-             sizeof(*pyserv_servaddr)) < 0)
-    {
-        perror("[ERROR] Obs. server bind failed");
-        exit(EXIT_FAILURE);
-    }
-
-    // Now server is ready to listen and verification
-    if ((listen(pyserv_sockfd, 5)) != 0) {
-        printf("[ERROR] Obs. server listen failed...\n");
-        exit(EXIT_FAILURE);
-    }
-    else
-        printf("[INFO] Obs. server listening...\n");
-
-    // Accept the data packet from client and verification
-    socklen_t len = sizeof(*pyserv_cliaddr);
-    pyserv_conn = accept(pyserv_sockfd, (struct sockaddr*)pyserv_cliaddr, &len);
-    if (pyserv_conn < 0) {
-        printf("[ERROR] Obs. server accept failed...\n");
-        exit(EXIT_FAILURE);
-    }
-    else
-        printf("[INFO] Obs. server accepted the client\n");
-
-    // Set receive and send timeout on the socket
-    struct timeval timeout;
-    timeout.tv_sec = 2;  /* timeout time in seconds */
-    timeout.tv_usec = 0;
-    if (setsockopt(pyserv_conn, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout, sizeof(timeout)) < 0) {
-        printf("[ERROR] setsockopt failed\n");
-        exit(EXIT_FAILURE);
-    }
-    if (setsockopt(pyserv_conn, SOL_SOCKET, SO_SNDTIMEO, (const char*)&timeout, sizeof(timeout)) < 0) {
-        printf("[ERROR] setsockopt failed\n");
-        exit(EXIT_FAILURE);
-    }
-
-    printf("\n[INFO] Obs. server started in port %d\n\n", pyserv_port);
+    printf("\n[INFO] PyConn started in port %d\n\n", py_port);
 }
 
-void Client::pyServerListener() {
+void Client::pyConnStep() {
     char actions[25];
     int n_send, n_recv, W, H, obs_rwd_buffer_size;
     u32 c; // stores the RGBA pixel color
@@ -292,10 +247,10 @@ void Client::pyServerListener() {
     }
 
     /* Send the obs_rwd_buffer over TCP to Python */
-    n_send = send(pyserv_conn, obs_rwd_buffer, obs_rwd_buffer_size, 0);
+    n_send = send(py_sockfd, obs_rwd_buffer, obs_rwd_buffer_size, 0);
 
     /* Receive a buffer of bytes with the actions to take */
-    n_recv = recv(pyserv_conn, &actions, sizeof(actions), 0);
+    n_recv = recv(py_sockfd, &actions, sizeof(actions), 0);
 
     virtual_key_presses[KeyType::FORWARD] = actions[0];
     virtual_key_presses[KeyType::BACKWARD] = actions[1];
@@ -754,7 +709,7 @@ void Client::step(float dtime)
 	*/
 	LocalPlayer *player = m_env.getLocalPlayer();
 
-        pyServerListener();
+        pyConnStep();
 
 	// Step environment (also handles player controls)
 	m_env.step(dtime);

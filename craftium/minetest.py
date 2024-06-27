@@ -13,22 +13,6 @@ def is_port_in_use(port: int) -> bool:
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         return s.connect_ex(('localhost', port)) == 0
 
-
-def launch_process(cmd: str, cwd: Optional[os.PathLike] = None, env_vars: dict[str, str] = dict()):
-    def launch_fn():
-        # set env vars
-        for key, value in env_vars.items():
-            os.environ[key] = value
-
-        # open files for piping stderr and stdout into
-        stderr = open(os.path.join(cwd, "stderr.txt"), "a")
-        stdout = open(os.path.join(cwd, "stdout.txt"), "a")
-
-        subprocess.run(cmd, cwd=cwd, stderr=stderr, stdout=stdout)
-    process = multiprocessing.Process(target=launch_fn, args=[])
-    process.start()
-    return process
-
 def is_minetest_build_dir(path: os.PathLike) -> bool:
     # list of directories required by craftium to exist in the a minetest build directory
     req_dirs = ["builtin", "fonts", "locale", "textures", "bin", "client"]
@@ -53,7 +37,10 @@ class Minetest():
             minetest_dir: Optional[str] = None,
             tcp_port: Optional[int] = None,
             minetest_conf: dict[str, Any] = dict(),
+            pipe_proc: bool = True,
     ):
+        self.pipe_proc = pipe_proc
+
         # create a dedicated directory for this run
         if run_dir is None:
             self.run_dir = f"./minetest-run-{uuid4()}"
@@ -147,22 +134,43 @@ class Minetest():
             "--worldname", world_name,
         ]
 
-        self.proc = None  # will hold the mintest's process
+        self.proc = None  # holds mintest's process
+        self.stderr, self.stdout = None, None
 
         self.mt_env = {}
         if headless:
             self.mt_env["SDL_VIDEODRIVER"] = "offscreen"
 
     def start_process(self):
-        self.proc = launch_process(
-            self.launch_cmd,
-            self.run_dir,
-            env_vars=self.mt_env
-        )
+        if self.pipe_proc:
+            # open files for piping stderr and stdout into
+            self.stderr = open(os.path.join(self.run_dir, "stderr.txt"), "a")
+            self.stdout = open(os.path.join(self.run_dir, "stdout.txt"), "a")
+
+        def launch_fn():
+            # set env vars
+            for key, value in self.mt_env.items():
+                os.environ[key] = value
+            # launch the process (pipeing stderr and stdout if necessary)
+            if self.pipe_proc:
+                subprocess.run(self.launch_cmd, cwd=self.run_dir, stderr=self.stderr, stdout=self.stdout)
+            else:
+                subprocess.run(self.launch_cmd, cwd=self.run_dir)
+
+        process = multiprocessing.Process(target=launch_fn, args=[])
+        process.start()
+        self.proc = process
 
     def kill_process(self):
+        # close the files where the process is being piped
+        # into berfore the process itself
+        if self.stderr is not None:
+            self.stderr.close()
+        if self.stdout is not None:
+            self.stdout.close()
+
         if self.proc is not None:
-            self.proc.terminate()
+            self.proc.kill()
 
     def clear(self):
         # delete the run's directory

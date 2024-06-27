@@ -5,30 +5,19 @@ from typing import Optional
 
 import numpy as np
 
-MT_IP = "127.0.0.1"
-MT_DEFAULT_PORT = 4343
+MT_DEFAULT_PORT = 55555
 
-class MtClient():
+class MtChannel():
     def __init__(self, img_width: int, img_height: int, port: Optional[int] = None, connect_timeout: int = 30):
         self.img_width = img_width
         self.img_height = img_height
 
-        # create client's socket
         self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.s.settimeout(10)
+        self.s.settimeout(30)
+        self.s.bind(("127.0.0.1", MT_DEFAULT_PORT if port is None else port))
 
-        # make some trials to connect to the minetest server
-        trial_start = time.time()
-        while True:
-            time.sleep(0.1)  # wait some time after each trial
-            try:
-                self.s.connect((MT_IP, MT_DEFAULT_PORT if port is None else port))
-                break
-            except Exception as e:
-                # check if the timeout is reached
-                if (time.time() - trial_start) >= connect_timeout:
-                    print("[*] Craftium client reached timeout while waiting for minetest's server")
-                    raise e
+        # initialized in `reset_connection`
+        self.conn = None
 
         # pre-compute the number of bytes that we should receive from MT.
         # the RGB image + 8 bytes of the reward + 1 byte of the termination flag
@@ -37,7 +26,7 @@ class MtClient():
     def receive(self):
         data = []
         while len(data) < self.rec_bytes:
-            data += self.s.recv(self.rec_bytes)
+            data += self.conn.recv(self.rec_bytes)
         data = data[:self.rec_bytes]
 
         # reward bytes (8) + termination bytes (1)
@@ -66,7 +55,19 @@ class MtClient():
 
         mouse = list(struct.pack("<h", mouse_x)) + list(struct.pack("<h", mouse_y))
 
-        self.s.sendall(bytes(keys + mouse))
+        self.conn.sendall(bytes(keys + mouse))
 
     def close(self):
+        if self.conn is not None:
+            self.conn.close()
         self.s.close()
+
+    def close_conn(self):
+        if self.conn is not None:
+            self.conn.close()
+            self.conn = None
+
+    def open_conn(self):
+        self.close_conn()
+        self.s.listen()
+        self.conn, addr = self.s.accept()
