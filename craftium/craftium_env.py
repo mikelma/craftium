@@ -193,6 +193,8 @@ class CraftiumEnv(Env):
             return self.last_observation
 
     def close(self):
+        if self.client is not None:
+            self.client.close()
+
         self.mt.kill_process()
         self.mt.clear()
-        self.client.close()
