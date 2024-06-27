@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <arpa/inet.h>
+#include <mutex>
 
 /*
 
@@ -27,10 +28,29 @@ inline int virtual_mouse_y = 0;
   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 */
-#define SYNC_PORT 44445
+inline int sync_port = -1;
+inline std::mutex sync_port_mtx;
 
 inline int sync_client_fd = -1;
 inline int sync_conn_fd = -1;
+
+inline int getSyncPort() {
+    int port;
+
+    sync_port_mtx.lock();
+
+    if (sync_port < 0) {
+        // select a random port in the range [65535, 49152] (dynamic ports' range)
+        sync_port = (rand() % (65535 - 49152 + 1)) + 49152;
+        printf("*** Internal sync port set to %d\n", sync_port);
+    }
+
+    port = sync_port;
+
+    sync_port_mtx.unlock();
+
+    return port;
+}
 
 inline int syncServerInit() {
     int server_fd;
@@ -56,7 +76,7 @@ inline int syncServerInit() {
     }
     address.sin_family = AF_INET;
     address.sin_addr.s_addr = INADDR_ANY;
-    address.sin_port = htons(SYNC_PORT);
+    address.sin_port = htons(getSyncPort());
 
     // Forcefully attaching socket to the port
     if (bind(server_fd, (struct sockaddr*)&address,
@@ -102,7 +122,7 @@ inline int syncClientInit() {
     }
 
     serv_addr.sin_family = AF_INET;
-    serv_addr.sin_port = htons(SYNC_PORT);
+    serv_addr.sin_port = htons(getSyncPort());
 
     // Convert IPv4 and IPv6 addresses from text to binary
     // form
