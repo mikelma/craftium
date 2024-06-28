@@ -1,0 +1,3 @@
+[submodule "craftium-envs/minetest_game"]
+	path = craftium-envs/minetest_game
+	url = https://github.com/minetest/minetest_game
