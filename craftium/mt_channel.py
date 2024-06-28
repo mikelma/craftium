@@ -13,7 +13,7 @@ class MtChannel():
         self.img_height = img_height
 
         self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.s.settimeout(30)
+        self.s.settimeout(30)  # time limit in seconds for minetest to connect to the socket
         self.s.bind(("127.0.0.1", MT_DEFAULT_PORT if port is None else port))
 
         # initialized in `reset_connection`

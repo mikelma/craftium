@@ -130,7 +130,20 @@ class CraftiumEnv(Env):
         self.mt.start_process()
 
         # open communication channel with minetest
-        self.mt_chann.open_conn()
+        try:
+            self.mt_chann.open_conn()
+        except Exception as e:
+            print("\n\x1b[1m[!] Error connecting to Minetest. Minetest probably failed to launch.")
+            print("  => Run's scratch directory should be available, containing stderr.txt and")
+            print("     stdout.txt useful for checking what went wrong.")
+            print("** Content of stderr.txt in the run's sratch directory:\x1b[0m")
+            print("~"*45, "\n")
+            with open(f"{self.mt.run_dir}/stderr.txt", "r") as f:
+                print(f.read())
+            print("~"*45)
+            print("\x1b[1mRaising catched exception (in case it's useful):\x1b[0m")
+            print("~"*45, "\n")
+            raise e
 
         # HACK skip some frames to let the game initialize
         for _ in range(self.init_frames):
