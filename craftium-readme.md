@@ -22,10 +22,10 @@ Craftium is a fully open-source research platform for Reinforcement Learning (RL
 
 ## Installation ⚙️
 
-First, clone craftium and `cd` into the project's main directory:
+First, clone craftium using the `--recurse-submodules` flag (**important**: the flag fetches submodules needed by the library) and `cd` into the project's main directory:
 
 ```bash
-git clone https://github.com/mikelma/craftium.git # if you prefer ssh: git@github.com:mikelma/craftium.git
+git clone --recurse-submodules https://github.com/mikelma/craftium.git # if you prefer ssh: git@github.com:mikelma/craftium.git
 cd craftium
 ```
 

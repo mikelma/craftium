@@ -1,9 +1,9 @@
 # Installation
 
-First, download craftium's source from [here](https://github.com/mikelma/craftium) or clone the repo and `cd` into the project's main directory:
+First, clone craftium's the repo using the `--recurse-submodules` flag (**important**: the flag fetches submodules needed by the library) and `cd` into the project's main directory:
 
 ```bash
-git clone https://github.com/mikelma/craftium.git # if you prefer ssh: git@github.com:mikelma/craftium.git
+git clone --recurse-submodules https://github.com/mikelma/craftium.git # if you prefer ssh: git@github.com:mikelma/craftium.git
 
 cd craftium
 ```
