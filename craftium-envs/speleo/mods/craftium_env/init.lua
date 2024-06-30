@@ -29,3 +29,8 @@ minetest.register_globalstep(function(dtime)
       -- position on the Y axis (depth)
       set_reward(-player_pos.y)
 end)
+
+minetest.register_on_dieplayer(function(_player, _reason)
+      -- End episode if the player dies
+      set_termination()
+end)

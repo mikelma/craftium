@@ -20,5 +20,11 @@ minetest.register_on_joinplayer(function(player, _last_login)
       player:hud_set_flags({
             hotbar = false,
             crosshair = false,
+            healthbar = false,
       })
+end)
+
+minetest.register_on_dieplayer(function(_player, _reason)
+      -- End episode if the player dies
+      set_termination()
 end)
