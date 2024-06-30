@@ -26,6 +26,7 @@ minetest.register_on_joinplayer(function(player, _last_login)
       player:hud_set_flags({
             hotbar = false,
             crosshair = false,
+            healthbar = false,
       })
 end)
 
