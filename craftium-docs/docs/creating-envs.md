@@ -26,11 +26,6 @@ To install the mod follow the same process as installing the minetest game: clic
 
 ![](./imgs/install_mod.gif)
 
-The room should look like this:
-
-![](./imgs/example_env_1.png)
-
-
 ## Creating the world
 
 In this example, we will start from an empty environment in an infinite and flat world. To create this world, follow the steps from the video below. Note that the created world should be named **world**. Although this can be changed in CraftiumEnv's option we recommend you to keep this name for the sake of simplicity.
@@ -91,6 +86,10 @@ Finally, add the mod to the newly created world, and start the game. When the ga
 ![](./imgs/load_builder_mod.gif)
 
 Once the room is created, you can safely remove the `craftium_builder` mod from the `mods/` directory.
+
+The room should look like this:
+
+![](./imgs/example_env_1.png)
 
 ## Defining the environment
 
