@@ -1,3 +1,12 @@
 [submodule "craftium-envs/minetest_game"]
 	path = craftium-envs/minetest_game
 	url = https://github.com/minetest/minetest_game
+[submodule "craftium-envs/common_mods/mobs_monster"]
+	path = craftium-envs/common_mods/mobs_monster
+	url = https://codeberg.org/tenplus1/mobs_monster.git
+[submodule "craftium-envs/common_mods/superflat"]
+	path = craftium-envs/common_mods/superflat
+	url = https://github.com/srifqi/superflat
+[submodule "craftium-envs/common_mods/mobs"]
+	path = craftium-envs/common_mods/mobs
+	url = https://codeberg.org/tenplus1/mobs_redo.git
