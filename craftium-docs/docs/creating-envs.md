@@ -163,6 +163,8 @@ minetest.register_globalstep(function(dtime)
 end)
 ```
 
+Note that the mod above mostly uses Lua functions from the [Minetest's Lua API](https://api.minetest.net/). However, few functions (eg., `set_reward`) are specific to craftium, check [Extensions to the Minetest's Lua API](./lua_functions.md) for the complete list of Lua functions added by craftium and their documentation.
+
 !!! note "Playing like an agent"
 
     At this step, you can load the minetest mod and play like an agent. However, note that the functions `set_reward()` and `set_termination` are functions only available in the craftium's modified version of minetest and not in the original minetest binary we are using to create the mod. To play the game like an agent, you have to comment or remove these functions from `init.lua`.
