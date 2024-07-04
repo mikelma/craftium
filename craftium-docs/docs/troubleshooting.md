@@ -38,8 +38,8 @@ Compile it with:
   ./list_sdl_video_drivers
 ```
 
-If =offscreen= is not listed, then, compile it with =offscreen=
-support.
+If `offscreen` is not listed, then, you might need to compile SDL with `offscreen`
+support:
 
 ```bash
   wget https://www.libsdl.org/release/SDL2-2.X.X.tar.gz

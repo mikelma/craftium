@@ -28,7 +28,7 @@ After wrapping `env` with `BinaryActionWrapper`, we get that `env.action_space` 
 MultiBinary(3)
 ```
 
-The default action space has been reduced to a binary vector of only 3 elements (see [`MultiBinary`](https://gymnasium.farama.org/api/spaces/fundamental/#gymnasium.spaces.MultiBinary)). Note that `BinaryActionWrapper` allows for simultanaous actions. In the example above, the action `[1, 0, 1]` whould generate a forward movement action and a mouse (camera) rotation at the same time.
+The default action space has been reduced to a binary vector of only 3 elements (see [`MultiBinary`](https://gymnasium.farama.org/api/spaces/fundamental/#gymnasium.spaces.MultiBinary)). Note that `BinaryActionWrapper` allows for simultaneous actions. In the example above, the action `[1, 0, 1]` would generate a forward movement action and a mouse (camera) rotation at the same time.
 
 ## DiscreteActionWrapper
 

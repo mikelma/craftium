@@ -1,12 +1,12 @@
 # Craftium
 
-<img src="../craftium-docs/docs/imgs/Craftium_Logo.png" alt="Craftium logo" width="400" align="right">
+<img src="../craftium-docs/docs/imgs/craftium_logo.png" alt="Craftium logo" width="350" align="right">
 
 ✨ *Imagine the features of Minecraft: open world, procedural generation, fully destructible voxel environments... but open source, without Java, easily extensible in [Lua](https://www.lua.org), and with a modern [Gymnasium API](https://gymnasium.farama.org/index.html) designed for RL... This is* **Craftium!** ✨
 
 Craftium is a fully open-source research platform for Reinforcement Learning (RL) research that provides a [Gymnasium](https://gymnasium.farama.org/index.html) wrapper for the [Minetest](https://www.minetest.net/) voxel game engine.
 
-📑 If you use craftium in your projects or research please consider [citing](#citing-craftium) the project, and don't hesitate to let us know what have you created using the library! 🤗
+📑 If you use craftium in your projects or research please consider [citing](#citing-craftium) the project, and don't hesitate to let us know what you have created using the library! 🤗
 
 **TODO:** Link to the documentation page.
 
@@ -73,7 +73,7 @@ for t in range(100):
 env.close()
 ```
 
-Training a CNN-based agent usingh PPO is as simple as:
+Training a CNN-based agent using PPO is as simple as:
 
 ```python
 from stable_baselines3 import PPO
@@ -100,7 +100,7 @@ TODO
 
 ## Contributing 🏋️
 
-We really appreciate contributions to craftium! craftium is in an early development stage, so many possible improvements and bugs are expected. If you have found a bug or have a suggestion, please consider opening an [issue](https://github.com/mikelma/craftium/issues) if it isn't already covered. In case you want to submit a fix or an improvement to the library, [pull requests](https://github.com/mikelma/craftium/pulls) are also very welcome!
+We appreciate contributions to craftium! craftium is in early development, so many possible improvements and bugs are expected. If you have found a bug or have a suggestion, please consider opening an [issue](https://github.com/mikelma/craftium/issues) if it isn't already covered. In case you want to submit a fix or an improvement to the library, [pull requests](https://github.com/mikelma/craftium/pulls) are also very welcome!
 
 ## License 📖
 
@@ -108,4 +108,4 @@ Craftium is based on [minetest](https://github.com/minetest/minetest) and its so
 
 ## Acknowledgements 🤗
 
-We want to thank the minetest and gymnasium developers and community for maintaining such an excellent open-source project over the years. We also thank [minerl](minerl.readthedocs.io/) and other projects integrating minetest and gymnasium ([here](https://github.com/EleutherAI/minetest) and [here](https://github.com/Astera-org/minetest)) for serving as inspiration for this project.
+We thank the minetest and gymnasium developers and community for maintaining such an excellent open-source project. We also thank [minerl](minerl.readthedocs.io/) and other projects integrating minetest and gymnasium ([here](https://github.com/EleutherAI/minetest) and [here](https://github.com/Astera-org/minetest)) for serving as inspiration for this project.

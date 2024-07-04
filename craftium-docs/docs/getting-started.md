@@ -49,7 +49,7 @@ env.close()
 
 The code above just starts an episode calling `env.reset`, then samples a random action, plots the current observation, and executes the action using `env.step`. If the episode finishes, `env.reset` is called again to start a new episode. Finally, when the loop ends, `env.close` cleanly closes the environment.
 
-Finally, check the [page](./obs-and-acts.md) on obervations and actions for a complete description of the craftium's default observation and action spaces.
+Finally, check the [page](./obs-and-acts.md) on observations and actions for a complete description of the craftium's default observation and action spaces.
 
 ## Using `CraftiumEnv`
 

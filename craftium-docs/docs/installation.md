@@ -1,6 +1,6 @@
 # Installation
 
-First, clone craftium's the repo using the `--recurse-submodules` flag (**important**: the flag fetches submodules needed by the library) and `cd` into the project's main directory:
+First, clone craftium's repo using the `--recurse-submodules` flag (**important**: the flag fetches submodules needed by the library) and `cd` into the project's main directory:
 
 ```bash
 git clone --recurse-submodules https://github.com/mikelma/craftium.git # if you prefer ssh: git@github.com:mikelma/craftium.git
@@ -14,7 +14,7 @@ cd craftium
 sudo apt install g++ make libc6-dev cmake libpng-dev libjpeg-dev libgl1-mesa-dev libsqlite3-dev libogg-dev libvorbis-dev libopenal-dev libcurl4-gnutls-dev libfreetype6-dev zlib1g-dev libgmp-dev libjsoncpp-dev libzstd-dev libluajit-5.1-dev gettext libsdl2-dev
 ```
 
-Once Minetest's dependencies are installed, just check that `setuptools` is updated and run the installation command in the craftium repo's directory:
+Once Minetest's dependencies are installed, check that `setuptools` is updated and run the installation command in the craftium repo's directory:
 
 ```bash
 pip install -U setuptools
@@ -26,4 +26,4 @@ and,
 pip install .
 ```
 
-This last command should compile minetest, install python dependencies and, finally, craftium. If the installation process fails, please consider submitting an issue [here](https://github.com/mikelma/craftium/issues).
+This last command should compile minetest, install python dependencies, and, finally, craftium. If the installation process fails, please consider submitting an issue [here](https://github.com/mikelma/craftium/issues).
