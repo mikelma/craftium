@@ -10,6 +10,7 @@ Craftium is a fully open-source platform for creating Reinforcement Learning (RL
 Check the [installation](./installation.md) instructions and the [getting started](./getting-started.md) pages to start using craftium!
 
 - GitHub repository: [https://github.com/mikelma/craftium](https://github.com/mikelma/craftium)
+- Online documentation: [https://craftium.readthedocs.io/en/latest/](https://craftium.readthedocs.io/en/latest/)
 
 ## Features ✨
 

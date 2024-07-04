@@ -1,19 +1,21 @@
+[![Documentation Status](https://readthedocs.org/projects/craftium/badge/?version=latest)](https://craftium.readthedocs.io/en/latest/?badge=latest)
+
 # Craftium
 
 <img src="../craftium-docs/imgs/craftium_logo.png" alt="Craftium logo" width="350" align="right">
 
 ✨ *Imagine the features of Minecraft: open world, procedural generation, fully destructible voxel environments... but open source, without Java, easily extensible in [Lua](https://www.lua.org), and with the modern [Gymnasium API](https://gymnasium.farama.org/index.html) designed for RL... This is* **Craftium!** ✨
 
-Craftium is a fully open-source platform for creating Reinforcement Learning (RL) environments and tasks that provides a [Gymnasium](https://gymnasium.farama.org/index.html) wrapper for the [Minetest](https://www.minetest.net/) voxel game engine. Craftium forks Minetest to support:
+[Craftium](https://craftium.readthedocs.io/en/latest/) is a fully open-source platform for creating Reinforcement Learning (RL) environments and tasks that provides a [Gymnasium](https://gymnasium.farama.org/index.html) wrapper for the [Minetest](https://www.minetest.net/) voxel game engine. Craftium forks Minetest to support:
 
 - Connecting to Craftium's Python process via TCP (sending observations, and other data; receiving action commands)
 - Executing Craftium actions as keyboard and mouse controls.
 - Extesions to the Lua API for creating RL environments and tasks.
 - Minetest's client/server synchronization.
 
-📑 If you use craftium in your projects or research please consider [citing](#citing-craftium) the project, and don't hesitate to let us know what you have created using the library! 🤗
+📚 Craftium's documentation can be found [here](https://craftium.readthedocs.io/en/latest/).
 
-**TODO:** Link to the documentation page.
+📑 If you use craftium in your projects or research please consider [citing](#citing-craftium) the project, and don't hesitate to let us know what you have created using the library! 🤗
 
 ## Features ✨
 
