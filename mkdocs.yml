@@ -3,19 +3,19 @@ site_name: Craftium
 docs_dir: craftium-docs
 
 nav:
-  - Home: docs/index.md
+  - Home: index.md
   - User Guide:
-      - docs/installation.md
-      - docs/getting-started.md
-      - docs/creating-envs.md
+      - installation.md
+      - getting-started.md
+      - creating-envs.md
   - General Information:
-      - Observations and actions: docs/obs-and-acts.md
-      - docs/environments.md
-      - Wrappers: docs/wrappers.md
-      - Extensions to the Lua API: docs/lua_functions.md
+      - Observations and actions: obs-and-acts.md
+      - environments.md
+      - Wrappers: wrappers.md
+      - Extensions to the Lua API: lua_functions.md
   - Misc:
-    - docs/troubleshooting.md
-    - API Reference: docs/reference.md
+    - troubleshooting.md
+    - API Reference: reference.md
 
 theme: readthedocs
 
