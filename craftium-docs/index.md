@@ -1,11 +1,11 @@
 
-> ✨ *Imagine the features of Minecraft: open world, procedural generation, fully destructible voxel environments... but open source, without Java, easily extensible in [Lua](https://www.lua.org), and with a modern [Gymnasium API](https://gymnasium.farama.org/index.html) designed for RL... This is* **Craftium!** ✨
+> ✨ *Imagine the features of Minecraft: open world, procedural generation, fully destructible voxel environments... but open source, without Java, easily extensible in [Lua](https://www.lua.org), and with the modern [Gymnasium API](https://gymnasium.farama.org/index.html) designed for RL... This is* **Craftium!** ✨
 
 <center>
 <img src="imgs/craftium_logo.png" alt="Craftium logo" width="350" align="right">
 </center>
 
-Craftium is a fully open-source research platform for Reinforcement Learning (RL) research that provides a [Gymnasium](https://gymnasium.farama.org/index.html) wrapper for the [Minetest](https://www.minetest.net/) voxel game engine.
+Craftium is a fully open-source platform for creating Reinforcement Learning (RL) environents and tasks that provides a [Gymnasium](https://gymnasium.farama.org/index.html) wrapper for the [Minetest](https://www.minetest.net/) voxel game engine.
 
 Check the [installation](./installation.md) instructions and the [getting started](./getting-started.md) pages to start using craftium!
 
