@@ -6,6 +6,8 @@
 
 ✨ *Imagine the features of Minecraft: open world, procedural generation, fully destructible voxel environments... but open source, without Java, easily extensible in [Lua](https://www.lua.org), and with the modern [Gymnasium API](https://gymnasium.farama.org/index.html) designed for RL... This is* **Craftium!** ✨
 
+**[[Docs](https://craftium.readthedocs.io/en/latest/)] [[GitHub](https://github.com/mikelma/craftium/)] [[Paper (ArXiv)](https://arxiv.org/abs/2407.03969)]**
+
 [Craftium](https://craftium.readthedocs.io/en/latest/) is a fully open-source platform for creating Reinforcement Learning (RL) environments and tasks that provides a [Gymnasium](https://gymnasium.farama.org/index.html) wrapper for the [Minetest](https://www.minetest.net/) voxel game engine. Craftium forks Minetest to support:
 
 - Connecting to Craftium's Python process via TCP (sending observations, and other data; receiving action commands)
@@ -103,7 +105,14 @@ This example trains a CNN-based agent for 10K timesteps in the `Craftium/ChopTre
 
 ## Citing Craftium 📑
 
-TODO
+```bibtex
+@article{malagon2024craftium,
+  title={Craftium: An Extensible Framework for Creating Reinforcement Learning Environments},
+  author={Mikel Malag{\'o}n and Josu Ceberio and Jose A. Lozano},
+  journal={arXiv preprint arXiv:2407.03969},
+  year={2024}
+}
+```
 
 ## Contributing 🏋️
 
