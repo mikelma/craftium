@@ -32,12 +32,17 @@ def parse_args():
 if __name__ == "__main__":
     args = parse_args()
 
-    run_name = str(uuid4()) if args.run_name is None else args.run_name
-    log_path = os.path.join(args.runs_dir, run_name)
+    if args.run_name is None:
+        run_name = f"{args.env_id.replace('/', '-')}-{args.method}--{str(uuid4())}"
+    else:
+        run_name = args.run_name
 
+    # configure SB3 logger
+    log_path = os.path.join(args.runs_dir, run_name)
     print(f"** Storing run's data in {log_path}")
     new_logger = logger.configure(log_path, ["stdout", "csv"])
 
+    # set up the environment
     envs = DummyVecEnv([lambda: gym.make(args.env_id) for _ in range(args.num_envs)])
     envs = VecMonitor(envs)
 
