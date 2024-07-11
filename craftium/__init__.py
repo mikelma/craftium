@@ -74,7 +74,7 @@ register(
             name="DiscreteActionWrapper",
             entry_point="craftium.wrappers:DiscreteActionWrapper",
             kwargs=dict(
-                actions=["forward", "dig", "mouse x+", "mouse x-", "mouse y+", "mouse y-"],
+                actions=["forward", "jump", "dig", "mouse x+", "mouse x-", "mouse y+", "mouse y-"],
                 mouse_mov=0.5,
             ),
         )

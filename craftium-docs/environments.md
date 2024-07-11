@@ -18,7 +18,7 @@ The player spawns in a dense forest with many trees, equipped with a steel axe. 
 
 - **Observation space:** `Box(0, 255, (64, 64, 3), uint8)` (64x64 RGB image)
 
-- **Action space:** `Discrete(7)` (`forward`, `dig` (used to chop), `mouse x+`, `mouse x-`, `mouse y+`, `mouse y-`)
+- **Action space:** `Discrete(8)` (`nop`, `forward`, `jump`, `dig` (used to chop), `mouse x+`, `mouse x-`, `mouse y+`, `mouse y-`)
 
 - **Default episode length:** 500
 
@@ -36,7 +36,7 @@ The player is placed at one end of a closed room. In the other half of the room,
 
 - **Observation space:** `Box(0, 255, (64, 64, 3), uint8)` (64x64 RGB image)
 
-- **Action space:** `Discrete(3)` (`forward`, `mouse x+`, `mouse x-`)
+- **Action space:** `Discrete(4)` (`nop`, `forward`, `mouse x+`, `mouse x-`)
 
 - **Default episode length:** 500
 
@@ -54,7 +54,7 @@ The same as `Craftium/Room-v0` but in a smaller room, resulting in a considerabl
 
 - **Observation space:** `Box(0, 255, (64, 64, 3), uint8)` (64x64 RGB image)
 
-- **Action space:** `Discrete(3)` (`forward`, `mouse x+`, `mouse x-`)
+- **Action space:** `Discrete(4)` (`nop`, `forward`, `mouse x+`, `mouse x-`)
 
 - **Default episode length:** 200
 
@@ -72,7 +72,7 @@ In this environment, the player spawns in a closed cave illuminated with torches
 
 - **Observation space:** `Box(0, 255, (64, 64, 3), uint8)` (64x64 RGB image)
 
-- **Action space:** `Discrete(6)` (`forward`, `jump`, `mouse x+`, `mouse x-`, `mouse y+`, `mouse y-`)
+- **Action space:** `Discrete(7)` (`nop`, `forward`, `jump`, `mouse x+`, `mouse x-`, `mouse y+`, `mouse y-`)
 
 - **Default episode length:** 500
 
@@ -90,7 +90,7 @@ The player is spawned in a closed cage with a spider inside it. The player is eq
 
 - **Observation space:** `Box(0, 255, (64, 64, 3), uint8)` (64x64 RGB image)
 
-- **Action space:** `Discrete(9)` (`forward`, `left`, `right`, `jump`, `dig` (attack), `mouse x+`, `mouse x-`, `mouse y+`, `mouse y-`)
+- **Action space:** `Discrete(10)` (`nop`, `forward`, `left`, `right`, `jump`, `dig` (attack), `mouse x+`, `mouse x-`, `mouse y+`, `mouse y-`)
 
 - **Default episode length:** 2000
 
