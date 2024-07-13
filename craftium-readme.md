@@ -2,6 +2,12 @@
 
 # Craftium
 
+<img src="../craftium-docs/imgs/env_chop_tree.gif" width="100" align="left">
+<img src="../craftium-docs/imgs/env_room.gif" width="100" align="left">
+<img src="../craftium-docs/imgs/env_speleo.gif" width="100" align="left">
+<img src="../craftium-docs/imgs/env_spiders_attack.gif" width="100">
+<br>
+
 <img src="../craftium-docs/imgs/craftium_logo.png" alt="Craftium logo" width="350" align="right">
 
 ✨ *Imagine the features of Minecraft: open world, procedural generation, fully destructible voxel environments... but open source, without Java, easily extensible in [Lua](https://www.lua.org), and with the modern [Gymnasium API](https://gymnasium.farama.org/index.html) designed for RL... This is* **Craftium!** ✨
