@@ -59,8 +59,7 @@ class Minetest():
             # select a (random) free port for the craftium <-> minetest communication.
             while True:
                 self.port = random.randint(49152, 65535)
-                # port+1 must also be free as it will be used by Minetest's internal sync
-                if not is_port_in_use(self.port) and not is_port_in_use(self.port+1):
+                if not is_port_in_use(self.port):
                     break
         else:
             self.port = tcp_port

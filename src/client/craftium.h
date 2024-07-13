@@ -30,65 +30,69 @@ inline int virtual_mouse_y = 0;
 */
 inline int sync_client_fd = -1;
 inline int sync_conn_fd = -1;
+inline int sync_port = -1;
 
 inline int syncServerInit() {
     int server_fd;
     // ssize_t valread;
     struct sockaddr_in address;
-    int opt = 1;
+    // int opt = 1;
     socklen_t addrlen = sizeof(address);
 
     // Creating socket file descriptor
     if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-        perror("socket failed");
+        perror("[SyncServer] Socket creation failed");
         exit(EXIT_FAILURE);
     }
 
-    // Forcefully attaching socket to the port
-    if (setsockopt(server_fd, SOL_SOCKET,
-                   SO_REUSEADDR | SO_REUSEPORT, &opt,
-                   sizeof(opt))) {
-        printf("[SyncServer] setsockopt failed\n");
-        exit(EXIT_FAILURE);
-    }
     address.sin_family = AF_INET;
     address.sin_addr.s_addr = INADDR_ANY;
-    address.sin_port = htons(g_settings->getU32("craftium_port")+1);
+    address.sin_port = htons(0); // let the OS choose an empty port
 
-    // Forcefully attaching socket to the port
+    // Set receive and send timeout on the socket
+    struct timeval timeout;
+    timeout.tv_sec = 10;  // timeout time in seconds
+    timeout.tv_usec = 0;
+    if (setsockopt(server_fd, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout, sizeof(timeout)) < 0) {
+        perror("[SyncServer] setsockopt failed");
+        exit(EXIT_FAILURE);
+    }
+    if (setsockopt(server_fd, SOL_SOCKET, SO_SNDTIMEO, (const char*)&timeout, sizeof(timeout)) < 0) {
+        perror("[SyncServer] setsockopt failed");
+        exit(EXIT_FAILURE);
+    }
+
+    // Bind the server's socket to a port
     if (bind(server_fd, (struct sockaddr*)&address,
              sizeof(address))
         < 0) {
-        printf("[SyncServer] Bind failed\n");
+        perror("[SyncServer] Bind failed");
         exit(EXIT_FAILURE);
     }
+
+    // Get the port that the server has connected to
+    struct sockaddr_in servaddr;
+    bzero(&servaddr, sizeof(servaddr));
+    socklen_t len = sizeof(servaddr);
+    getsockname(server_fd, (struct sockaddr *) &servaddr, &len);
+    // Set the value of the global `sync_port` variable,
+    // this is used in `syncClientInit` to know which port to connect to
+    sync_port = ntohs(servaddr.sin_port);
+
+    // Listen (blocking) for the client to connect
     if (listen(server_fd, 3) < 0) {
-        printf("[SyncServer] Failed to listen\n");
+        perror("[SyncServer] Failed to listen");
         exit(EXIT_FAILURE);
     }
+
+    // Accept client's connection
     if ((sync_conn_fd
          = accept(server_fd, (struct sockaddr*)&address, &addrlen)) < 0) {
-        printf("[SyncServer] Connection accept error\n");
+        perror("[SyncServer] Connection accept error");
         exit(EXIT_FAILURE);
     }
 
-    // Set receive and send timeout on the socket
-    /*
-    struct timeval timeout;
-    timeout.tv_sec = 2;  // timeout time in seconds
-    timeout.tv_usec = 0;
-    if (setsockopt(sync_conn_fd, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout, sizeof(timeout)) < 0) {
-        printf("[SyncServer] setsockopt failed\n");
-        exit(EXIT_FAILURE);
-    }
-    if (setsockopt(sync_conn_fd, SOL_SOCKET, SO_SNDTIMEO, (const char*)&timeout, sizeof(timeout)) < 0) {
-        printf("[SyncServer] setsockopt failed\n");
-        exit(EXIT_FAILURE);
-    }
-    */
-
-    printf("=> Sync Server connected\n");
-
+    // printf("=> Sync Server connected @ %d\n", sync_port);
     return 0;
 }
 
@@ -96,30 +100,31 @@ inline int syncClientInit() {
     int status;
     struct sockaddr_in serv_addr;
     if ((sync_client_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-        printf("[SycClient] Socket creation error\n");
+        perror("[SycClient] Socket creation error");
         return -1;
     }
 
     serv_addr.sin_family = AF_INET;
-    serv_addr.sin_port = htons(g_settings->getU32("craftium_port")+1);
+    serv_addr.sin_port = htons(sync_port);
 
     // Convert IPv4 and IPv6 addresses from text to binary
     // form
     if (inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr)
         <= 0) {
-        printf("[SycClient] Invalid address\n");
+        perror("[SycClient] Invalid address");
         return -1;
     }
 
+    // Connect to the server @ sync_port
     if ((status
          = connect(sync_client_fd, (struct sockaddr*)&serv_addr,
                    sizeof(serv_addr)))
         < 0) {
-        printf("[SycClient] Connection Failed\n");
+        perror("[SycClient] Connection Failed");
         return -1;
     }
 
-    printf("=> Sync Client connected\n");
+    // printf("=> Sync Client connected @ %d\n", sync_port);
     return 0;
 }
 
