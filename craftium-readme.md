@@ -2,17 +2,18 @@
 
 # Craftium
 
-<img src="../craftium-docs/imgs/env_chop_tree.gif" width="100" align="left">
-<img src="../craftium-docs/imgs/env_room.gif" width="100" align="left">
-<img src="../craftium-docs/imgs/env_speleo.gif" width="100" align="left">
-<img src="../craftium-docs/imgs/env_spiders_attack.gif" width="100">
-<br>
-
 <img src="../craftium-docs/imgs/craftium_logo.png" alt="Craftium logo" width="350" align="right">
 
 ✨ *Imagine the features of Minecraft: open world, procedural generation, fully destructible voxel environments... but open source, without Java, easily extensible in [Lua](https://www.lua.org), and with the modern [Gymnasium API](https://gymnasium.farama.org/index.html) designed for RL... This is* **Craftium!** ✨
 
 **[[Docs](https://craftium.readthedocs.io/en/latest/)] [[GitHub](https://github.com/mikelma/craftium/)] [[Paper (ArXiv)](https://arxiv.org/abs/2407.03969)]**
+
+<p align="left">
+  <img src="../craftium-docs/imgs/env_chop_tree.gif" width="100" align="center">
+  <img src="../craftium-docs/imgs/env_room.gif" width="100" align="center">
+  <img src="../craftium-docs/imgs/env_speleo.gif" width="100" align="center">
+  <img src="../craftium-docs/imgs/env_spiders_attack.gif" width="100", align="center">
+</p>
 
 [Craftium](https://craftium.readthedocs.io/en/latest/) is a fully open-source platform for creating Reinforcement Learning (RL) environments and tasks that provides a [Gymnasium](https://gymnasium.farama.org/index.html) wrapper for the [Minetest](https://www.minetest.net/) voxel game engine. Craftium forks Minetest to support:
 
