@@ -9,7 +9,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <arpa/inet.h>
-#include <mutex>
+#include "../settings.h"
 
 /*
 
@@ -28,29 +28,8 @@ inline int virtual_mouse_y = 0;
   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 */
-inline int sync_port = -1;
-inline std::mutex sync_port_mtx;
-
 inline int sync_client_fd = -1;
 inline int sync_conn_fd = -1;
-
-inline int getSyncPort() {
-    int port;
-
-    sync_port_mtx.lock();
-
-    if (sync_port < 0) {
-        // select a random port in the range [65535, 49152] (dynamic ports' range)
-        sync_port = (rand() % (65535 - 49152 + 1)) + 49152;
-        printf("*** Internal sync port set to %d\n", sync_port);
-    }
-
-    port = sync_port;
-
-    sync_port_mtx.unlock();
-
-    return port;
-}
 
 inline int syncServerInit() {
     int server_fd;
@@ -58,8 +37,6 @@ inline int syncServerInit() {
     struct sockaddr_in address;
     int opt = 1;
     socklen_t addrlen = sizeof(address);
-    // char buffer[1024] = { 0 };
-    // char* hello = "Hello from server";
 
     // Creating socket file descriptor
     if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
@@ -67,7 +44,7 @@ inline int syncServerInit() {
         exit(EXIT_FAILURE);
     }
 
-    // Forcefully attaching socket to the port 8080
+    // Forcefully attaching socket to the port
     if (setsockopt(server_fd, SOL_SOCKET,
                    SO_REUSEADDR | SO_REUSEPORT, &opt,
                    sizeof(opt))) {
@@ -76,7 +53,7 @@ inline int syncServerInit() {
     }
     address.sin_family = AF_INET;
     address.sin_addr.s_addr = INADDR_ANY;
-    address.sin_port = htons(getSyncPort());
+    address.sin_port = htons(g_settings->getU32("craftium_port")+1);
 
     // Forcefully attaching socket to the port
     if (bind(server_fd, (struct sockaddr*)&address,
@@ -96,8 +73,9 @@ inline int syncServerInit() {
     }
 
     // Set receive and send timeout on the socket
+    /*
     struct timeval timeout;
-    timeout.tv_sec = 2;  /* timeout time in seconds */
+    timeout.tv_sec = 2;  // timeout time in seconds
     timeout.tv_usec = 0;
     if (setsockopt(sync_conn_fd, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout, sizeof(timeout)) < 0) {
         printf("[SyncServer] setsockopt failed\n");
@@ -107,6 +85,7 @@ inline int syncServerInit() {
         printf("[SyncServer] setsockopt failed\n");
         exit(EXIT_FAILURE);
     }
+    */
 
     printf("=> Sync Server connected\n");
 
@@ -122,7 +101,7 @@ inline int syncClientInit() {
     }
 
     serv_addr.sin_family = AF_INET;
-    serv_addr.sin_port = htons(getSyncPort());
+    serv_addr.sin_port = htons(g_settings->getU32("craftium_port")+1);
 
     // Convert IPv4 and IPv6 addresses from text to binary
     // form

@@ -56,10 +56,11 @@ class Minetest():
         print(f"==> Creating Minetest run directory: {self.run_dir}")
 
         if tcp_port is None:
-            # select a (random) free port for the craftium <-> minetest communication
+            # select a (random) free port for the craftium <-> minetest communication.
             while True:
                 self.port = random.randint(49152, 65535)
-                if not is_port_in_use(self.port):
+                # port+1 must also be free as it will be used by Minetest's internal sync
+                if not is_port_in_use(self.port) and not is_port_in_use(self.port+1):
                     break
         else:
             self.port = tcp_port
