@@ -57,8 +57,10 @@ inline int syncServerInit() {
         perror("[SyncServer] setsockopt failed");
         exit(EXIT_FAILURE);
     }
-    if (setsockopt(server_fd, SOL_SOCKET, SO_SNDTIMEO, (const char*)&timeout, sizeof(timeout)) < 0) {
-        perror("[SyncServer] setsockopt failed");
+
+    int opt = 1;
+    if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0) {
+        perror("[SyncServer] setsockopt SO_REUSEADDR failed");
         exit(EXIT_FAILURE);
     }
 
@@ -101,7 +103,7 @@ inline int syncClientInit() {
     struct sockaddr_in serv_addr;
     if ((sync_client_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
         perror("[SycClient] Socket creation error");
-        return -1;
+        exit(EXIT_FAILURE);
     }
 
     serv_addr.sin_family = AF_INET;
@@ -112,7 +114,15 @@ inline int syncClientInit() {
     if (inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr)
         <= 0) {
         perror("[SycClient] Invalid address");
-        return -1;
+        exit(EXIT_FAILURE);
+    }
+
+    struct timeval timeout;
+    timeout.tv_sec = 10;  // timeout time in seconds
+    timeout.tv_usec = 0;
+    if (setsockopt(sync_client_fd, SOL_SOCKET, SO_SNDTIMEO, (const char*)&timeout, sizeof(timeout)) < 0) {
+        perror("[SyncClient] setsockopt failed");
+        exit(EXIT_FAILURE);
     }
 
     // Connect to the server @ sync_port
@@ -120,8 +130,8 @@ inline int syncClientInit() {
          = connect(sync_client_fd, (struct sockaddr*)&serv_addr,
                    sizeof(serv_addr)))
         < 0) {
-        perror("[SycClient] Connection Failed");
-        return -1;
+        perror("[SycClient] Connection failed");
+        exit(EXIT_FAILURE);
     }
 
     // printf("=> Sync Client connected @ %d\n", sync_port);
@@ -133,7 +143,10 @@ inline void syncServerStep() {
         syncServerInit();
 
     char msg[2];
-    read(sync_conn_fd, msg, 2);
+    if (read(sync_conn_fd, msg, 2) <= 0) {
+        perror("[syncServerStep] Step failed");
+        exit(EXIT_FAILURE);
+    }
 }
 
 inline void syncClientStep() {
@@ -141,7 +154,10 @@ inline void syncClientStep() {
         syncClientInit();
 
     /* Send a dummy message of two bytes */
-    send(sync_client_fd, "-", 2, 0);
+    if (send(sync_client_fd, "-", 2, 0) <= 0) {
+        perror("[syncClientStep] Step failed");
+        exit(EXIT_FAILURE);
+    }
 }
 
 /*
