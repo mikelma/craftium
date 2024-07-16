@@ -2,10 +2,8 @@ import socket
 import struct
 import time
 from typing import Optional
-
 import numpy as np
 
-MT_DEFAULT_PORT = 55555
 
 class MtChannel():
     def __init__(self, img_width: int, img_height: int, port: Optional[int] = None, connect_timeout: int = 30):
@@ -14,7 +12,8 @@ class MtChannel():
 
         self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.s.settimeout(30)  # time limit in seconds for minetest to connect to the socket
-        self.s.bind(("127.0.0.1", MT_DEFAULT_PORT if port is None else port))
+        self.s.bind(("127.0.0.1", port if port is not None else 0))
+        self.port = self.s.getsockname()[1]
 
         # initialized in `reset_connection`
         self.conn = None

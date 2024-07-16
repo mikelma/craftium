@@ -4,14 +4,7 @@ import subprocess
 import multiprocessing
 from uuid import uuid4
 import shutil
-import random
-# from distutils.dir_util import copy_tree
 
-
-def is_port_in_use(port: int) -> bool:
-    import socket
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        return s.connect_ex(('localhost', port)) == 0
 
 def is_minetest_build_dir(path: os.PathLike) -> bool:
     # list of directories required by craftium to exist in the a minetest build directory
@@ -25,6 +18,7 @@ def is_minetest_build_dir(path: os.PathLike) -> bool:
 class Minetest():
     def __init__(
             self,
+            tcp_port: int,
             run_dir: Optional[os.PathLike] = None,
             run_dir_prefix: Optional[os.PathLike] = None,
             headless: bool = False,
@@ -35,7 +29,6 @@ class Minetest():
             screen_w: int = 640,
             screen_h: int = 360,
             minetest_dir: Optional[str] = None,
-            tcp_port: Optional[int] = None,
             minetest_conf: dict[str, Any] = dict(),
             pipe_proc: bool = True,
     ):
@@ -55,15 +48,6 @@ class Minetest():
 
         print(f"==> Creating Minetest run directory: {self.run_dir}")
 
-        if tcp_port is None:
-            # select a (random) free port for the craftium <-> minetest communication.
-            while True:
-                self.port = random.randint(49152, 65535)
-                if not is_port_in_use(self.port):
-                    break
-        else:
-            self.port = tcp_port
-
         config = dict(
             # Base config
             enable_sound=False,
@@ -79,7 +63,7 @@ class Minetest():
             undersampling=1,
             # fov=self.fov_y,
 
-            craftium_port=self.port,
+            craftium_port=tcp_port,
 
             # Adapt HUD size to display size, based on (1024, 600) default
             # hud_scaling=self.display_size[0] / 1024,
