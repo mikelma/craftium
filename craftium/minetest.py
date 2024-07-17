@@ -4,6 +4,8 @@ import subprocess
 import multiprocessing
 from uuid import uuid4
 import shutil
+import signal
+import atexit
 
 
 def is_minetest_build_dir(path: os.PathLike) -> bool:
@@ -125,25 +127,38 @@ class Minetest():
         if headless:
             self.mt_env["SDL_VIDEODRIVER"] = "offscreen"
 
+        # register the cleanup function to be called on exit
+        atexit.register(self._kill_proc)
+
+    def _kill_proc(self):
+        if self.proc is not None:
+            # send kill signal to the process
+            os.kill(self.proc.pid, signal.SIGKILL)
+            # wait for the process to finish (timeout at 30s)
+            self.proc.wait(timeout=30)
+            self.proc = None
+
     def start_process(self):
         if self.pipe_proc:
             # open files for piping stderr and stdout into
             self.stderr = open(os.path.join(self.run_dir, "stderr.txt"), "a")
             self.stdout = open(os.path.join(self.run_dir, "stdout.txt"), "a")
 
-        def launch_fn():
-            # set env vars
-            for key, value in self.mt_env.items():
-                os.environ[key] = value
-            # launch the process (pipeing stderr and stdout if necessary)
-            if self.pipe_proc:
-                subprocess.run(self.launch_cmd, cwd=self.run_dir, stderr=self.stderr, stdout=self.stdout)
-            else:
-                subprocess.run(self.launch_cmd, cwd=self.run_dir)
+            kwargs = dict(
+                stderr=self.stderr,
+                stdout=self.stdout,
+            )
 
-        process = multiprocessing.Process(target=launch_fn, args=[])
-        process.start()
-        self.proc = process
+        # set env vars
+        for key, value in self.mt_env.items():
+            os.environ[key] = value
+
+        self.proc = subprocess.Popen(
+            self.launch_cmd,
+            start_new_session=True,
+            cwd=self.run_dir,
+            **kwargs,
+        )
 
     def kill_process(self):
         # close the files where the process is being piped
@@ -153,8 +168,7 @@ class Minetest():
         if self.stdout is not None:
             self.stdout.close()
 
-        if self.proc is not None:
-            self.proc.kill()
+        self._kill_proc()
 
     def clear(self):
         # delete the run's directory
