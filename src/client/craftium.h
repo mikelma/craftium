@@ -145,7 +145,12 @@ inline void syncServerStep() {
     char msg[2];
     if (read(sync_conn_fd, msg, 2) <= 0) {
         perror("[syncServerStep] Step failed");
-        exit(EXIT_FAILURE);
+        if (errno == EAGAIN) {
+            fprintf(stderr, "[SyncServerStep] Warning: timeout\n" );
+        } else {
+            fprintf(stderr, "Error code is %d, exiting...\n", errno);
+            exit(EXIT_FAILURE);
+        }
     }
 }
 
