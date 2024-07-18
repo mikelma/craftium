@@ -49,16 +49,18 @@ class MtChannel():
 
         return img, reward, termination
 
-    def send(self, keys: list[int], mouse_x: int, mouse_y: int):
+    def send(self, keys: list[int], mouse_x: int, mouse_y: int, terminate: bool = False):
         assert len(keys) == 21, f"Keys list must be of length 21 and is {len(keys)}"
 
         mouse = list(struct.pack("<h", mouse_x)) + list(struct.pack("<h", mouse_y))
 
-        self.conn.sendall(bytes(keys + mouse))
+        self.conn.sendall(bytes(keys + mouse + [1 if terminate else 0]))
+
+    def send_termination(self):
+        self.send(keys=[0]*21, mouse_x=0, mouse_y=0, terminate=True)
 
     def close(self):
-        if self.conn is not None:
-            self.conn.close()
+        self.close_conn()
         self.s.close()
 
     def close_conn(self):

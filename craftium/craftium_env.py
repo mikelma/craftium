@@ -1,12 +1,10 @@
 import os
 from typing import Optional, Any
-import time
 
 from .mt_channel import MtChannel
 from .minetest import Minetest
 
 import numpy as np
-
 from gymnasium import Env
 from gymnasium.spaces import Dict, Discrete, Box
 
@@ -125,10 +123,11 @@ class CraftiumEnv(Env):
         super().reset(seed=seed)
         self.timesteps = 0
 
-        # close the active (if any) channel with mintest
-        self.mt_chann.close_conn()
-        # kill the active mt process if there's any
-        self.mt.kill_process()
+        if self.mt_chann.conn is not None:
+            self.mt_chann.send_termination()
+            self.mt_chann.close_conn()
+            self.mt.close_pipes()
+            self.mt.wait_close()
 
         # start the new MT process
         self.mt.start_process()
@@ -198,6 +197,9 @@ class CraftiumEnv(Env):
             return self.last_observation
 
     def close(self):
-        self.mt_chann.close()
-        self.mt.kill_process()
+        if self.mt_chann.conn is not None:
+            self.mt_chann.send_termination()
+            self.mt_chann.close()
+            self.mt.close_pipes()
+            self.mt.wait_close()
         self.mt.clear()

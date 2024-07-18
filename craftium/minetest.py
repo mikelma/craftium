@@ -1,11 +1,8 @@
 import os
 from typing import Optional, Any
 import subprocess
-import multiprocessing
 from uuid import uuid4
 import shutil
-import signal
-import atexit
 
 
 def is_minetest_build_dir(path: os.PathLike) -> bool:
@@ -127,17 +124,6 @@ class Minetest():
         if headless:
             self.mt_env["SDL_VIDEODRIVER"] = "offscreen"
 
-        # register the cleanup function to be called on exit
-        atexit.register(self._kill_proc)
-
-    def _kill_proc(self):
-        if self.proc is not None:
-            # send kill signal to the process
-            os.kill(self.proc.pid, signal.SIGKILL)
-            # wait for the process to finish (timeout at 30s)
-            self.proc.wait(timeout=30)
-            self.proc = None
-
     def start_process(self):
         if self.pipe_proc:
             # open files for piping stderr and stdout into
@@ -160,15 +146,17 @@ class Minetest():
             **kwargs,
         )
 
-    def kill_process(self):
+    def wait_close(self):
+        if self.proc is not None:
+            self.proc.wait()
+
+    def close_pipes(self):
         # close the files where the process is being piped
         # into berfore the process itself
         if self.stderr is not None:
             self.stderr.close()
         if self.stdout is not None:
             self.stdout.close()
-
-        self._kill_proc()
 
     def clear(self):
         # delete the run's directory

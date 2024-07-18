@@ -168,6 +168,20 @@ void Client::startPyConn()
         exit(EXIT_FAILURE);
     }
 
+    /*
+    struct timeval timeout;
+    timeout.tv_sec = 2;  // timeout time in seconds
+    timeout.tv_usec = 0;
+    if (setsockopt(py_sockfd, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout, sizeof(timeout)) < 0) {
+        perror("[ERROR] PyConn setsockopt failed");
+        exit(EXIT_FAILURE);
+    }
+    if (setsockopt(py_sockfd, SOL_SOCKET, SO_SNDTIMEO, (const char*)&timeout, sizeof(timeout)) < 0) {
+        perror("[ERROR] PyConn setsockopt failed");
+        exit(EXIT_FAILURE);
+    }
+    */
+
     py_servaddr = (struct sockaddr_in*) malloc(sizeof(struct sockaddr_in));
 
     memset(py_servaddr, 0, sizeof(*py_servaddr));
@@ -186,7 +200,7 @@ void Client::startPyConn()
 }
 
 void Client::pyConnStep() {
-    char actions[25];
+    char actions[26];
     int n_send, n_recv, W, H, obs_rwd_buffer_size;
     u32 c; // stores the RGBA pixel color
 
@@ -327,7 +341,12 @@ void Client::pyConnStep() {
     /* If sending or receiving went wrong, print an error message and quit */
     if (n_send + n_recv < 2) {
         printf("[!!] Python client disconnected. Shutting down...\n");
-        exit(43);
+        exit(EXIT_FAILURE);
+    }
+
+    if (actions[25]) {
+        printf("[NOTE] Termination signal received, exiting...\n");
+        exit(0);
     }
 }
 

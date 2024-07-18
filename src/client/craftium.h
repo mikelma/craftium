@@ -49,21 +49,6 @@ inline int syncServerInit() {
     address.sin_addr.s_addr = INADDR_ANY;
     address.sin_port = htons(0); // let the OS choose an empty port
 
-    // Set receive and send timeout on the socket
-    struct timeval timeout;
-    timeout.tv_sec = 10;  // timeout time in seconds
-    timeout.tv_usec = 0;
-    if (setsockopt(server_fd, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout, sizeof(timeout)) < 0) {
-        perror("[SyncServer] setsockopt failed");
-        exit(EXIT_FAILURE);
-    }
-
-    int opt = 1;
-    if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0) {
-        perror("[SyncServer] setsockopt SO_REUSEADDR failed");
-        exit(EXIT_FAILURE);
-    }
-
     // Bind the server's socket to a port
     if (bind(server_fd, (struct sockaddr*)&address,
              sizeof(address))
@@ -117,14 +102,6 @@ inline int syncClientInit() {
         exit(EXIT_FAILURE);
     }
 
-    struct timeval timeout;
-    timeout.tv_sec = 10;  // timeout time in seconds
-    timeout.tv_usec = 0;
-    if (setsockopt(sync_client_fd, SOL_SOCKET, SO_SNDTIMEO, (const char*)&timeout, sizeof(timeout)) < 0) {
-        perror("[SyncClient] setsockopt failed");
-        exit(EXIT_FAILURE);
-    }
-
     // Connect to the server @ sync_port
     if ((status
          = connect(sync_client_fd, (struct sockaddr*)&serv_addr,
@@ -145,12 +122,7 @@ inline void syncServerStep() {
     char msg[2];
     if (read(sync_conn_fd, msg, 2) <= 0) {
         perror("[syncServerStep] Step failed");
-        if (errno == EAGAIN) {
-            fprintf(stderr, "[SyncServerStep] Warning: timeout\n" );
-        } else {
-            fprintf(stderr, "Error code is %d, exiting...\n", errno);
-            exit(EXIT_FAILURE);
-        }
+        exit(EXIT_FAILURE);
     }
 }
 
