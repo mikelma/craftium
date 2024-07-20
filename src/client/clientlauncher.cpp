@@ -486,7 +486,10 @@ bool ClientLauncher::launch_game(std::string &error_message,
 	if (start_data.isSinglePlayer()) {
 		start_data.name = "singleplayer";
 		start_data.password = "";
-		start_data.socket_port = myrand_range(49152, 65535);
+                // Craftium: This is commented to use the port and remote_port options
+                // from the minetest.conf instead of a random one.
+                //
+		// start_data.socket_port = myrand_range(49152, 65535);
 	} else {
 		g_settings->set("name", start_data.name);
 	}

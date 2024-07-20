@@ -3,7 +3,7 @@ from typing import Optional, Any
 import subprocess
 from uuid import uuid4
 import shutil
-
+import random
 
 def is_minetest_build_dir(path: os.PathLike) -> bool:
     # list of directories required by craftium to exist in the a minetest build directory
@@ -30,6 +30,7 @@ class Minetest():
             minetest_dir: Optional[str] = None,
             minetest_conf: dict[str, Any] = dict(),
             pipe_proc: bool = True,
+            mt_port: Optional[int] = None,
     ):
         self.pipe_proc = pipe_proc
 
@@ -47,6 +48,8 @@ class Minetest():
 
         print(f"==> Creating Minetest run directory: {self.run_dir}")
 
+        port = mt_port if mt_port is not None else random.randint(49152, 65535)
+
         config = dict(
             # Base config
             enable_sound=False,
@@ -63,6 +66,10 @@ class Minetest():
             # fov=self.fov_y,
 
             craftium_port=tcp_port,
+
+            # port used for MT's internal client<->server comm.
+            port=port,
+            remote_port=port,
 
             # Adapt HUD size to display size, based on (1024, 600) default
             # hud_scaling=self.display_size[0] / 1024,
