@@ -16,8 +16,12 @@ nav:
   - Misc:
     - troubleshooting.md
     - API Reference: reference.md
+  - GitHub: https://github.com/mikelma/craftium
+  - Paper: https://arxiv.org/abs/2407.03969
 
-theme: readthedocs
+theme:
+  name: readthedocs
+  logo: imgs/craftium_banner.png
 
 plugins:
   - search
