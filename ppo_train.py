@@ -37,10 +37,15 @@ class Args:
     capture_video: bool = False
     """whether to capture videos of the agent performances (check out `videos` folder)"""
 
+    async_envs: bool = False
+    """whether to use Gymnasium's async vector environment or not (disabled by default)"""
+    mt_wd: str = "./"
+    """Directory where the Minetest working directories will be created (defaults to the current one)"""
+
     # Algorithm specific arguments
     env_id: str = "Craftium/ChopTree-v0"
     """the id of the environment"""
-    total_timesteps: int = 10000000
+    total_timesteps: int = int(1e6)
     """total timesteps of the experiments"""
     learning_rate: float = 2.5e-4
     """the learning rate of the optimizer"""
@@ -82,10 +87,11 @@ class Args:
     """the number of iterations (computed in runtime)"""
 
 
-def make_env(env_id, idx, capture_video, run_name):
+def make_env(env_id, idx, capture_video, run_name, mt_port, mt_wd):
     def thunk():
         craftium_kwargs = dict(
-            run_dir_prefix="/tmp/",
+            run_dir_prefix=mt_wd,
+            mt_port=mt_port,
         )
         if capture_video and idx == 0:
             env = gym.make(env_id, render_mode="rgb_array", **craftium_kwargs)
@@ -175,8 +181,9 @@ if __name__ == "__main__":
     device = torch.device("cuda" if torch.cuda.is_available() and args.cuda else "cpu")
 
     # env setup
-    envs = gym.vector.SyncVectorEnv(
-        [make_env(args.env_id, i, args.capture_video, run_name) for i in range(args.num_envs)],
+    vector_env = gym.vector.SyncVectorEnv if not args.async_envs else gym.vector.AsyncVectorEnv
+    envs = vector_env(
+        [make_env(args.env_id, i, args.capture_video, run_name, 49155+i, args.mt_wd) for i in range(args.num_envs)],
     )
 
     assert isinstance(envs.single_action_space, gym.spaces.Discrete), "only discrete action space is supported"
