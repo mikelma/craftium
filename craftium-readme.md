@@ -132,3 +132,8 @@ Craftium is based on [minetest](https://github.com/minetest/minetest) and its so
 ## Acknowledgements 🤗
 
 We thank the minetest and gymnasium developers and community for maintaining such an excellent open-source project. We also thank [minerl](minerl.readthedocs.io/) and other projects integrating minetest and gymnasium ([here](https://github.com/EleutherAI/minetest) and [here](https://github.com/Astera-org/minetest)) for serving as inspiration for this project.
+
+We are also grateful to:
+- [@vadel](https://github.com/vadel) for helping with obscure bugs 🐛.
+- [@abarrainkua](https://github.com/abarrainkua) for reading preliminary versions of the paper.
+- _Pascu_ for the technical support in HPC.
