@@ -32,6 +32,7 @@ class Minetest():
             pipe_proc: bool = True,
             mt_port: Optional[int] = None,
             frameskip: int = 1,
+            rgb_frames: bool = True,
     ):
         self.pipe_proc = pipe_proc
 
@@ -68,6 +69,7 @@ class Minetest():
 
             craftium_port=tcp_port,
             frameskip=frameskip,
+            rgb_frames=rgb_frames,
 
             # port used for MT's internal client<->server comm.
             port=port,

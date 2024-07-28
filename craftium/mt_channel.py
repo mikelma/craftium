@@ -7,7 +7,14 @@ import mt_server
 
 
 class MtChannel():
-    def __init__(self, img_width: int, img_height: int, port: Optional[int] = None, listen_timeout: int = 2000):
+    def __init__(
+            self,
+            img_width: int,
+            img_height: int,
+            port: Optional[int] = None,
+            listen_timeout: int = 2000,
+            rgb_imgs: bool = True
+    ):
         self.img_width = img_width
         self.img_height = img_height
         self.listen_timeout = listen_timeout
@@ -19,14 +26,16 @@ class MtChannel():
 
         # pre-compute the number of bytes that we should receive from MT.
         # the RGB image + 8 bytes of the reward + 1 byte of the termination flag
-        self.rec_bytes = img_width*img_height*3 + 8 + 1
+        self.n_chan = 3 if rgb_imgs else 1
+        self.rec_bytes = img_width*img_height*self.n_chan + 8 + 1
 
     def receive(self):
         img, reward, termination = mt_server.server_recv(
             self.connfd,
             self.rec_bytes,
             self.img_width,
-            self.img_height
+            self.img_height,
+            self.n_chan,
         )
         return img, reward, termination
 

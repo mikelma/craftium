@@ -223,7 +223,11 @@ void Client::pyConnStep() {
           W*H*3 for the WxH RGB image, +8 for the reward value (a double),
           and +1 for the episode termination flag
         */
-        obs_rwd_buffer_size = W*H*3 + 8 + 1;
+        if (g_settings->getBool("rgb_frames")) {
+            obs_rwd_buffer_size = W*H*3 + 8 + 1; // full RGB images
+        } else {
+            obs_rwd_buffer_size = W*H + 8 + 1; // grayscale images
+        }
 
         /* If obs_rwd_buffer is not initialized, allocate memory for it now */
         if (!obs_rwd_buffer) {
@@ -235,13 +239,23 @@ void Client::pyConnStep() {
 
         /* Copy RGB image into a flat u8 array (obs_rwd_buffer) */
         int i = 0;
-        for (int w=0; w<W; w++) {
+        if (g_settings->getBool("rgb_frames")) {
             for (int h=0; h<H; h++) {
-                c = raw_image->getPixel(w, h).color;
-                obs_rwd_buffer[i] = (c>>16) & 0xff;  // R
-                obs_rwd_buffer[i+1] = (c>>8) & 0xff; // G
-                obs_rwd_buffer[i+2] = c & 0xff;      // B
-                i = i + 3;
+                for (int w=0; w<W; w++) {
+                    c = raw_image->getPixel(w, h).color;
+                    obs_rwd_buffer[i] = (c>>16) & 0xff;  // R
+                    obs_rwd_buffer[i+1] = (c>>8) & 0xff; // G
+                    obs_rwd_buffer[i+2] = c & 0xff;      // B
+                    i = i + 3;
+                }
+            }
+        } else {
+            for (int h=0; h<H; h++) {
+                for (int w=0; w<W; w++) {
+                    c = raw_image->getPixel(w, h).color;
+                    obs_rwd_buffer[i] = (((c>>16) & 0xff) / 3) + (((c>>8) & 0xff) / 3) + ((c & 0xff) / 3);
+                    i++;
+                }
             }
         }
 

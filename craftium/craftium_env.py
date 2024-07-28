@@ -36,7 +36,9 @@ class CraftiumEnv(Env):
     :param pipe_proc: If `True`, the minetest process stderr and stdout will be piped into two files inside the run's directory. Otherwise, the minetest process will not be piped and its output will be shown in the terminal. This option is disabled by default to reduce verbosity, but can be useful for debugging.
     :param mt_listen_timeout: Number of milliseconds to wait for MT to connect to the TCP channel. If the timeout is reached a Timeout exception is raised. **WARNING:** When using multiple (serial) MT environments, timeout can be easily reached for the last environment. In this case, you might want to increase the value of this parameter according to the number of environments.
     :param mt_port: TCP port to employ for MT's internal client<->server communication. If not provided a random port in the [49152, 65535] range is used.
-    :params frameskip: The number of frames skipped between steps, 1 by default (disabled). Note that `max_timesteps` and `init_frames` parameters will be divided by the frameskip value.
+    :param frameskip: The number of frames skipped between steps, 1 by default (disabled). Note that `max_timesteps` and `init_frames` parameters will be divided by the frameskip value.
+    :param rgb_observations: Whether to use RGB images or gray scale images as observations. Note that RGB images are slower to send from MT to python via TCP. By default RGB images are used.
+    :param gray_scale_keepdim: If `True`, a singleton dimension will be added, i.e. observations are of the shape WxHx1. Otherwise, they are of shape WxH.
     """
     metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 30}
 
@@ -59,6 +61,8 @@ class CraftiumEnv(Env):
             mt_listen_timeout: int = 10_000,
             mt_port: Optional[int] = None,
             frameskip: int = 1,
+            rgb_observations: bool = False,
+            gray_scale_keepdim: bool = False,
     ):
         super(CraftiumEnv, self).__init__()
 
@@ -66,6 +70,7 @@ class CraftiumEnv(Env):
         self.obs_height = obs_height
         self.init_frames = init_frames // frameskip
         self.max_timesteps = None if max_timesteps is None else max_timesteps // frameskip
+        self.gray_scale_keepdim = gray_scale_keepdim and (not rgb_observations)
 
         # define the action space
         action_dict = {}
@@ -75,7 +80,10 @@ class CraftiumEnv(Env):
         action_dict[ACTION_ORDER[-1]] = Box(low=-1, high=1, shape=(2,), dtype=np.float32)
         self.action_space = Dict(action_dict)
 
-        self.observation_space = Box(low=0, high=255, shape=(obs_width, obs_height, 3), dtype=np.uint8)
+        # define the observation space
+        n_chan = 3 if rgb_observations else 1
+        shape = (obs_width, obs_height, n_chan) if gray_scale_keepdim else (obs_width, obs_height)
+        self.observation_space = Box(low=0, high=255, shape=shape, dtype=np.uint8)
 
         assert render_mode is None or render_mode in self.metadata["render_modes"]
         self.render_mode = render_mode
@@ -86,6 +94,7 @@ class CraftiumEnv(Env):
             img_height=self.obs_height,
             port=tcp_port,
             listen_timeout=mt_listen_timeout,
+            rgb_imgs=rgb_observations,
         )
 
         # handles the MT configuration and process
@@ -105,6 +114,7 @@ class CraftiumEnv(Env):
             pipe_proc=pipe_proc,
             mt_port=mt_port,
             frameskip=frameskip,
+            rgb_frames=rgb_observations,
         )
 
         self.last_observation = None  # used in render if "rgb_array"
@@ -161,6 +171,9 @@ class CraftiumEnv(Env):
             self.mt_chann.send([0]*21, 0, 0)  # nop action
 
         observation, _reward, _term = self.mt_chann.receive()
+        if not self.gray_scale_keepdim:
+            observation = observation[:, :, 0]
+
         self.last_observation = observation
 
         info = self._get_info()
@@ -191,6 +204,9 @@ class CraftiumEnv(Env):
 
         # receive the new info from minetest
         observation, reward, termination = self.mt_chann.receive()
+        if not self.gray_scale_keepdim:
+            observation = observation[:, :, 0]
+
         self.last_observation = observation
 
         info = self._get_info()

@@ -92,13 +92,13 @@ static PyObject* server_listen(PyObject* self, PyObject* args) {
 
 
 static PyObject* server_recv(PyObject* self, PyObject* args) {
-  int connfd, n_bytes, obs_width, obs_height, n_read;
+  int connfd, n_bytes, obs_width, obs_height, n_read, n_channels;
   double reward;
   char *buff;
 
-  if (!PyArg_ParseTuple(args, "iiii", &connfd, &n_bytes, &obs_width, &obs_height)) {
+  if (!PyArg_ParseTuple(args, "iiiii", &connfd, &n_bytes, &obs_width, &obs_height, &n_channels)) {
     PyErr_SetString(PyExc_TypeError,
-                    "Arguments must be 4 integers: connection's fd, num. of bytes to read, obs. width, and obs. height.");
+                    "Arguments must be 5 integers: connection's fd, num. of bytes to read, obs. width and height, and num. channels.");
     return NULL;
   }
 
@@ -123,7 +123,7 @@ static PyObject* server_recv(PyObject* self, PyObject* args) {
   PyObject* py_reward = PyFloat_FromDouble(reward);
 
   // Create the numpy array of the image
-  npy_intp dims[3] = {obs_width, obs_height, 3};
+  npy_intp dims[3] = {obs_width, obs_height, n_channels};
   PyObject* array = PyArray_SimpleNewFromData(3, dims, NPY_UINT8, buff);
   if (!array) {
     PyErr_SetString(PyExc_RuntimeError, "Failed to create NumPy array");
