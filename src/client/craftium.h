@@ -11,6 +11,20 @@
 #include <arpa/inet.h>
 #include "../settings.h"
 
+
+inline char actions[26];
+
+/*
+
+  Frameskip
+  ~~~~~~~~~
+
+*/
+inline int frameskip_count = 0;
+// The value of this variable is set in the Client::startPyConn
+// method according to the frameskip setting
+inline int frameskip = 0;
+
 /*
 
   "Virtual" keyboard input handling

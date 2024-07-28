@@ -157,6 +157,9 @@ Client::Client(
 
 void Client::startPyConn()
 {
+    // Get the frameskip parameter from the settings
+    frameskip = g_settings->getU32("frameskip");
+
     // Get the craftium port from the config file
     py_port = g_settings->getU32("craftium_port");
 
@@ -200,71 +203,82 @@ void Client::startPyConn()
 }
 
 void Client::pyConnStep() {
-    char actions[26];
+    // NOTE: the `actions` array is defined in craftium.h
     int n_send, n_recv, W, H, obs_rwd_buffer_size;
     u32 c; // stores the RGBA pixel color
 
-    /* Take the screenshot */
-    irr::video::IVideoDriver *driver = m_rendering_engine->get_video_driver();
-    irr::video::IImage* const raw_image = driver->createScreenShot();
+    frameskip_count++;
 
-    /* Get the dimensions of the image */
-    auto dims = raw_image->getDimension();
-    W = dims.Width;
-    H = dims.Height;
+    if (frameskip_count == frameskip) {
+        /* Take the screenshot */
+        irr::video::IVideoDriver *driver = m_rendering_engine->get_video_driver();
+        irr::video::IImage* const raw_image = driver->createScreenShot();
 
-    /*
-      W*H*3 for the WxH RGB image, +8 for the reward value (a double),
-      and +1 for the episode termination flag
-    */
-    obs_rwd_buffer_size = W*H*3 + 8 + 1;
+        /* Get the dimensions of the image */
+        auto dims = raw_image->getDimension();
+        W = dims.Width;
+        H = dims.Height;
 
-    /* If obs_rwd_buffer is not initialized, allocate memory for it now */
-    if (!obs_rwd_buffer) {
-        obs_rwd_buffer = (unsigned char*) malloc(obs_rwd_buffer_size);
-    }
+        /*
+          W*H*3 for the WxH RGB image, +8 for the reward value (a double),
+          and +1 for the episode termination flag
+        */
+        obs_rwd_buffer_size = W*H*3 + 8 + 1;
 
-    if (!raw_image)
-        return;
-
-    /* Copy RGB image into a flat u8 array (obs_rwd_buffer) */
-    int i = 0;
-    for (int w=0; w<W; w++) {
-        for (int h=0; h<H; h++) {
-            c = raw_image->getPixel(w, h).color;
-            obs_rwd_buffer[i] = (c>>16) & 0xff;  // R
-            obs_rwd_buffer[i+1] = (c>>8) & 0xff; // G
-            obs_rwd_buffer[i+2] = c & 0xff;      // B
-            i = i + 3;
+        /* If obs_rwd_buffer is not initialized, allocate memory for it now */
+        if (!obs_rwd_buffer) {
+            obs_rwd_buffer = (unsigned char*) malloc(obs_rwd_buffer_size);
         }
-    }
 
-    /* Encode the reward (double) as  8 bytes at the end of the buffer */
-    char *rewardBytes = (char*)&g_reward;
-    for (int j=0; j<8; j++) {
-        obs_rwd_buffer[i] = rewardBytes[j];
-        i++;
-    }
+        if (!raw_image)
+            return;
 
-    /* Reset the reward for the next iteration if needed */
-    if (g_reward_reset) {
-        g_reward_reset = false;
-        g_reward = g_reward_reset_value;
-    }
+        /* Copy RGB image into a flat u8 array (obs_rwd_buffer) */
+        int i = 0;
+        for (int w=0; w<W; w++) {
+            for (int h=0; h<H; h++) {
+                c = raw_image->getPixel(w, h).color;
+                obs_rwd_buffer[i] = (c>>16) & 0xff;  // R
+                obs_rwd_buffer[i+1] = (c>>8) & 0xff; // G
+                obs_rwd_buffer[i+2] = c & 0xff;      // B
+                i = i + 3;
+            }
+        }
 
-    /* Encode the termination signal */
-    if (g_termination) {
-        g_termination = false;  /* Reset the flag to false */
-        obs_rwd_buffer[i] = 1;
+        /* Encode the reward (double) as  8 bytes at the end of the buffer */
+        char *rewardBytes = (char*)&g_reward;
+        for (int j=0; j<8; j++) {
+            obs_rwd_buffer[i] = rewardBytes[j];
+            i++;
+        }
+
+        /* Reset the reward for the next iteration if needed */
+        if (g_reward_reset) {
+            g_reward_reset = false;
+            g_reward = g_reward_reset_value;
+        }
+
+        /* Encode the termination signal */
+        if (g_termination) {
+            g_termination = false;  /* Reset the flag to false */
+            obs_rwd_buffer[i] = 1;
+        } else {
+            obs_rwd_buffer[i] = 0;
+        }
+
+        /* Send the obs_rwd_buffer over TCP to Python */
+        n_send = send(py_sockfd, obs_rwd_buffer, obs_rwd_buffer_size, 0);
+
+        /* Receive a buffer of bytes with the actions to take */
+        n_recv = recv(py_sockfd, &actions, sizeof(actions), 0);
+
+        frameskip_count = 0;
+
     } else {
-        obs_rwd_buffer[i] = 0;
+        // Set recv & send bytes to > 0 to avoid reporting errors in frameskips
+        n_recv = 1;
+        n_send = 1;
     }
-
-    /* Send the obs_rwd_buffer over TCP to Python */
-    n_send = send(py_sockfd, obs_rwd_buffer, obs_rwd_buffer_size, 0);
-
-    /* Receive a buffer of bytes with the actions to take */
-    n_recv = recv(py_sockfd, &actions, sizeof(actions), 0);
 
     virtual_key_presses[KeyType::FORWARD] = actions[0];
     virtual_key_presses[KeyType::BACKWARD] = actions[1];

@@ -31,6 +31,7 @@ class Minetest():
             minetest_conf: dict[str, Any] = dict(),
             pipe_proc: bool = True,
             mt_port: Optional[int] = None,
+            frameskip: int = 1,
     ):
         self.pipe_proc = pipe_proc
 
@@ -66,6 +67,7 @@ class Minetest():
             # fov=self.fov_y,
 
             craftium_port=tcp_port,
+            frameskip=frameskip,
 
             # port used for MT's internal client<->server comm.
             port=port,
