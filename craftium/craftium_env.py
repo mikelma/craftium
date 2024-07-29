@@ -61,7 +61,7 @@ class CraftiumEnv(Env):
             mt_listen_timeout: int = 10_000,
             mt_port: Optional[int] = None,
             frameskip: int = 1,
-            rgb_observations: bool = False,
+            rgb_observations: bool = True,
             gray_scale_keepdim: bool = False,
     ):
         super(CraftiumEnv, self).__init__()
@@ -70,7 +70,8 @@ class CraftiumEnv(Env):
         self.obs_height = obs_height
         self.init_frames = init_frames // frameskip
         self.max_timesteps = None if max_timesteps is None else max_timesteps // frameskip
-        self.gray_scale_keepdim = gray_scale_keepdim and (not rgb_observations)
+        self.gray_scale_keepdim = gray_scale_keepdim
+        self.rgb_observations = rgb_observations
 
         # define the action space
         action_dict = {}
@@ -81,8 +82,12 @@ class CraftiumEnv(Env):
         self.action_space = Dict(action_dict)
 
         # define the observation space
-        n_chan = 3 if rgb_observations else 1
-        shape = (obs_width, obs_height, n_chan) if gray_scale_keepdim else (obs_width, obs_height)
+        shape = [obs_width, obs_height]
+        if rgb_observations:
+            shape.append(3)
+        elif gray_scale_keepdim:
+            shape.append(1)
+
         self.observation_space = Box(low=0, high=255, shape=shape, dtype=np.uint8)
 
         assert render_mode is None or render_mode in self.metadata["render_modes"]
@@ -171,7 +176,7 @@ class CraftiumEnv(Env):
             self.mt_chann.send([0]*21, 0, 0)  # nop action
 
         observation, _reward, _term = self.mt_chann.receive()
-        if not self.gray_scale_keepdim:
+        if not self.gray_scale_keepdim and not self.rgb_observations:
             observation = observation[:, :, 0]
 
         self.last_observation = observation
@@ -204,7 +209,7 @@ class CraftiumEnv(Env):
 
         # receive the new info from minetest
         observation, reward, termination = self.mt_chann.receive()
-        if not self.gray_scale_keepdim:
+        if not self.gray_scale_keepdim and not self.rgb_observations:
             observation = observation[:, :, 0]
 
         self.last_observation = observation

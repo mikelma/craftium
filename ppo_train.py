@@ -41,6 +41,7 @@ class Args:
     """whether to use Gymnasium's async vector environment or not (disabled by default)"""
     mt_wd: str = "./"
     """Directory where the Minetest working directories will be created (defaults to the current one)"""
+    frameskip: int = 4
 
     # Algorithm specific arguments
     env_id: str = "Craftium/ChopTree-v0"
@@ -87,11 +88,13 @@ class Args:
     """the number of iterations (computed in runtime)"""
 
 
-def make_env(env_id, idx, capture_video, run_name, mt_port, mt_wd):
+def make_env(env_id, idx, capture_video, run_name, mt_port, mt_wd, frameskip):
     def thunk():
         craftium_kwargs = dict(
             run_dir_prefix=mt_wd,
             mt_port=mt_port,
+            frameskip=frameskip,
+            rgb_observations=False,
         )
         if capture_video and idx == 0:
             env = gym.make(env_id, render_mode="rgb_array", **craftium_kwargs)
@@ -106,7 +109,7 @@ def make_env(env_id, idx, capture_video, run_name, mt_port, mt_wd):
         #     env = FireResetEnv(env)
         # env = ClipRewardEnv(env)
         # env = gym.wrappers.ResizeObservation(env, (84, 84))
-        env = gym.wrappers.GrayScaleObservation(env)
+        # env = gym.wrappers.GrayScaleObservation(env)
         env = gym.wrappers.FrameStack(env, 4)
         return env
 
@@ -152,7 +155,7 @@ if __name__ == "__main__":
     args = tyro.cli(Args)
     args.batch_size = int(args.num_envs * args.num_steps)
     args.minibatch_size = int(args.batch_size // args.num_minibatches)
-    args.num_iterations = args.total_timesteps // args.batch_size
+    args.num_iterations = (args.total_timesteps // args.frameskip) // args.batch_size
     run_name = f"{args.env_id}__{args.exp_name}__{args.seed}__{int(time.time())}"
     if args.track:
         import wandb
@@ -183,7 +186,7 @@ if __name__ == "__main__":
     # env setup
     vector_env = gym.vector.SyncVectorEnv if not args.async_envs else gym.vector.AsyncVectorEnv
     envs = vector_env(
-        [make_env(args.env_id, i, args.capture_video, run_name, 49155+i, args.mt_wd) for i in range(args.num_envs)],
+        [make_env(args.env_id, i, args.capture_video, run_name, 49155+i, args.mt_wd, args.frameskip) for i in range(args.num_envs)],
     )
 
     assert isinstance(envs.single_action_space, gym.spaces.Discrete), "only discrete action space is supported"
@@ -214,7 +217,7 @@ if __name__ == "__main__":
             optimizer.param_groups[0]["lr"] = lrnow
 
         for step in range(0, args.num_steps):
-            global_step += args.num_envs
+            global_step += args.num_envs * args.frameskip
             obs[step] = next_obs
             dones[step] = next_done
 
