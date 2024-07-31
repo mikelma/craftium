@@ -14,7 +14,13 @@ cd craftium
 sudo apt install g++ make libc6-dev cmake libpng-dev libjpeg-dev libgl1-mesa-dev libsqlite3-dev libogg-dev libvorbis-dev libopenal-dev libcurl4-gnutls-dev libfreetype6-dev zlib1g-dev libgmp-dev libjsoncpp-dev libzstd-dev libluajit-5.1-dev gettext libsdl2-dev
 ```
 
-Once Minetest's dependencies are installed, check that `setuptools` is updated and run the installation command in the craftium repo's directory:
+Besides these libraries, craftium requires Python's header files to build a dedicated Python module implemented in C (`mt_server`). In Debian/Ubuntu (the name of the package might slightly differ depending on the distro):
+
+```bash
+sudo apt install python3-dev
+```
+
+Once system dependencies are installed, check that `setuptools` is updated and run the installation command in the craftium repo's directory:
 
 ```bash
 pip install -U setuptools
