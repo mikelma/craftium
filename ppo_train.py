@@ -42,6 +42,11 @@ class Args:
     mt_wd: str = "./"
     """Directory where the Minetest working directories will be created (defaults to the current one)"""
     frameskip: int = 4
+    """Number of frames to skip between observations"""
+    save_agent: bool = False
+    """Save the agent's model (disabled by default)"""
+    save_num: int = 5
+    """Number of times to save the agent's model"""
 
     # Algorithm specific arguments
     env_id: str = "Craftium/ChopTree-v0"
@@ -102,14 +107,6 @@ def make_env(env_id, idx, capture_video, run_name, mt_port, mt_wd, frameskip):
         else:
             env = gym.make(env_id, **craftium_kwargs)
         env = gym.wrappers.RecordEpisodeStatistics(env)
-        # env = NoopResetEnv(env, noop_max=30)
-        # env = MaxAndSkipEnv(env, skip=4)
-        # env = EpisodicLifeEnv(env)
-        # if "FIRE" in env.unwrapped.get_action_meanings():
-        #     env = FireResetEnv(env)
-        # env = ClipRewardEnv(env)
-        # env = gym.wrappers.ResizeObservation(env, (84, 84))
-        # env = gym.wrappers.GrayScaleObservation(env)
         env = gym.wrappers.FrameStack(env, 4)
         return env
 
@@ -174,6 +171,10 @@ if __name__ == "__main__":
         "hyperparameters",
         "|param|value|\n|-|-|\n%s" % ("\n".join([f"|{key}|{value}|" for key, value in vars(args).items()])),
     )
+
+    if args.save_agent:
+        agent_path = f"agents/{run_name}"
+        os.makedirs(agent_path, exist_ok=True)
 
     # TRY NOT TO MODIFY: seeding
     random.seed(args.seed)
@@ -334,6 +335,12 @@ if __name__ == "__main__":
         writer.add_scalar("losses/explained_variance", explained_var, global_step)
         print("SPS:", int(global_step / (time.time() - start_time)))
         writer.add_scalar("charts/SPS", int(global_step / (time.time() - start_time)), global_step)
+
+        if args.save_agent and \
+           (iteration % (args.num_iterations//args.save_num) == 0 \
+            or iteration == args.num_iterations):
+            print("Saving agent...")
+            torch.save(agent, f"{agent_path}/agent_step_{global_step}.pt")
 
     envs.close()
     writer.close()
