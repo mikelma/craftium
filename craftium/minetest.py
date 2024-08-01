@@ -62,8 +62,8 @@ class Minetest():
             screen_w=screen_w,
             screen_h=screen_h,
             vsync=False,
-            fps_max=1000,
-            fps_max_unfocused=1000,
+            fps_max=4000,
+            fps_max_unfocused=4000,
             undersampling=1,
             # fov=self.fov_y,
 
