@@ -20,7 +20,7 @@ The player spawns in a dense forest with many trees, equipped with a steel axe. 
 
 - **Action space:** `Discrete(8)` (`nop`, `forward`, `jump`, `dig` (used to chop), `mouse x+`, `mouse x-`, `mouse y+`, `mouse y-`)
 
-- **Default episode length:** 500
+- **Default episode length:** 2000
 
 - **Reward range:** {0.0, 1.0}
 
@@ -38,7 +38,7 @@ The player is placed at one end of a closed room. In the other half of the room,
 
 - **Action space:** `Discrete(4)` (`nop`, `forward`, `mouse x+`, `mouse x-`)
 
-- **Default episode length:** 500
+- **Default episode length:** 2000
 
 - **Reward range:** {-1}
 
@@ -56,7 +56,7 @@ The same as `Craftium/Room-v0` but in a smaller room, resulting in a considerabl
 
 - **Action space:** `Discrete(4)` (`nop`, `forward`, `mouse x+`, `mouse x-`)
 
-- **Default episode length:** 200
+- **Default episode length:** 1000
 
 - **Reward range:** {-1}
 
@@ -74,7 +74,7 @@ In this environment, the player spawns in a closed cave illuminated with torches
 
 - **Action space:** `Discrete(7)` (`nop`, `forward`, `jump`, `mouse x+`, `mouse x-`, `mouse y+`, `mouse y-`)
 
-- **Default episode length:** 500
+- **Default episode length:** 3000
 
 - **Reward range:** [-8.8, 24.5]
 
@@ -92,6 +92,6 @@ The player is spawned in a closed cage with a spider inside it. The player is eq
 
 - **Action space:** `Discrete(10)` (`nop`, `forward`, `left`, `right`, `jump`, `dig` (attack), `mouse x+`, `mouse x-`, `mouse y+`, `mouse y-`)
 
-- **Default episode length:** 2000
+- **Default episode length:** 4000
 
 - **Reward range:** {0.0, 1.0}

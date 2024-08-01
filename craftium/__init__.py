@@ -38,7 +38,7 @@ register(
         env_dir=os.path.join(root_path, "craftium-envs/room"),
         obs_width=64,
         obs_height=64,
-        max_timesteps=500,
+        max_timesteps=2000,
         init_frames=200,
     )
 )
@@ -61,7 +61,7 @@ register(
         env_dir=os.path.join(root_path, "craftium-envs/small-room"),
         obs_width=64,
         obs_height=64,
-        max_timesteps=200,
+        max_timesteps=1000,
         init_frames=200,
     )
 )
@@ -84,7 +84,7 @@ register(
         env_dir=os.path.join(root_path, "craftium-envs/chop-tree"),
         obs_width=64,
         obs_height=64,
-        max_timesteps=500,
+        max_timesteps=2000,
         init_frames=200,
         minetest_conf=dict(
             give_initial_stuff=True,
@@ -112,7 +112,7 @@ register(
         env_dir=os.path.join(root_path, "craftium-envs/speleo"),
         obs_width=64,
         obs_height=64,
-        max_timesteps=500,
+        max_timesteps=3000,
         init_frames=200,
     )
 )
@@ -136,7 +136,7 @@ register(
         env_dir=os.path.join(root_path, "craftium-envs/spiders-attack"),
         obs_width=64,
         obs_height=64,
-        max_timesteps=2_000,
+        max_timesteps=4000,
         init_frames=200,
         minetest_conf=dict(
             give_initial_stuff=True,
