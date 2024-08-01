@@ -90,6 +90,35 @@ static PyObject* server_listen(PyObject* self, PyObject* args) {
   return Py_BuildValue("i", connfd); // return connection's fd
 }
 
+#define BUFFER_SIZE 8192
+
+int read_large_from_socket(int socket_fd, char *buffer, int total_size) {
+    int bytes_received = 0;
+    int total_bytes = 0;
+
+    while (total_bytes < total_size) {
+        // Calculate remaining size to read
+        int bytes_to_read = (total_size - total_bytes) < BUFFER_SIZE ?
+                            (total_size - total_bytes) : BUFFER_SIZE;
+
+        bytes_received = recv(socket_fd, buffer + total_bytes, bytes_to_read, 0);
+
+        if (bytes_received < 0) {
+            // Handle error
+            if (errno == EINTR) {
+                continue;  // Interrupted by signal, retry recv
+            } else {
+                perror("recv failed");
+                return -1;  // Indicate failure
+            }
+        } else if (bytes_received == 0) {
+            // Connection closed by peer
+            break;
+        }
+        total_bytes += bytes_received;
+    }
+    return total_bytes;
+}
 
 static PyObject* server_recv(PyObject* self, PyObject* args) {
   int connfd, n_bytes, obs_width, obs_height, n_read, n_channels;
@@ -109,9 +138,14 @@ static PyObject* server_recv(PyObject* self, PyObject* args) {
     return NULL;
   }
 
-  n_read = read(connfd, buff, n_bytes);
-  if (n_read <= 0) {
-    PyErr_SetString(PyExc_ConnectionError, "Failed to receive from MT");
+  n_read = read_large_from_socket(connfd, buff, n_bytes);
+
+  if (n_read < 0) {
+    PyErr_SetString(PyExc_ConnectionError, "Failed to receive from MT, error reading from socket.");
+    return NULL;
+  } else if (n_read == 0) {
+    close(connfd);
+    PyErr_SetString(PyExc_ConnectionError, "Failed to receive from MT. Connection closed by peer: is MT down?");
     return NULL;
   }
 
