@@ -1,3 +1,9 @@
+-- Set the random seed
+seed = minetest.settings:get("fixed_map_seed")
+if seed ~= nil then
+   math.randomseed(seed)
+end
+
 max_spiders = 5
 num_spiders = 1
 dead_spiders = 0

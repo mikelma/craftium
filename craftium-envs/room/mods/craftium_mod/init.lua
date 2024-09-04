@@ -1,3 +1,9 @@
+-- Set the random seed
+seed = minetest.settings:get("fixed_map_seed")
+if seed ~= nil then
+   math.randomseed(seed)
+end
+
 function rand(lower, greater)
     return lower + math.random()  * (greater - lower);
 end
