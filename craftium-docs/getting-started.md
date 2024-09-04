@@ -82,5 +82,5 @@ These are some resources that might be interesting for your next steps!
 
 - [Creating custom environments](./creating-envs.md) page.
 - [Wrappers](./wrappers.md) page.
-- [Craftium's training example](https://github.com/mikelma/craftium/blob/main/train_agent.py).
-- [Craftium's environment implementations](https://github.com/mikelma/craftium/tree/main/craftium-envs).
+- [Craftium training example](https://github.com/mikelma/craftium/blob/main/sb3_train.py).
+- [Craftium environment implementation](https://github.com/mikelma/craftium/tree/main/craftium-envs).

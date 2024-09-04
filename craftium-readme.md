@@ -30,7 +30,7 @@
 
 - **Super extensible 🧩:** Minetest is built with modding in mind! The game engine is completely extensible using the [Lua](https://www.lua.org) programming language. Easily create mods to implement the environment that suits the needs of your research!
 
-- **Modern RL API 🤖:** Craftium slightly modifies Mintest to communicate with Python, and implements the well-known [Gymnasium](https://gymnasium.farama.org/index.html)'s [Env](https://gymnasium.farama.org/api/env/) API. This opens the door to a huge number of existing tools and libraries compatible with this API, such as [stable-baselines3](https://stable-baselines3.readthedocs.io) or [CleanRL](https://github.com/vwxyzjn/cleanrl).
+- **Modern RL API 🤖:** Craftium slightly modifies Mintest to communicate with Python, and implements the well-known [Gymnasium](https://gymnasium.farama.org/index.html)'s [Env](https://gymnasium.farama.org/api/env/) API. This opens the door to a huge number of existing tools and libraries compatible with this API, such as [stable-baselines3](https://stable-baselines3.readthedocs.io) or [CleanRL](https://github.com/vwxyzjn/cleanrl) (check [examples](#examples-) section!).
 
 - **Fully open source 🤠:** Craftium is based on the Minetest and Gymnasium, both open-source projects.
 
@@ -115,6 +115,14 @@ env.close()
 ```
 
 This example trains a CNN-based agent for 10K timesteps in the `Craftium/ChopTree-v0` environment using PPO. Additionally, we set up a custom logger that records training statistics to a CSV file inside the `logs-ppo-agent/` directory.
+
+## Examples 🤓
+
+By implementing Gymnasium's API, craftium supports many existing tools and libraries. Check these scripts for some examples:
+
+- **Stable baselines3**: [sb3_train.py](https://github.com/mikelma/craftium/blob/main/sb3_train.py)
+- **Ray rllib**: [sb3_train.py](https://github.com/mikelma/craftium/blob/main/ray_train.py)
+- **CleanRL**: [sb3_train.py](https://github.com/mikelma/craftium/blob/main/cleanrl_ppo_train.py)
 
 ## Citing Craftium 📑
 
