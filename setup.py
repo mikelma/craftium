@@ -1,8 +1,8 @@
 import os
 import shutil
-from setuptools import setup
 import subprocess
-
+from setuptools import setup, Extension
+import numpy
 
 def build_minetest():
     subprocess.check_call(["cmake", ".", "-DRUN_IN_PLACE=TRUE", "-DCMAKE_BUILD_TYPE=Release"])
@@ -44,4 +44,8 @@ setup_irr_shaders_dir()
 
 create_data_dir()
 
-setup()
+module = Extension("mt_server",
+                   sources=["mt_server.c"],
+                   include_dirs=[numpy.get_include()])
+
+setup(ext_modules=[module])

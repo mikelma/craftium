@@ -54,7 +54,7 @@ sudo apt install g++ make libc6-dev cmake libpng-dev libjpeg-dev libgl1-mesa-dev
 Additionally, `craftium` requires Python's header files to build a dedicated Python module implemented in C (`mt_server`):
 
 ```bash
-sudo apt install python3-dev
+sudo apt install libpython3-dev
 ```
 
 Then, check that `setuptools` is updated and run the installation command in the craftium repo's directory:
