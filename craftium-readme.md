@@ -122,7 +122,7 @@ By implementing Gymnasium's API, craftium supports many existing tools and libra
 
 - **Stable baselines3**: [sb3_train.py](https://github.com/mikelma/craftium/blob/main/sb3_train.py)
 - **Ray rllib**: [sb3_train.py](https://github.com/mikelma/craftium/blob/main/ray_train.py)
-- **CleanRL**: [sb3_train.py](https://github.com/mikelma/craftium/blob/main/cleanrl_ppo_train.py)
+- **CleanRL**: [cleanrl_ppo_train.py](https://github.com/mikelma/craftium/blob/main/cleanrl_ppo_train.py)
 
 ## Citing Craftium 📑
 
