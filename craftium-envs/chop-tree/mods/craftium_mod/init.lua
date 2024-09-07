@@ -23,8 +23,3 @@ minetest.register_on_joinplayer(function(player, _last_login)
             healthbar = false,
       })
 end)
-
-minetest.register_on_dieplayer(function(_player, _reason)
-      -- End episode if the player dies
-      set_termination()
-end)
