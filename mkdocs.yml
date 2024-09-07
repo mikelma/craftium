@@ -13,6 +13,7 @@ nav:
       - environments.md
       - Wrappers: wrappers.md
       - Extensions to the Lua API: lua_functions.md
+      - Lua environment cookbook: lua_env_cookbook.md
   - Misc:
     - troubleshooting.md
     - API Reference: reference.md

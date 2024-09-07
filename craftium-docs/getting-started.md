@@ -81,6 +81,7 @@ The rest of the parameters are optional, where the ones in the code section abov
 These are some resources that might be interesting for your next steps!
 
 - [Creating custom environments](./creating-envs.md) page.
+- [The Lua environment cookbook](./lua_env_cookbook.md).
 - [Wrappers](./wrappers.md) page.
 - [Craftium training example](https://github.com/mikelma/craftium/blob/main/sb3_train.py).
 - [Craftium environment implementation](https://github.com/mikelma/craftium/tree/main/craftium-envs).

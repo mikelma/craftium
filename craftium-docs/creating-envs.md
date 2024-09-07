@@ -234,6 +234,8 @@ As expected, the player and the box start with a random position on opposite sid
 
 This tutorial shows a step-by-step guide to implementing a custom environment in minetest. For the sake of clarity, not every detail has been covered in this tutorial, but additional information on how to develop more complex (or simple) environments can be found in the following links:
 
+- **[The Lua environment cookbook](./lua_env_cookbook.md)🧑‍🍳.** A collection of examples demonstrating how to accomplish many tasks from Lua mods in a Craftium environment.
+
 - **Craftium's environment implementations 🤖.** These are located in the [`craftium-envs`](https://github.com/mikelma/craftium/tree/main/craftium-envs) directory of the [repo](https://github.com/mikelma/craftium).
 
 - **Minetest's [modding book](https://rubenwardy.com/minetest_modding_book/en/index.html) 📖:** the best guide on how to create minetest mods.

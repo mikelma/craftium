@@ -17,12 +17,13 @@ Check the [installation](./installation.md) instructions and the [getting starte
 
 - **Super extensible 🧩:** Minetest is built with modding in mind! The game engine is completely extensible using the [Lua](https://www.lua.org) programming language. Easily create mods to implement the environment that suits the needs of your research!
 
+- **Extensive documentation 📚:** Craftium extensively [documents](https://craftium.readthedocs.io) how to [use](./getting-started.md) existing [environments](./environments.md) and [create](./creating-envs.md) new ones. The documentation also includes a low-level [reference](./reference.md) of the exported Python classes and gymnasium [Wrappers](./wrappers.md), [extensions to the Lua API](./lua_functions.md), and [code examples](./lua_env_cookbook.md). Moreover, Craftium greatly benefits from existing Minetest documentation like the [wiki](https://wiki.minetest.net/Main_Page), [reference](https://api.minetest.net/), and [modding book](https://rubenwardy.com/minetest_modding_book/en/basics/getting_started.html).
+
 - **Modern RL API 🤖:** Craftium slightly modifies Mintest to communicate with Python, and implements the well-known [Gymnasium](https://gymnasium.farama.org/index.html)'s [Env](https://gymnasium.farama.org/api/env/) API. This opens the door to a huge number of existing tools and libraries compatible with this API, such as [stable-baselines3](https://stable-baselines3.readthedocs.io) or [CleanRL](https://github.com/vwxyzjn/cleanrl).
 
 - **Fully open source 🤠:** Craftium is based on the Minetest and Gymnasium, both open-source projects.
 
 - **No more Java ⚡:** The Minecraft game is written in Java, not a very friendly language for clusters and high-performance applications. Contrarily, Minetest is written in C++, much more friendly for clusters, and highly performant!
-
 
 ## Citing Craftium
 
