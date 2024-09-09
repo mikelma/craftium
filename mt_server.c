@@ -157,7 +157,7 @@ static PyObject* server_recv(PyObject* self, PyObject* args) {
   PyObject* py_reward = PyFloat_FromDouble(reward);
 
   // Create the numpy array of the image
-  npy_intp dims[3] = {obs_width, obs_height, n_channels};
+  npy_intp dims[3] = {obs_height, obs_width, n_channels};
   PyObject* array = PyArray_SimpleNewFromData(3, dims, NPY_UINT8, buff);
   if (!array) {
     PyErr_SetString(PyExc_RuntimeError, "Failed to create NumPy array");
