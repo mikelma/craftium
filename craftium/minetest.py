@@ -145,6 +145,8 @@ class Minetest():
                 stderr=self.stderr,
                 stdout=self.stdout,
             )
+        else:
+            kwargs = dict()
 
         # set env vars
         for key, value in self.mt_env.items():
