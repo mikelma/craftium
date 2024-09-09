@@ -10,3 +10,6 @@
 [submodule "craftium-envs/common_mods/mobs"]
 	path = craftium-envs/common_mods/mobs
 	url = https://codeberg.org/tenplus1/mobs_redo.git
+[submodule "craftium-envs/voxel-libre2/games/mineclone2"]
+	path = craftium-envs/voxel-libre2/games/mineclone2
+	url = https://git.minetest.land/VoxeLibre/VoxeLibre.git
