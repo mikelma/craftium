@@ -3,7 +3,6 @@ from .wrappers import BinaryActionWrapper, DiscreteActionWrapper
 
 from gymnasium.envs.registration import register, WrapperSpec
 
-
 #
 # Environment registrations:
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -176,8 +175,48 @@ register(
             console_alpha=0,
             ### Graphics Effects
             smooth_lighting=False,
-            performance_tradeoffs=False,
+            performance_tradeoffs=True,
             enable_particles=False,
+        ),
+    )
+)
+
+register(
+    id="Craftium/ProcDungeons-v0",
+    entry_point="craftium.craftium_env:CraftiumEnv",
+    additional_wrappers=[
+        WrapperSpec(
+            name="DiscreteActionWrapper",
+            entry_point="craftium.wrappers:DiscreteActionWrapper",
+            kwargs=dict(
+                actions=["forward", "left", "right", "jump", "dig",
+                         "mouse x+", "mouse x-", "mouse y+", "mouse y-"],
+                mouse_mov=0.1,
+            ),
+        )
+    ],
+    # kwargs
+    kwargs=dict(
+        env_dir=os.path.join(root_path, "craftium-envs/procgen-dungeons"),
+        obs_width=64,
+        obs_height=64,
+        max_timesteps=5_000,
+        init_frames=200,
+        minetest_conf=dict(
+                minetest_conf = dict(
+                    # give_initial_stuff=True,
+                    # initial_stuff="default:sword_steel",
+                    # performance_tradeoffs=True,
+                    # monster_type_a="mobs_monster:sand_monster",
+                    # monster_type_b="mobs_monster:spider",
+                    # monster_type_c="mobs_monster:stone_monster",
+                    # monster_type_d="mobs_monster:mese_monster",
+                    # wall_material="default:obsidian",
+                    # objective_item="default:diamond",
+                    # rwd_objective=1.0,
+                    # rwd_kill_monster=0.5,
+                    # ascii_map=ascii_map,
+                )
         ),
     )
 )
