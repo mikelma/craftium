@@ -141,3 +141,153 @@ Additional information:
 - **Default episode length:** 10k
 
 - **Reward range:** {0.0, 2048}
+
+## Procedural environment generation
+
+<center>
+    <img src="../imgs/env_procdungeons.gif" align="center" width="200px">
+    <img src="../imgs/example_dungeon_2.png" align="center" width="220px">
+</center>
+
+This environment showcases the flexibility of Craftium by implementing procedurally generated environments and tasks. These environments can be used for less conventional RL research such as unsupervised environment design, continual RL, and meta-RL.
+
+In this case, craftium builds a dungeon environment specified by an ASCII map representation. ASCII maps can be defined by hand or (more interestingly) generated using a procedural map generator. Craftium provides a map generator class `RandomMapGen` (check the reference [here](./reference)), but you could use your own. Although the parameters of the reward function can be changed (see the section below), generally, the objective is to survive in a labyrinthic dungeon full of monstrous creatures and reach the objective (a diamond by default).
+
+This environment uses the following minetest mods: [`Superflat`](https://content.minetest.net/packages/srifqi/superflat/), [`mobs`](https://content.minetest.net/packages/TenPlus1/mobs/), and [`mobs_monster`](https://content.minetest.net/packages/TenPlus1/mobs_monster/). Refer to the mods' documentation for further information (e.g., available monsters).
+
+General information:
+
+- **Import:** `gymnasium.make("Craftium/ProcDungeons-v0")`
+
+- **Observation space:** `Box(0, 255, (64, 64, 3), uint8)` (64x64 RGB image)
+
+- **Action space:** `Discrete(10)` (`nop`, `forward`, `left`, `right`, `jump`, `dig` (attack), `mouse x+`, `mouse x-`, `mouse y+`, `mouse y-`)
+
+- **Default episode length:** 5_000
+
+- **Reward range:** Specified by the developer.
+
+!!! note "Environment initialization"
+
+    Instantiating the environment using the default parameters (i.e., `gymnasium.make("Craftium/ProcDungeons-v0")`) will always initialize the same default map. Use the `ascii_map` parameter to change the map (optionally, generate random maps with `ProcMapGen`).
+
+### Custom parameters
+
+This environment expects some parameters when initialized. These parameters are specified using the `mintest_conf` keyword parameter when calling `gymnasium.make`. Here's an example:
+
+
+```python
+import gymnasium as gym
+import craftium
+from craftium.extra.random_map_generator import RandomMapGen
+
+# Generate a random map using the random dungeon generator provided by craftium
+mapgen = RandomMapGen(
+        n_rooms=5,
+        dispersion=0.4,
+        room_min_size=5,
+        room_max_size=10,
+        max_monsters_per_room=5,
+        monsters={"a": 0.4, "b": 0.3, "c": 0.2, "d": 0.1},
+    )
+
+ascii_map = mapgen.rasterize(wall_height=5)  # Convert map into a string
+
+env = gym.make(
+    "Craftium/ProcDungeons-v0",
+    minetest_conf=dict(
+        give_initial_stuff=True,
+        initial_stuff="default:sword_steel",  # Provide the player with a sword
+        performance_tradeoffs=True,
+        # ProcDungeons-v0 specific:
+        monster_type_a="mobs_monster:sand_monster",
+        monster_type_b="mobs_monster:spider",
+        monster_type_c="mobs_monster:stone_monster",
+        monster_type_d="mobs_monster:mese_monster",
+        wall_material="default:steelblock",
+        objective_item="default:diamond",  # item to serve as objective
+        rwd_objective=1.0,  # Reward of collecting the objective item
+        rwd_kill_monster=0.5,  # Reward for killing a monster
+        ascii_map=ascii_map.replace("\n", "\\n"),
+    ),
+)
+```
+
+The required parameters are:
+
+| Parameter          | Description                                           |
+|--------------------|-------------------------------------------------------|
+| `monster_type_a`   | Name of the type `a` monster                          |
+| `monster_type_b`   | Name of the type `b` monster                          |
+| `monster_type_c`   | Name of the type `c` monster                          |
+| `monster_type_d`   | Name of the type `d` monster                          |
+| `wall_material`    | Name of the material to use for construction          |
+| `objective_item`   | `itemstring` of the item to use as objective          |
+| `rwd_objective`    | Reward for reaching the objective                     |
+| `rwd_kill_monster` | Reward for killing a monster                          |
+| `ascii_map`        | Map specification in ASCII format (see section below) |
+
+
+### Map format specification
+
+Maps are specified as ASCII strings, where each character has a different meaning. Maps are organized into layers, where the first layer is the floor layer, the second includes walls, the player, and monsters, and the rest of the layers are used for walls.
+
+| Character              | Meaning                               |
+|------------------------|---------------------------------------|
+| (whitespace)           | Air block                             |
+| `#`                    | Wall or floor block (`wall_material`) |
+| `@`                    | Player                                |
+| `O`                    | Objective item (`objective_item`)     |
+| `a`, `b`, `c`, and `d` | Monsters of types a, b, c, and d      |
+| `-`                    | New layer                             |
+
+An example map with three layers (walls have a height of 2 blocks). The map describes a dungeon of two rooms, with a single objective item and a monster of type `b`.
+
+```text
+##########
+##########
+##########
+##########
+##########
+      #####
+       #####
+       ##########
+       ##########
+       ##########
+       ##########
+       ##########
+-
+##########
+#        #
+#    @   #
+#        #
+######   #
+      #   #
+       #   #
+       #    #####
+       #        #
+       #    O   #
+       #      b #
+       ##########
+-
+##########
+#        #
+#        #
+#        #
+######   #
+      #   #
+       #   #
+       #    #####
+       #        #
+       #        #
+       #        #
+       ##########
+```
+
+This ASCII map is transalted to the following craftium environment:
+
+<center>
+    <img src="../imgs/example_dungeon_1.png" align="center" width="40%">
+</center>
+
+In this case, the `objective_item` was set to `default:diamond`, and `monster_type_b` to `mobs_monster:spider`.

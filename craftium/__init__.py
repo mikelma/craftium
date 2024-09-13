@@ -203,20 +203,91 @@ register(
         max_timesteps=5_000,
         init_frames=200,
         minetest_conf=dict(
-                minetest_conf = dict(
-                    # give_initial_stuff=True,
-                    # initial_stuff="default:sword_steel",
-                    # performance_tradeoffs=True,
-                    # monster_type_a="mobs_monster:sand_monster",
-                    # monster_type_b="mobs_monster:spider",
-                    # monster_type_c="mobs_monster:stone_monster",
-                    # monster_type_d="mobs_monster:mese_monster",
-                    # wall_material="default:obsidian",
-                    # objective_item="default:diamond",
-                    # rwd_objective=1.0,
-                    # rwd_kill_monster=0.5,
-                    # ascii_map=ascii_map,
-                )
+            give_initial_stuff=True,
+            initial_stuff="default:sword_steel",  # Provide the player with a sword
+            performance_tradeoffs=True,
+            # Monster types are a,b,c, and d (ordered in increasing difficulty)
+            monster_type_a="mobs_monster:sand_monster",
+            monster_type_b="mobs_monster:spider",
+            monster_type_c="mobs_monster:stone_monster",
+            monster_type_d="mobs_monster:mese_monster",
+            wall_material="default:steelblock",
+            objective_item="default:diamond",  # item to serve as objective
+            rwd_objective=1.0,  # Reward of collecting the objective item
+            rwd_kill_monster=0.5,  # Reward of killing a monster
+            ascii_map="""
+#######
+#######
+#######
+#######
+########
+#########
+##########
+     ######
+       ############
+        ###########
+         ##########
+         ##########
+         ##########
+         ##########
+         ##########
+         ##########
+         ##########
+-
+#######
+#     #
+# b   #
+#  O  #
+#      #
+#       #
+#####    #
+     ##   #
+       #   ########
+        #         #
+         #        #
+         #        #
+         #    @   #
+         #        #
+         #        #
+         #        #
+         ##########
+-
+#######
+#     #
+#     #
+#     #
+#      #
+#       #
+#####    #
+     ##   #
+       #   ########
+        #         #
+         #        #
+         #        #
+         #        #
+         #        #
+         #        #
+         #        #
+         ##########
+-
+#######
+#     #
+#     #
+#     #
+#      #
+#       #
+#####    #
+     ##   #
+       #   ########
+        #         #
+         #        #
+         #        #
+         #        #
+         #        #
+         #        #
+         #        #
+         ##########
+                    """.replace("\n", "\\n"),
         ),
     )
 )

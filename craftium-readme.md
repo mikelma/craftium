@@ -28,7 +28,7 @@
 
 ## Features ✨
 
-- **Super extensible 🧩:** Minetest is built with modding in mind! The game engine is completely extensible using the [Lua](https://www.lua.org) programming language. Easily create mods to implement the environment that suits the needs of your research!
+- **Super extensible 🧩:** Minetest is built with modding in mind! The game engine is completely extensible using the [Lua](https://www.lua.org) programming language. Easily create mods to implement the environment that suits the needs of your research! See [environments](https://craftium.readthedocs.io/en/latest/environments/) for a showcase of what is possible with craftium.
 
 - **Extensive documentation 📚:** Craftium extensively [documents](https://craftium.readthedocs.io) how to [use](https://craftium.readthedocs.io/en/latest/getting-started/) existing [environments](https://craftium.readthedocs.io/en/latest/environments) and [create](https://craftium.readthedocs.io/en/latest/creating-envs/) new ones. The documentation also includes a low-level [reference](https://craftium.readthedocs.io/en/latest/reference/) of the exported Python classes and gymnasium [Wrappers](https://craftium.readthedocs.io/en/latest/wrappers/), [extensions to the Lua API](https://craftium.readthedocs.io/en/latest/lua_functions/), and [code examples](https://craftium.readthedocs.io/en/latest/lua_env_cookbook/). Moreover, Craftium greatly benefits from existing Minetest documentation like the [wiki](https://wiki.minetest.net/Main_Page), [reference](https://api.minetest.net/), and [modding book](https://rubenwardy.com/minetest_modding_book/en/basics/getting_started.html).
 

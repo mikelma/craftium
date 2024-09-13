@@ -95,3 +95,13 @@ minetest.register_on_dignode(function(pos, node)
   end
 end)
 ```
+
+## Set player's initial position
+
+```lua
+minetest.register_on_joinplayer(function(player, _last_login)
+      player:set_pos({x = x, y = y, z = z})
+end)
+```
+
+Where `{x = x, y = y, z = z}` are minetest world coordinates (see [Coordinates](https://wiki.minetest.net/Coordinates) in the wiki).

@@ -5,6 +5,15 @@
 <img src="imgs/craftium_logo.png" alt="Craftium logo" width="350" align="right">
 </center>
 
+<p align="left">
+  <img src="../imgs/env_chop_tree.gif" width="60" align="center">
+  <img src="../imgs/env_room.gif" width="60" align="center">
+  <img src="../imgs/env_procdungeons.gif" width="63", align="center">
+  <img src="../imgs/env_speleo.gif" width="60" align="center">
+  <img src="../imgs/env_spiders_attack.gif" width="60", align="center">
+</p>
+
+
 Craftium is a fully open-source platform for creating Reinforcement Learning (RL) environents and tasks that provides a [Gymnasium](https://gymnasium.farama.org/index.html) wrapper for the [Minetest](https://www.minetest.net/) voxel game engine.
 
 Check the [installation](./installation.md) instructions and the [getting started](./getting-started.md) pages to start using craftium!
@@ -15,7 +24,7 @@ Check the [installation](./installation.md) instructions and the [getting starte
 
 ## Features ✨
 
-- **Super extensible 🧩:** Minetest is built with modding in mind! The game engine is completely extensible using the [Lua](https://www.lua.org) programming language. Easily create mods to implement the environment that suits the needs of your research!
+- **Super extensible 🧩:** Minetest is built with modding in mind! The game engine is completely extensible using the [Lua](https://www.lua.org) programming language. Easily create mods to implement the environment that suits the needs of your research! See [environments](./environments.md) for a showcase of what is possible with craftium.
 
 - **Extensive documentation 📚:** Craftium extensively [documents](https://craftium.readthedocs.io) how to [use](./getting-started.md) existing [environments](./environments.md) and [create](./creating-envs.md) new ones. The documentation also includes a low-level [reference](./reference.md) of the exported Python classes and gymnasium [Wrappers](./wrappers.md), [extensions to the Lua API](./lua_functions.md), and [code examples](./lua_env_cookbook.md). Moreover, Craftium greatly benefits from existing Minetest documentation like the [wiki](https://wiki.minetest.net/Main_Page), [reference](https://api.minetest.net/), and [modding book](https://rubenwardy.com/minetest_modding_book/en/basics/getting_started.html).
 
