@@ -1,19 +1,27 @@
 # API Reference
 
-# CraftiumEnv
+::: craftium.make_dungeon_env
+    handler: python
+    options:
+        show_root_heading: true
+        heading_level: 3
 
 ::: craftium.craftium_env.CraftiumEnv
-
-<br>
-
-# BinaryActionWrapper
+    handler: python
+    options:
+        show_root_heading: true
 
 ::: craftium.wrappers.BinaryActionWrapper
-
-# DiscreteActionWrapper
+    handler: python
+    options:
+        show_root_heading: true
 
 ::: craftium.wrappers.DiscreteActionWrapper
-
-# RandomMapGen
+    handler: python
+    options:
+        show_root_heading: true
 
 ::: craftium.extra.random_map_generator.RandomMapGen
+    handler: python
+    options:
+        show_root_heading: true

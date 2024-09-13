@@ -6,11 +6,11 @@
 </center>
 
 <p align="left">
-  <img src="../imgs/env_chop_tree.gif" width="60" align="center">
-  <img src="../imgs/env_room.gif" width="60" align="center">
-  <img src="../imgs/env_procdungeons.gif" width="63", align="center">
-  <img src="../imgs/env_speleo.gif" width="60" align="center">
-  <img src="../imgs/env_spiders_attack.gif" width="60", align="center">
+  <img src="imgs/env_chop_tree.gif" width="60" align="center">
+  <img src="imgs/env_room.gif" width="60" align="center">
+  <img src="imgs/env_procdungeons.gif" width="63", align="center">
+  <img src="imgs/env_speleo.gif" width="60" align="center">
+  <img src="imgs/env_spiders_attack.gif" width="60", align="center">
 </p>
 
 

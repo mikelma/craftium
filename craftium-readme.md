@@ -118,6 +118,20 @@ env.close()
 
 This example trains a CNN-based agent for 10K timesteps in the `Craftium/ChopTree-v0` environment using PPO. Additionally, we set up a custom logger that records training statistics to a CSV file inside the `logs-ppo-agent/` directory.
 
+Craftium is not only limited to "typical" RL scenarios, its versatility makes it the ideal platform for meta-RL, open-ended learning, continual and lifelong RL, or unsupervised environment design. As a showcase, Craftium provides open-world and procedurally generated tasks (see [environments](https://craftium.readthedocs.io/en/latest/environments/) for more info).
+
+This code snippet initializes a procedurally generated dungeon environment with 5 rooms and a maximum number of 4 monsters per room:
+```python
+env, map_str = craftium.make_dungeon_env(
+    mapgen_kwargs=dict(
+        n_rooms=5,
+        max_monsters_per_room=5,
+    ),
+    return_map_str=True,
+)
+print(map_str.split("-")[1])
+```
+
 ## Examples 🤓
 
 By implementing Gymnasium's API, craftium supports many existing tools and libraries. Check these scripts for some examples:

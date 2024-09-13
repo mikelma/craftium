@@ -12,18 +12,20 @@ class RandomMapGen():
     :param room_min_size: Minimum size (both height and width) of the room.
     :param room_max_size: Maximum size (both height and width) of the room.
     :param dispersion: Affects the _distance between the rooms.
+    :param min_monsters_per_room: Minimum number of monsters per room.
+    :param max_monsters_per_room: Maximum number of monsters per room.
     :param monsters: A dictionary with the `a`, `b`, `c`, and `d` keys (refers to the type of the monster), where values are the probability of spawning a monster of that type. Types are sorted from `a` less dangerous to, `d`, more.
     :param monsters_in_player_spawn: If set to `True`, monsters can spawn in the same room as the player.
     """
     def __init__(
             self,
-            n_rooms: int = 3,
-            room_min_size: int = 10,
-            room_max_size: int = 30,
+            n_rooms: int = 4,
+            room_min_size: int = 7,
+            room_max_size: int = 15,
             dispersion: float = 1.,
             min_monsters_per_room: int = 0,
             max_monsters_per_room: int = 5,
-            monsters: dict[str, float] = {"a": 0.2, "b": 0.3, "c": 0.3, "d": 0.2},
+            monsters: dict[str, float] = {"a": 0.4, "b": 0.3, "c": 0.2, "d": 0.1},
             monsters_in_player_spawn: bool = False,
     ):
         assert room_min_size >= 5, "Minimum room size must be >= 5"
@@ -114,7 +116,8 @@ class RandomMapGen():
         monster_type_indices = -np.arange(1, len(monster_probs)+1)
         monster_locs = []
         for room in rooms:
-            if not monsters_in_player_spawn and self._box_center(room) == self.player_pos:
+            if (not monsters_in_player_spawn
+                and self._box_center(room) == self.player_pos) or max_monsters_per_room == 0:
                 continue
             # number of monsters in this room
             n = np.random.randint(min_monsters_per_room, max_monsters_per_room)
@@ -167,6 +170,10 @@ class RandomMapGen():
             D += 2*dy
 
     def rasterize(self, wall_height=2):
+        """Converts the generated map into an ASCII string.
+
+        :params wall_height: Height of the walls of the dungeon.
+        """
         assert wall_height >= 1, "Wall height must be >= 1"
         ncols, nrows = self.rooms[:, :, 0].max(), self.rooms[:, :, 1].max()
         m = np.zeros((nrows, ncols), dtype=np.int8)

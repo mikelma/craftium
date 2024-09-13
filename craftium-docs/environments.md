@@ -151,7 +151,7 @@ Additional information:
 
 This environment showcases the flexibility of Craftium by implementing procedurally generated environments and tasks. These environments can be used for less conventional RL research such as unsupervised environment design, continual RL, and meta-RL.
 
-In this case, craftium builds a dungeon environment specified by an ASCII map representation. ASCII maps can be defined by hand or (more interestingly) generated using a procedural map generator. Craftium provides a map generator class `RandomMapGen` (check the reference [here](./reference)), but you could use your own. Although the parameters of the reward function can be changed (see the section below), generally, the objective is to survive in a labyrinthic dungeon full of monstrous creatures and reach the objective (a diamond by default).
+In this case, craftium builds a dungeon environment specified by an ASCII map representation. ASCII maps can be defined by hand or (more interestingly) generated using a procedural map generator. Craftium provides a map generator class `RandomMapGen` (check the reference [here](./reference.md)), but you could use your own. Although the parameters of the reward function can be changed (see the section below), generally, the objective is to survive in a labyrinthic dungeon full of monstrous creatures and reach the objective (a diamond by default).
 
 This environment uses the following minetest mods: [`Superflat`](https://content.minetest.net/packages/srifqi/superflat/), [`mobs`](https://content.minetest.net/packages/TenPlus1/mobs/), and [`mobs_monster`](https://content.minetest.net/packages/TenPlus1/mobs_monster/). Refer to the mods' documentation for further information (e.g., available monsters).
 
@@ -167,9 +167,51 @@ General information:
 
 - **Reward range:** Specified by the developer.
 
-!!! note "Environment initialization"
+!!! warning "Environment initialization"
 
-    Instantiating the environment using the default parameters (i.e., `gymnasium.make("Craftium/ProcDungeons-v0")`) will always initialize the same default map. Use the `ascii_map` parameter to change the map (optionally, generate random maps with `ProcMapGen`).
+    Instantiating the environment using the default parameters (i.e., `gymnasium.make("Craftium/ProcDungeons-v0")`) will always initialize the same default map. Use the `ascii_map` parameter to change the map. You can (optionally) generate random maps with `ProcMapGen` or use the built-in `make_dungeon_env` function.
+
+For simplicity, craftium includes a built-in utility function (see [`make_dungeon_env`](./reference.md)) to generate this type of environments, avoiding bilerplate code. Here are some examples of how to use it:
+
+```python
+# Generate a random dungeon using the default values
+env = craftium.make_dungeon_env()
+
+
+# Make a random map, return it, and set the render_mode
+# of the CraftiumEnv to "human"
+env, map_str = craftium.make_dungeon_env(
+    return_map=True,
+    render_mode="human",
+)
+
+
+# Generate a random map using RandomMapGen and pass it to make_dungeon_env
+from craftium.extra.random_map_generator import RandomMapGen
+mapgen = RandomMapGen(n_rooms=10)
+ascii_map = mapgen.rasterize(wall_height=7)
+env = craftium.make_dungeon_env(ascii_map)
+
+
+# Generate a random dungeon, customizing RandomMapGen arguments,
+# changing the wall_material to obsidian, and modifying general
+# CraftiumEnv arguments
+env, map_str = craftium.make_dungeon_env(
+    mapgen_kwargs=dict(
+        n_rooms=2,
+        room_max_size=12,
+    ),
+    return_map_str=True,
+    render_mode="human",
+    obs_width=512,
+    obs_height=512,
+    minetest_conf=dict(
+        wall_material="default:obsidian",
+    ),
+)
+print(map_str)
+```
+
 
 ### Custom parameters
 
