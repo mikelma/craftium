@@ -333,3 +333,63 @@ This ASCII map is transalted to the following craftium environment:
 </center>
 
 In this case, the `objective_item` was set to `default:diamond`, and `monster_type_b` to `mobs_monster:spider`.
+
+## Continual RL
+
+Craftium also provides a task sequence for Continual Reinforcement Learning (CRL), built using the `Craftium/ProcDungeons-v0` procedural environment. In CRL, the agent faces a discrete sequence of tasks, where the agent only operates in one task at a time and the time in each task is limited. In this context, the agent's objective is to learn new tasks as efficiently as possible, using the knowledge generated in previously faced tasks to solve new ones.
+
+Craftium provides a ready-to-use sequence of tasks for CRL, but can also be used for curriculum learning or meta-R. Currently craftium ships with a single sequence, named `sequence0_25`, with 25 different tasks.
+
+Tasks can be loaded using the `load_task` function in `extras`:
+
+```python
+import craftium.extra.crl_dungeons as crl
+
+env = crl.load_task("sequence0_25", task_id=0)  # Load the first task from sequence0
+```
+
+Check the [reference](./reference.md) for more information on `load_task`. In the future, craftium might include other task sequences of different lengths and properties, but will also be accessible through the `load_task` function. This function also allows to preview a task by returning the ASCII format of the map. For example, to preview the map of the 6th task of `sequence0_25`:
+
+```python
+ascii_map = crl.load_task("sequence0_25", task_id=5, make_env=False, return_map=True)
+print(ascii_map.split("-")[1])
+```
+
+The output:
+
+```text
+#######
+#     #
+# a   #
+#     #
+#     #
+####   #
+    #   #
+     #   #
+      #   #####
+       #      #
+        #     #
+        #  @  #
+        #     #
+        ####   #
+            #   #
+             #   #
+              #   #
+               #   #
+                #   #####
+                 #      #
+                  # b   #
+                  #  O  #
+                  #     #
+                  #######
+```
+
+The map of this task consist of three vertically placed rooms. The agent starts from the center room, the upper room only contains a monster of type A, and the bottom room holds a type B monster and the objective item (`O` character).
+The rest of the tasks can be previewd using the same method, or can be directly accessed in the repository (check the single text [file](https://github.com/mikelma/craftium/tree/main/craftium/extra/sequence0_25) containing all the maps). The properties of each task in the sequence are given in the figures below:
+
+<center>
+    <img src="../imgs/sequence0_25_params.png" align="center" width="50%">
+    <img src="../imgs/sequence0_25_monsters.png" align="center" width="50%">
+</center>
+
+Note that the lower figure counts the number of monsters on the map,  but the maximum number of monsters per room has been set to 5 for the most difficult tasks, and lower for the rest (check the upper figure).

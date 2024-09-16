@@ -21,7 +21,19 @@
     options:
         show_root_heading: true
 
+::: craftium.extra
+    handler: python
+    options:
+        show_root_heading: true
+
 ::: craftium.extra.random_map_generator.RandomMapGen
     handler: python
     options:
         show_root_heading: true
+        heading_level: 3
+
+::: craftium.extra.crl_dungeons.load_task
+    handler: python
+    options:
+        show_root_heading: true
+        heading_level: 3
