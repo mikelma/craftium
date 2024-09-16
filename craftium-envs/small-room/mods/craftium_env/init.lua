@@ -1,7 +1,6 @@
 -- Set the random seed
-seed = minetest.settings:get("fixed_map_seed")
-if seed ~= nil then
-   math.randomseed(seed)
+if minetest.settings:has("fixed_map_seed") then
+   math.randomseed(minetest.settings:get("fixed_map_seed"))
 end
 
 function rand(lower, greater)

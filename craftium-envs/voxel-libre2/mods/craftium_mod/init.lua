@@ -1,4 +1,3 @@
-
 -- Names of the items included in the initial inventory
 init_tools = { "mcl_tools:axe_stone", "mcl_torches:torch 256" }
 

@@ -93,13 +93,14 @@ class Args:
     """the number of iterations (computed in runtime)"""
 
 
-def make_env(env_id, idx, capture_video, run_name, mt_port, mt_wd, frameskip):
+def make_env(env_id, idx, capture_video, run_name, mt_port, mt_wd, frameskip, seed):
     def thunk():
         craftium_kwargs = dict(
             run_dir_prefix=mt_wd,
             mt_port=mt_port,
             frameskip=frameskip,
             rgb_observations=False,
+            seed=seed,
         )
         if capture_video and idx == 0:
             env = gym.make(env_id, render_mode="rgb_array", **craftium_kwargs)
@@ -187,7 +188,7 @@ if __name__ == "__main__":
     # env setup
     vector_env = gym.vector.SyncVectorEnv if not args.async_envs else gym.vector.AsyncVectorEnv
     envs = vector_env(
-        [make_env(args.env_id, i, args.capture_video, run_name, 49155+i, args.mt_wd, args.frameskip) for i in range(args.num_envs)],
+        [make_env(args.env_id, i, args.capture_video, run_name, 49155+i, args.mt_wd, args.frameskip, args.seed) for i in range(args.num_envs)],
     )
 
     assert isinstance(envs.single_action_space, gym.spaces.Discrete), "only discrete action space is supported"
