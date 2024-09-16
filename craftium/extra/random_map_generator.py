@@ -12,8 +12,8 @@ class RandomMapGen():
     :param room_min_size: Minimum size (both height and width) of the room.
     :param room_max_size: Maximum size (both height and width) of the room.
     :param dispersion: Affects the _distance between the rooms.
-    :param min_monsters_per_room: Minimum number of monsters per room.
-    :param max_monsters_per_room: Maximum number of monsters per room.
+    :param min_monsters_per_room: Minimum number of monsters per room. If the minimum is set equal to the maximum, the number of monsters per room is fixed.
+    :param max_monsters_per_room: Maximum number of monsters per room. If the minimum is set equal to the maximum, the number of monsters per room is fixed.
     :param monsters: A dictionary with the `a`, `b`, `c`, and `d` keys (refers to the type of the monster), where values are the probability of spawning a monster of that type. Types are sorted from `a` less dangerous to, `d`, more.
     :param monsters_in_player_spawn: If set to `True`, monsters can spawn in the same room as the player.
     """
@@ -120,7 +120,10 @@ class RandomMapGen():
                 and self._box_center(room) == self.player_pos) or max_monsters_per_room == 0:
                 continue
             # number of monsters in this room
-            n = np.random.randint(min_monsters_per_room, max_monsters_per_room)
+            if min_monsters_per_room == max_monsters_per_room:
+                n = min_monsters_per_room
+            else:
+                n = np.random.randint(min_monsters_per_room, max_monsters_per_room)
             type_idx = np.random.choice(monster_type_indices, p=monster_probs)
             # compute al locations within a room that a monster can spawn
             places = []
