@@ -6,6 +6,7 @@ import os
 import random
 import time
 from dataclasses import dataclass
+from typing import Optional
 
 import gymnasium as gym
 import numpy as np
@@ -22,7 +23,7 @@ import craftium
 class Args:
     exp_name: str = os.path.basename(__file__)[: -len(".py")]
     """the name of this experiment"""
-    seed: int = 1
+    seed: Optional[int] = None
     """seed of the experiment"""
     torch_deterministic: bool = True
     """if toggled, `torch.backends.cudnn.deterministic=False`"""
@@ -185,7 +186,11 @@ if __name__ == "__main__":
     args.batch_size = int(args.num_envs * args.num_steps)
     args.minibatch_size = int(args.batch_size // args.num_minibatches)
     args.num_iterations = (args.total_timesteps // args.frameskip) // args.batch_size
-    run_name = f"{args.env_id}__{args.exp_name}__{args.seed}__{int(time.time())}"
+    t = int(time.time())
+    run_name = f"{args.env_id}__{args.exp_name}__{args.seed}__{t}"
+    if args.seed is None:
+        args.seed = t
+
     if args.track:
         import wandb
 
