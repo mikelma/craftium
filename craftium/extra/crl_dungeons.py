@@ -1,5 +1,5 @@
 from typing import Optional
-from random_map_generator import RandomMapGen
+from .random_map_generator import RandomMapGen
 import os
 from .. import make_dungeon_env
 
