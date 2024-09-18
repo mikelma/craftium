@@ -47,6 +47,8 @@ class Args:
     """Number of frames to skip between observations"""
     prev_model: Optional[str] = None
     """Path to the model trained in the previous task"""
+    mt_port: int = 49155
+    """TCP port used by Minetest server and client communication. Multiple envs will use successive ports."""
 
     # Algorithm specific arguments
     env_id: int = 0
@@ -93,12 +95,13 @@ class Args:
     """the number of iterations (computed in runtime)"""
 
 
-def make_env(env_id, idx, capture_video, run_name, mt_wd, frameskip, seed):
+def make_env(env_id, idx, capture_video, run_name, mt_port, mt_wd, frameskip, seed):
     def thunk():
         craftium_kwargs = dict(
             run_dir_prefix=mt_wd,
             frameskip=frameskip,
             rgb_observations=False,
+            mt_port=mt_port,
             seed=seed,
         )
         env = crl.load_task("sequence0_25", task_id=env_id, **craftium_kwargs)
@@ -185,7 +188,7 @@ if __name__ == "__main__":
     # env setup
     vector_env = gym.vector.SyncVectorEnv if not args.async_envs else gym.vector.AsyncVectorEnv
     envs = vector_env(
-        [make_env(args.env_id, i, args.capture_video, run_name, args.mt_wd, args.frameskip, args.seed) for i in range(args.num_envs)],
+        [make_env(args.env_id, i, args.capture_video, run_name, args.mt_port+i, args.mt_wd, args.frameskip, args.seed) for i in range(args.num_envs)],
     )
 
     assert isinstance(envs.single_action_space, gym.spaces.Discrete), "only discrete action space is supported"
