@@ -59,7 +59,7 @@ class CraftiumEnv(Env):
             tcp_port: Optional[int] = None,
             minetest_conf: dict[str, Any] = dict(),
             pipe_proc: bool = True,
-            mt_listen_timeout: int = 10_000,
+            mt_listen_timeout: int = 60_000,
             mt_port: Optional[int] = None,
             frameskip: int = 1,
             rgb_observations: bool = True,

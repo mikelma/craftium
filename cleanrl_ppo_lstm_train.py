@@ -104,6 +104,7 @@ def make_env(env_id, idx, capture_video, run_name, mt_port, mt_wd, frameskip, se
             mt_port=mt_port,
             frameskip=frameskip,
             rgb_observations=False,
+            mt_listen_timeout=300_000,
             seed=seed,
         )
         if capture_video and idx == 0:
