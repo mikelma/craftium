@@ -15,8 +15,8 @@ DEFAULT_PROCDUNGEONS_CONF = dict(
     monster_type_d="mobs_monster:mese_monster",
     wall_material="default:steelblock",
     objective_item="default:diamond",
-    rwd_objective=1.0,
-    rwd_kill_monster=0.5,
+    rwd_objective=100.0,
+    rwd_kill_monster=1.0,
 )
 
 

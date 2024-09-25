@@ -248,8 +248,8 @@ env = gym.make(
         monster_type_d="mobs_monster:mese_monster",
         wall_material="default:steelblock",
         objective_item="default:diamond",  # item to serve as objective
-        rwd_objective=1.0,  # Reward of collecting the objective item
-        rwd_kill_monster=0.5,  # Reward for killing a monster
+        rwd_objective=100.0,  # Reward of collecting the objective item
+        rwd_kill_monster=1.0,  # Reward for killing a monster
         ascii_map=ascii_map.replace("\n", "\\n"),
     ),
 )
