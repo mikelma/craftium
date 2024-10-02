@@ -1,33 +1,36 @@
--- Names of the items included in the initial inventory
+-- names of the items included in the initial inventory
 init_tools = { "mcl_tools:axe_stone", "mcl_torches:torch 256" }
 
 timeofday_step = 1 / 5000 -- day/night cycle lasts 5000 steps
 timeofday = 0.5 -- start episode at midday
 
--- Executed when the player joins the game
+-- executed when the player joins the game
 minetest.register_on_joinplayer(function(player, _last_login)
       minetest.set_timeofday(timeofday)
 
-      -- Disable HUD elements
+      -- disable HUD elements
       player:hud_set_flags({
             crosshair = false,
             basic_debug = false,
             chat = false,
       })
 
-      -- Setup initial inventory
+      -- setup initial inventory
       local inv = player:get_inventory()
       for i=1, #init_tools do
          inv:add_item("main", init_tools[i])
       end
+
+      -- set player's initial position
+      player:set_pos({x = 120, z = 92, y = 16.5 })
 end)
 
--- Turn on the termination flag if the agent dies
+-- turn on the termination flag if the agent dies
 minetest.register_on_dieplayer(function(ObjectRef, reason)
       set_termination()
 end)
 
--- Make game's time to match with learning timesteps
+-- make game's time match with learning timesteps
 minetest.register_globalstep(function(dtime)
       if timeofday > 1.0 then
          timeofday = 0.0
@@ -99,7 +102,7 @@ minetest.register_on_dignode(function(pos, node)
 
       -- check if we've enough resources to jump to the next stage
       if snext.current >= snext.req_num then
-         print(string.format("[STAGE] Stage '%s' starts", snext.name))
+         print(string.format("[STAGE] Stage '%s' starts", snext.name), os.date())
 
          -- provide one timestep reward
          set_reward_once(snext.reward, 0.0)
@@ -126,35 +129,25 @@ end)
 -- Hunt and Defend
 -- ~~~~~~~~~~~~~~~
 
-mob_setup = {
-   -- Defending
-   ["mobs_mc:zombie"] = { die_reward = 32.0 },
-   ["mobs_mc:skeleton"] = { die_reward = 64.0 },
-   ["mobs_mc:spider"] = { die_reward = 128.0 },
-   ["mobs_mc:cave_spider"] = { die_reward = 256.0 },
-   -- Hunting
-   ["mobs_mc:chicken"] = { die_reward = 16.0 },
-   ["mobs_mc:sheep"] = { die_reward = 32.0 },
-   ["mobs_mc:pig"] = { die_reward = 64.0 },
-   ["mobs_mc:cow"] = { die_reward = 128.0 },
-}
-
 for name, _ in pairs(mcl_mobs.spawning_mobs) do -- for all mobs that spawn
-   local setup = mob_setup[name]
    -- access its definition
-   local mod_def = minetest.registered_entities[name]
-   -- if the mob is considered for the environment
-   if setup ~= nil then
-      -- change on_die callback to provide reward
-      local old_fn = mod_def.on_die
-      mod_def.on_die = function(self)
-         print(">> [HUNT/DEFEND] Mob died:", name)
-         set_reward_once(setup.die_reward, 0.0)
-         if old_fn ~= nil then
-            old_fn(self)
-         end
+   local mob_def = minetest.registered_entities[name]
+   local mob_type = mob_def.type
+   local old_on_punch = mob_def.on_punch
+   mob_def.on_punch = function(self, puncher, time_from_last_punch, tool_capabilities, dir)
+      local damage = tool_capabilities.damage_groups
+            and tool_capabilities.damage_groups.fleshy or 1
+      -- provide a different reward for each type of punched mob
+      if mob_type == "monster" then
+         set_reward_once(damage, 0.0)
+      elseif mob_type == "animal" then
+         set_reward_once(damage*0.5, 0.0)
+      elseif mob_type == "npc" then
+         set_reward_once(-10.0, 0.0)
       end
-   else
-      mod_def.chance = 10000 -- Set an absurdly low spawining prob.
+      -- Call the original on_punch function
+      if old_on_punch ~= nil then
+         old_on_punch(self, puncher, time_from_last_punch, tool_capabilities, dir)
+      end
    end
 end
