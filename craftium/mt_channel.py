@@ -11,7 +11,6 @@ class MtChannel():
             self,
             img_width: int,
             img_height: int,
-            port: Optional[int] = None,
             listen_timeout: int = 2000,
             rgb_imgs: bool = True
     ):
