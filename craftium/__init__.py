@@ -1,4 +1,5 @@
 from .craftium_env import CraftiumEnv
+from .multiagent_env import MarlCraftiumEnv
 from .wrappers import BinaryActionWrapper, DiscreteActionWrapper
 
 from gymnasium.envs.registration import register, WrapperSpec

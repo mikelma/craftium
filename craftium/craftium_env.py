@@ -144,7 +144,7 @@ class CraftiumEnv(Env):
         self.timesteps = 0
 
         if self.mt_chann.is_open():
-            self.mt_chann.send_termination()
+            self.mt_chann.send_kill()
             self.mt_chann.close_conn()
             self.mt.close_pipes()
             self.mt.wait_close()
@@ -225,7 +225,7 @@ class CraftiumEnv(Env):
 
     def close(self):
         if self.mt_chann.is_open():
-            self.mt_chann.send_termination()
+            self.mt_chann.send_kill()
             self.mt_chann.close()
             self.mt.close_pipes()
             self.mt.wait_close()

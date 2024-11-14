@@ -206,6 +206,7 @@ void Client::pyConnStep() {
     // NOTE: the `actions` array is defined in craftium.h
     int n_send, n_recv, W, H, obs_rwd_buffer_size;
     u32 c; // stores the RGBA pixel color
+    bool kill;
 
     frameskip_count++;
 
@@ -372,8 +373,15 @@ void Client::pyConnStep() {
         exit(EXIT_FAILURE);
     }
 
+    /* Set termination to true only if a positive (true) termination flag is received */
     if (actions[25]) {
-        printf("[NOTE] Termination signal received, exiting...\n");
+        g_termination = true;
+    }
+
+    /* Check the kill flag. If soft_reset is not enabled, kill the current MT process */
+    kill = actions[26];
+    if (kill) {
+        printf("[INFO] Auto-kill signal received, exiting...\n");
         exit(0);
     }
 }

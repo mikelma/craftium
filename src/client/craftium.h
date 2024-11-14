@@ -12,7 +12,7 @@
 #include "../settings.h"
 
 
-inline char actions[26];
+inline char actions[27];
 
 /*
 
@@ -47,6 +47,10 @@ inline int sync_conn_fd = -1;
 inline int sync_port = -1;
 
 inline int syncServerInit() {
+    if (g_settings->getBool("multi_agent")) {
+        return 0;
+    }
+
     int server_fd;
     // ssize_t valread;
     struct sockaddr_in address;
@@ -98,6 +102,10 @@ inline int syncServerInit() {
 }
 
 inline int syncClientInit() {
+    if (g_settings->getBool("multi_agent")) {
+        return 0;
+    }
+
     int status;
     struct sockaddr_in serv_addr;
     if ((sync_client_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
@@ -130,6 +138,10 @@ inline int syncClientInit() {
 }
 
 inline void syncServerStep() {
+    if (g_settings->getBool("multi_agent")) {
+        return;
+    }
+
     if (sync_conn_fd == -1)
         syncServerInit();
 
@@ -141,10 +153,14 @@ inline void syncServerStep() {
 }
 
 inline void syncClientStep() {
+    if (g_settings->getBool("multi_agent")) {
+        return;
+    }
+
     if (sync_client_fd == -1)
         syncClientInit();
 
-    /* Send a dummy message of two bytes */
+    // Send a dummy message of two bytes
     if (send(sync_client_fd, "-", 2, 0) <= 0) {
         perror("[syncClientStep] Step failed");
         exit(EXIT_FAILURE);
