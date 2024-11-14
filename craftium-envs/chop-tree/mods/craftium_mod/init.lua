@@ -21,5 +21,6 @@ minetest.register_on_joinplayer(function(player, _last_login)
             hotbar = false,
             crosshair = false,
             healthbar = false,
+            chat = false,
       })
 end)
