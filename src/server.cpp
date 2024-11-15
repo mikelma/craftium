@@ -125,6 +125,9 @@ void *ServerThread::run()
 	while (!stopRequested()) {
 		ScopeProfiler spm(g_profiler, "Server::RunStep() (max)", SPT_MAX);
 
+                // Sync before computing t0, such that it does not affect the internal time (dtime)
+                syncServerStep();
+
 		u64 t0 = porting::getTimeUs();
 
 		const Server::StepSettings step_settings = m_server->getStepSettings();
@@ -614,8 +617,6 @@ void Server::step()
 
 void Server::AsyncRunStep(float dtime, bool initial_step)
 {
-        syncServerStep();
-
 	{
 		// Send blocks to clients
 		SendBlocks(dtime);
