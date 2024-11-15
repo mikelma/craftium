@@ -12,6 +12,8 @@ import numpy as np
 
 
 class MarlCraftiumEnv():
+    metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 30}
+
     def __init__(
             self,
             num_agents: int,
@@ -40,7 +42,7 @@ class MarlCraftiumEnv():
         self.obs_width = obs_width
         self.obs_height = obs_height
         self.init_frames = init_frames // frameskip
-        self.max_timesteps = None if max_timesteps is None else max_timesteps // frameskip
+        self.max_timesteps = None if max_timesteps is None else num_agents*max_timesteps // frameskip
         self.gray_scale_keepdim = gray_scale_keepdim
         self.rgb_observations = rgb_observations
 
@@ -96,7 +98,7 @@ class MarlCraftiumEnv():
                 client_name=f"agent{i}",
                 mt_server_port=self.mt_server.server_port,
                 run_dir_prefix=run_dir_prefix,
-                headless=render_mode != "human",
+                headless=i == 0 and render_mode != "human",
                 seed=seed,
                 sync_dir=env_dir,
                 screen_w=obs_width,
@@ -111,6 +113,7 @@ class MarlCraftiumEnv():
 
         self.last_observations = [None]*num_agents  # used in render if "rgb_array"
         self.timesteps = 0  # the timesteps counter
+        self.current_agent_id = 0
 
     def _get_infos(self):
         return [dict() for _ in range(self.num_agents)]
@@ -125,7 +128,7 @@ class MarlCraftiumEnv():
         if self.mt_server.proc is None:
             self.mt_server.start_process()
             # HACK wait for the server to initialize before launching the clients
-            print("* Waiting for MT server to initialize...")
+            print("* Waiting for MT server to initialize. This is only required in the first call to reset")
             time.sleep(5)  # TODO Use a an argument of the class instead of a constant
 
             for i in range(self.num_agents):
@@ -149,8 +152,8 @@ class MarlCraftiumEnv():
 
         else:  # soft reset
             for i in range(self.num_agents):
-                # send the terination flag to the MT client
-                self.mt_channs[i].send_termination()
+                # send a soft reset to the MT client
+                self.mt_channs[i].send_soft_reset()
                 # receive a new observation from minetest
                 observation, reward, _termination = self.mt_channs[i].receive()
                 if not self.gray_scale_keepdim and not self.rgb_observations:
@@ -162,8 +165,13 @@ class MarlCraftiumEnv():
 
         return observations, infos
 
-    def step(self, action: Any, agent_id: int):
+    def step(self, action):
         self.timesteps += 1
+
+        if self.current_agent_id == self.num_agents:
+            self.current_agent_id = 0
+        agent_id = self.current_agent_id
+        self.current_agent_id += 1
 
         # convert the action dict to a format to be sent to MT through mt_chann
         keys = [0]*21  # all commands (keys) except the mouse

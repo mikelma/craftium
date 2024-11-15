@@ -373,9 +373,9 @@ void Client::pyConnStep() {
         exit(EXIT_FAILURE);
     }
 
-    /* Set termination to true only if a positive (true) termination flag is received */
+    /* Set soft_reset only if the flag is true */
     if (actions[25]) {
-        g_termination = true;
+        g_soft_reset = true;
     }
 
     /* Check the kill flag. If soft_reset is not enabled, kill the current MT process */

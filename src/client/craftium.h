@@ -180,6 +180,7 @@ inline bool g_reward_reset = false;  /* Whether to reset the reward value after 
 inline double g_reward_reset_value = 0.0; /* The value to reset the reward to */
 
 inline bool g_termination = false; /* Global variable with the termination flag */
+inline bool g_soft_reset = false; /* Global variable with the termination flag */
 
 extern "C" {
 #include <lualib.h>
@@ -215,7 +216,18 @@ inline static int lua_set_termination(lua_State *L) {
     return 0; /* number of results */
 }
 
+inline static int lua_reset_termination(lua_State *L) {
+    g_termination = false;
+    g_soft_reset = false;
+    return 0; /* number of results */
+}
+
 inline static int lua_get_termination(lua_State *L) {
     lua_pushnumber(L, (int)g_termination);
+    return 1; /* number of results */
+}
+
+inline static int lua_get_soft_reset(lua_State *L) {
+    lua_pushnumber(L, (int)g_soft_reset);
     return 1; /* number of results */
 }

@@ -37,6 +37,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "lua_api/l_settings.h"
 #include "lua_api/l_client_sound.h"
 
+#include "../client/craftium.h"
+
 ClientScripting::ClientScripting(Client *client):
 	ScriptApiBase(ScriptingType::Client)
 {
@@ -49,6 +51,15 @@ ClientScripting::ClientScripting(Client *client):
 
 	lua_getglobal(L, "core");
 	int top = lua_gettop(L);
+
+        /* Functions to get/set the global reward and termination values */
+        lua_register(L, "set_reward", lua_set_reward);
+        lua_register(L, "set_reward_once", lua_set_reward_once);
+        lua_register(L, "get_reward", lua_get_reward);
+        lua_register(L, "set_termination", lua_set_termination);
+        lua_register(L, "reset_termination", lua_reset_termination);
+        lua_register(L, "get_termination", lua_get_termination);
+        lua_register(L, "get_soft_reset", lua_get_soft_reset);
 
 	lua_newtable(L);
 	lua_setfield(L, -2, "ui");

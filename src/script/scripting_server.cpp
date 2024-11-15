@@ -86,7 +86,9 @@ ServerScripting::ServerScripting(Server* server):
         lua_register(L, "set_reward_once", lua_set_reward_once);
         lua_register(L, "get_reward", lua_get_reward);
         lua_register(L, "set_termination", lua_set_termination);
+        lua_register(L, "reset_termination", lua_reset_termination);
         lua_register(L, "get_termination", lua_get_termination);
+        lua_register(L, "get_soft_reset", lua_get_soft_reset);
 
 	// Initialize our lua_api modules
 	InitializeModApi(L, top);

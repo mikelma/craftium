@@ -24,7 +24,7 @@ class MtChannel():
         self.connfd = None
 
         # pre-compute the number of bytes that we should receive from MT.
-        # the RGB image + 8 bytes of the reward + 1 of the termination flag
+        # the RGB image + 8 bytes of the reward + 1 of the soft-reset flag
         self.n_chan = 3 if rgb_imgs else 1
         self.rec_bytes = img_width*img_height*self.n_chan + 8 + 1
 
@@ -38,17 +38,17 @@ class MtChannel():
         )
         return img, reward, termination
 
-    def send(self, keys: list[int], mouse_x: int, mouse_y: int, terminate: bool = False, kill: bool = False):
+    def send(self, keys: list[int], mouse_x: int, mouse_y: int, soft_reset: bool = False, kill: bool = False):
         assert len(keys) == 21, f"Keys list must be of length 21 and is {len(keys)}"
 
         mouse = list(struct.pack("<h", mouse_x)) + list(struct.pack("<h", mouse_y))
 
-        b = bytes(keys + mouse + [int(terminate)] + [int(kill)])
+        b = bytes(keys + mouse + [int(soft_reset)] + [int(kill)])
 
         mt_server.server_send(self.connfd, b)
 
-    def send_termination(self):
-        self.send(keys=[0]*21, mouse_x=0, mouse_y=0, terminate=True)
+    def send_soft_reset(self):
+        self.send(keys=[0]*21, mouse_x=0, mouse_y=0, soft_reset=True)
 
     def send_kill(self):
         self.send(keys=[0]*21, mouse_x=0, mouse_y=0, kill=True)
