@@ -5,10 +5,14 @@
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <unistd.h>
+#include <arpa/inet.h>
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <arpa/inet.h>
+#include <semaphore.h>
+#include <fcntl.h>
+
 #include "../settings.h"
 
 
@@ -42,129 +46,109 @@ inline int virtual_mouse_y = 0;
   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 */
-inline int sync_client_fd = -1;
-inline int sync_conn_fd = -1;
-inline int sync_port = -1;
 
-inline int syncServerInit() {
-    if (g_settings->getBool("multi_agent")) {
-        return 0;
-    }
+inline char *srv_sem_name_A;
+inline char *srv_sem_name_B;
+inline sem_t *srv_sem_A = nullptr;
+inline sem_t *srv_sem_B = nullptr;
 
-    int server_fd;
-    // ssize_t valread;
-    struct sockaddr_in address;
-    // int opt = 1;
-    socklen_t addrlen = sizeof(address);
+inline char *cli_sem_name_A;
+inline char *cli_sem_name_B;
+inline sem_t *cli_sem_A = nullptr;
+inline sem_t *cli_sem_B = nullptr;
 
-    // Creating socket file descriptor
-    if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-        perror("[SyncServer] Socket creation failed");
+inline int syncServerInit()
+{
+    // Create the name of the semaphore based on the port number that commicates MT server and client
+    srv_sem_name_A = (char*)malloc(20 * sizeof(char));
+    srv_sem_name_B = (char*)malloc(20 * sizeof(char));
+    sprintf(srv_sem_name_A, "/crftA%d", g_settings->getU16("port"));
+    sprintf(srv_sem_name_B, "/crftB%d", g_settings->getU16("port"));
+
+    /*
+    printf("Creating semaphore with name '%s'\n", srv_sem_name_A);
+    printf("Creating semaphore with name '%s'\n", srv_sem_name_B);
+    */
+
+    // Create the sempaphores with an initial value of 1
+    if ((srv_sem_A = sem_open(srv_sem_name_A, O_CREAT, 0644, 0)) == SEM_FAILED) {
+        perror("[SyncServer] Failed to create semaphore A");
         exit(EXIT_FAILURE);
     }
 
-    address.sin_family = AF_INET;
-    address.sin_addr.s_addr = INADDR_ANY;
-    address.sin_port = htons(0); // let the OS choose an empty port
-
-    // Bind the server's socket to a port
-    if (bind(server_fd, (struct sockaddr*)&address,
-             sizeof(address))
-        < 0) {
-        perror("[SyncServer] Bind failed");
+    if ((srv_sem_B = sem_open(srv_sem_name_B, O_CREAT, 0644, 0)) == SEM_FAILED) {
+        perror("[SyncServer] Failed to create semaphore B");
         exit(EXIT_FAILURE);
     }
 
-    // Get the port that the server has connected to
-    struct sockaddr_in servaddr;
-    bzero(&servaddr, sizeof(servaddr));
-    socklen_t len = sizeof(servaddr);
-    getsockname(server_fd, (struct sockaddr *) &servaddr, &len);
-    // Set the value of the global `sync_port` variable,
-    // this is used in `syncClientInit` to know which port to connect to
-    sync_port = ntohs(servaddr.sin_port);
-
-    // Listen (blocking) for the client to connect
-    if (listen(server_fd, 3) < 0) {
-        perror("[SyncServer] Failed to listen");
-        exit(EXIT_FAILURE);
-    }
-
-    // Accept client's connection
-    if ((sync_conn_fd
-         = accept(server_fd, (struct sockaddr*)&address, &addrlen)) < 0) {
-        perror("[SyncServer] Connection accept error");
-        exit(EXIT_FAILURE);
-    }
-
-    // printf("=> Sync Server connected @ %d\n", sync_port);
     return 0;
 }
 
 inline int syncClientInit() {
-    if (g_settings->getBool("multi_agent")) {
-        return 0;
-    }
+    cli_sem_name_A = (char*)malloc(20 * sizeof(char));
+    cli_sem_name_B = (char*)malloc(20 * sizeof(char));
+    sprintf(cli_sem_name_A, "/crftA%d", g_settings->getU16("port"));
+    sprintf(cli_sem_name_B, "/crftB%d", g_settings->getU16("port"));
 
-    int status;
-    struct sockaddr_in serv_addr;
-    if ((sync_client_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-        perror("[SycClient] Socket creation error");
+    /*
+    printf("Creating semaphore with name '%s'\n", cli_sem_name_A);
+    printf("Creating semaphore with name '%s'\n", cli_sem_name_B);
+    */
+
+    if ((cli_sem_A = sem_open(cli_sem_name_A, 0)) == SEM_FAILED) {
+        perror("[SyncClient] Failed  to open semaphore A");
         exit(EXIT_FAILURE);
     }
 
-    serv_addr.sin_family = AF_INET;
-    serv_addr.sin_port = htons(sync_port);
-
-    // Convert IPv4 and IPv6 addresses from text to binary
-    // form
-    if (inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr)
-        <= 0) {
-        perror("[SycClient] Invalid address");
+    if ((cli_sem_B = sem_open(cli_sem_name_B, 0)) == SEM_FAILED) {
+        perror("[SyncClient] Failed  to open semaphore B");
         exit(EXIT_FAILURE);
     }
 
-    // Connect to the server @ sync_port
-    if ((status
-         = connect(sync_client_fd, (struct sockaddr*)&serv_addr,
-                   sizeof(serv_addr)))
-        < 0) {
-        perror("[SycClient] Connection failed");
-        exit(EXIT_FAILURE);
-    }
-
-    // printf("=> Sync Client connected @ %d\n", sync_port);
     return 0;
 }
 
 inline void syncServerStep() {
-    if (g_settings->getBool("multi_agent")) {
-        return;
-    }
+    // printf("<= SRV start\n");
 
-    if (sync_conn_fd == -1)
+    if (srv_sem_A == nullptr)
         syncServerInit();
 
-    char msg[2];
-    if (read(sync_conn_fd, msg, 2) <= 0) {
-        perror("[syncServerStep] Step failed");
+
+    if (sem_post(srv_sem_B) < 0) {
+        perror("[SyncServerStep] Error posting sem B");
         exit(EXIT_FAILURE);
     }
+
+    if (sem_wait(srv_sem_A) < 0) {
+        perror("[SyncServerStep] Error waiting sem A");
+        exit(EXIT_FAILURE);
+    }
+
+    // printf("=> SRV end\n");
 }
 
 inline void syncClientStep() {
-    if (g_settings->getBool("multi_agent")) {
-        return;
-    }
+    // printf("> CLI start\n");
 
-    if (sync_client_fd == -1)
-        syncClientInit();
+    if (cli_sem_A == nullptr)
+      syncClientInit();
 
-    // Send a dummy message of two bytes
-    if (send(sync_client_fd, "-", 2, 0) <= 0) {
-        perror("[syncClientStep] Step failed");
+    if (sem_post(cli_sem_A) < 0) {
+        perror("[SyncServerStep] Error posting sem A");
         exit(EXIT_FAILURE);
     }
+
+    if (sem_wait(cli_sem_B) < 0) {
+        perror("[SyncServerStep] Error waiting sem B");
+        exit(EXIT_FAILURE);
+    }
+
+    // if (g_settings->getBool("multi_agent")) {
+    //     return;
+    // }
+
+    // printf("< CLI end\n");
 }
 
 /*
