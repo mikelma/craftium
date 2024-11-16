@@ -39,7 +39,7 @@ class BinaryActionWrapper(ActionWrapper):
         self.action_space = MultiBinary(len(actions))
         self.mouse_mov = clip_mouse(mouse_mov)
 
-    def action(self, action):
+    def process(self, action):
         assert len(action) == len(self.actions), \
             f"Incorrect number of actions, got {len(action)} but expected {len(self.actions)}"
 
@@ -64,6 +64,12 @@ class BinaryActionWrapper(ActionWrapper):
 
         return res
 
+    def action(self, action):
+        if isinstance(action, list) or isinstance(action, np.ndarray):
+            return [self.process(act) for act in action]
+        return self.process(action)
+
+
 class DiscreteActionWrapper(ActionWrapper):
     """A Gymnasium `ActionWrapper` that translates craftium's `Dict` action space into a discretized action space [`Discrete`](https://gymnasium.farama.org/api/spaces/fundamental/#gymnasium.spaces.Discrete).
 
@@ -82,7 +88,7 @@ class DiscreteActionWrapper(ActionWrapper):
         self.action_space = Discrete(len(actions)+1)
         self.mouse_mov = clip_mouse(mouse_mov)
 
-    def action(self, action):
+    def process(self, action):
         assert action >= 0 and action <= len(self.actions), \
             f"Action out of bound, got {action} but expected 0 <= action <= {len(self.actions)}"
 
@@ -110,3 +116,8 @@ class DiscreteActionWrapper(ActionWrapper):
         res["mouse"] = mouse
 
         return res
+
+    def action(self, action):
+        if isinstance(action, list) or isinstance(action, np.ndarray):
+            return [self.process(act) for act in action]
+        return self.process(action)
