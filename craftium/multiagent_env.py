@@ -39,11 +39,12 @@ class MarlCraftiumEnv():
             seed: Optional[int] = None,
             sync_mode: bool = True,
     ):
+        assert num_agents > 1, "Number of agents lower than 2. Use CraftiumEnv for single agent environments."
         self.num_agents = num_agents
         self.obs_width = obs_width
         self.obs_height = obs_height
         self.init_frames = init_frames // frameskip
-        self.max_timesteps = None if max_timesteps is None else num_agents*max_timesteps // frameskip
+        self.max_timesteps = None if max_timesteps is None else max_timesteps // frameskip
         self.gray_scale_keepdim = gray_scale_keepdim
         self.rgb_observations = rgb_observations
 
@@ -56,7 +57,7 @@ class MarlCraftiumEnv():
         self.action_space = Dict(action_dict)
 
         # define the observation space
-        shape = [obs_width, obs_height]
+        shape = [num_agents, obs_width, obs_height]
         if rgb_observations:
             shape.append(3)
         elif gray_scale_keepdim:
@@ -118,8 +119,8 @@ class MarlCraftiumEnv():
         self.timesteps = 0  # the timesteps counter
         self.current_agent_id = 0
 
-    def _get_infos(self):
-        return [dict() for _ in range(self.num_agents)]
+    def _get_info(self):
+        return dict()
 
     def reset(self, **kwargs):
         self.timesteps = 0
@@ -164,11 +165,14 @@ class MarlCraftiumEnv():
                 observations.append(observation)
                 self.last_observations[i] = observation
 
-        infos = self._get_infos()
+        infos = self._get_info()
+
+        # stack the observations of each agent
+        observations = np.vstack([np.expand_dims(obs, 0) for obs in observations])
 
         return observations, infos
 
-    def step(self, action):
+    def step_agent(self, action):
         self.timesteps += 1
 
         if self.current_agent_id == self.num_agents:
@@ -196,11 +200,32 @@ class MarlCraftiumEnv():
             observation = observation[:, :, 0]
 
         self.last_observations[agent_id] = observation
-        info = self._get_infos()
+        info = self._get_info()
 
         truncated = self.max_timesteps is not None and self.timesteps >= self.max_timesteps
 
         return observation, reward, termination, truncated, info
+
+    def step(self, actions):
+        assert len(actions) == self.num_agents, f"The number of actions ({len(actions)}) must match with the number of agents ({self.num_agents})"
+
+        observations, rewards, terminations, truncations = [], [], [], []
+        infos = dict()
+        for agent_id in range(self.num_agents):
+            self.current_agent_id = agent_id
+            obs, rwd, trm, trc, inf = self.step_agent(actions[agent_id])
+            observations.append(obs)
+            rewards.append(rwd)
+            terminations.append(trm)
+            truncations.append(trc)
+            infos |= inf  # the | operator merges two dicts
+
+        # stack the observations of each agent
+        observations = np.vstack([np.expand_dims(obs, 0) for obs in observations])
+        rewards = np.array(rewards)
+        terminations = np.array(terminations)
+        truncations = np.array(truncations)
+        return observations, rewards, terminations, truncations, infos
 
     def render(self):
         if self.render_mode == "rgb_array":
