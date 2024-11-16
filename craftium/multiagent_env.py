@@ -37,6 +37,7 @@ class MarlCraftiumEnv():
             rgb_observations: bool = True,
             gray_scale_keepdim: bool = False,
             seed: Optional[int] = None,
+            sync_mode: bool = True,
     ):
         self.num_agents = num_agents
         self.obs_width = obs_width
@@ -88,6 +89,7 @@ class MarlCraftiumEnv():
             minetest_conf=mt_server_conf,
             pipe_proc=pipe_proc,
             mt_server_port=mt_server_port,
+            sync_mode=sync_mode,
         )
 
         # create a MT (client) instance for each agent
@@ -108,6 +110,7 @@ class MarlCraftiumEnv():
                 pipe_proc=pipe_proc,
                 frameskip=frameskip,
                 rgb_frames=rgb_observations,
+                sync_mode=sync_mode,
             )
             self.mt_clients.append(client)
 

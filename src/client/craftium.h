@@ -109,6 +109,10 @@ inline int syncClientInit() {
 }
 
 inline void syncServerStep() {
+    if (!g_settings->getBool("sync_env_mode")) {
+        return;
+    }
+
     // printf("<= SRV start\n");
 
     if (srv_sem_A == nullptr)
@@ -129,6 +133,9 @@ inline void syncServerStep() {
 }
 
 inline void syncClientStep() {
+    if (!g_settings->getBool("sync_env_mode")) {
+        return;
+    }
     // printf("> CLI start\n");
 
     if (cli_sem_A == nullptr)
@@ -143,10 +150,6 @@ inline void syncClientStep() {
         perror("[SyncServerStep] Error waiting sem B");
         exit(EXIT_FAILURE);
     }
-
-    // if (g_settings->getBool("multi_agent")) {
-    //     return;
-    // }
 
     // printf("< CLI end\n");
 }

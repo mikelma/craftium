@@ -33,6 +33,7 @@ class Minetest():
             mt_port: Optional[int] = None,
             frameskip: int = 1,
             rgb_frames: bool = True,
+            sync_mode: bool = False,
     ):
         self.pipe_proc = pipe_proc
 
@@ -75,7 +76,7 @@ class Minetest():
             port=port,
             remote_port=port,
 
-            multi_agent=False,
+            sync_env_mode=sync_mode,
 
             # Adapt HUD size to display size, based on (1024, 600) default
             # hud_scaling=self.display_size[0] / 1024,
@@ -231,6 +232,7 @@ class MTServerOnly():
             minetest_conf: dict[str, Any] = dict(),
             pipe_proc: bool = True,
             mt_server_port: Optional[int] = None,
+            sync_mode: bool = True,
     ):
         self.pipe_proc = pipe_proc
 
@@ -264,10 +266,12 @@ class MTServerOnly():
             port=self.server_port,
             remote_port=self.server_port,
 
-            multi_agent=True,
+            sync_env_mode=sync_mode,
 
             # Adapt HUD size to display size, based on (1024, 600) default
             # hud_scaling=self.display_size[0] / 1024,
+
+            dedicated_server_step = 1/60,
 
             # Attempt to improve performance. Impact unclear.
             server_map_save_interval=1000000,
@@ -423,6 +427,7 @@ class MTClientOnly():
             pipe_proc: bool = True,
             frameskip: int = 1,
             rgb_frames: bool = True,
+            sync_mode: bool = True,
     ):
         self.pipe_proc = pipe_proc
 
@@ -460,10 +465,12 @@ class MTClientOnly():
             port=mt_server_port,
             remote_port=mt_server_port,
 
-            multi_agent=True,
+            sync_env_mode=sync_mode,
 
             # Adapt HUD size to display size, based on (1024, 600) default
             # hud_scaling=self.display_size[0] / 1024,
+
+            dedicated_server_step = 1/60,
 
             # Attempt to improve performance. Impact unclear.
             server_map_save_interval=1000000,

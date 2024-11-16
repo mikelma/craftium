@@ -39,6 +39,7 @@ class CraftiumEnv(Env):
     :param rgb_observations: Whether to use RGB images or gray scale images as observations. Note that RGB images are slower to send from MT to python via TCP. By default RGB images are used.
     :param gray_scale_keepdim: If `True`, a singleton dimension will be added, i.e. observations are of the shape WxHx1. Otherwise, they are of shape WxH.
     :param seed: Random seed. Affects minetest's map generation and Lua's RNG (in mods).
+    :param sync_mode: If set to true, minetest's internal client and server steps are synchronized. This is useful for training models slower than realtime.
     """
     metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 30}
 
@@ -63,6 +64,7 @@ class CraftiumEnv(Env):
             rgb_observations: bool = True,
             gray_scale_keepdim: bool = False,
             seed: Optional[int] = None,
+            sync_mode: bool = False,
     ):
         super(CraftiumEnv, self).__init__()
 
@@ -119,6 +121,7 @@ class CraftiumEnv(Env):
             mt_port=mt_port,
             frameskip=frameskip,
             rgb_frames=rgb_observations,
+            sync_mode=sync_mode,
         )
 
         self.last_observation = None  # used in render if "rgb_array"
