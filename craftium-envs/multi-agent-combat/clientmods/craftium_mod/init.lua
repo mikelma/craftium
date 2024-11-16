@@ -4,7 +4,7 @@ mod_channel = nil
 minetest.register_globalstep(function(dtime)
       -- If soft-reset is requested by craftium, thoen send a message to
       -- the server to reset the environment
-      if get_soft_reset() == 1 then
+      if get_soft_reset() == 1 and mod_channel ~= nil then
          mod_channel:send_all(
             minetest.serialize({
                   agent = "server",
