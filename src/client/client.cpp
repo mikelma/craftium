@@ -210,90 +210,86 @@ void Client::pyConnStep() {
 
     frameskip_count++;
 
-    if (frameskip_count == frameskip) {
-        /* Take the screenshot */
-        irr::video::IVideoDriver *driver = m_rendering_engine->get_video_driver();
-        irr::video::IImage* const raw_image = driver->createScreenShot();
+    if (frameskip_count != frameskip)
+        return;
 
-        /* Get the dimensions of the image */
-        auto dims = raw_image->getDimension();
-        W = dims.Width;
-        H = dims.Height;
+    frameskip_count = 0;
 
-        /*
-          W*H*3 for the WxH RGB image, +8 for the reward value (a double),
-          and +1 for the episode termination flag
-        */
-        if (g_settings->getBool("rgb_frames")) {
-            obs_rwd_buffer_size = W*H*3 + 8 + 1; // full RGB images
-        } else {
-            obs_rwd_buffer_size = W*H + 8 + 1; // grayscale images
-        }
+    /* Take the screenshot */
+    irr::video::IVideoDriver *driver = m_rendering_engine->get_video_driver();
+    irr::video::IImage* const raw_image = driver->createScreenShot();
 
-        /* If obs_rwd_buffer is not initialized, allocate memory for it now */
-        if (!obs_rwd_buffer) {
-            obs_rwd_buffer = (unsigned char*) malloc(obs_rwd_buffer_size);
-        }
+    /* Get the dimensions of the image */
+    auto dims = raw_image->getDimension();
+    W = dims.Width;
+    H = dims.Height;
 
-        if (!raw_image)
-            return;
-
-        /* Copy RGB image into a flat u8 array (obs_rwd_buffer) */
-        int i = 0;
-        if (g_settings->getBool("rgb_frames")) {
-            for (int h=0; h<H; h++) {
-                for (int w=0; w<W; w++) {
-                    c = raw_image->getPixel(w, h).color;
-                    obs_rwd_buffer[i] = (c>>16) & 0xff;  // R
-                    obs_rwd_buffer[i+1] = (c>>8) & 0xff; // G
-                    obs_rwd_buffer[i+2] = c & 0xff;      // B
-                    i = i + 3;
-                }
-            }
-        } else {
-            for (int h=0; h<H; h++) {
-                for (int w=0; w<W; w++) {
-                    c = raw_image->getPixel(w, h).color;
-                    obs_rwd_buffer[i] = (((c>>16) & 0xff) / 3) + (((c>>8) & 0xff) / 3) + ((c & 0xff) / 3);
-                    i++;
-                }
-            }
-        }
-
-        /* Encode the reward (double) as  8 bytes at the end of the buffer */
-        char *rewardBytes = (char*)&g_reward;
-        for (int j=0; j<8; j++) {
-            obs_rwd_buffer[i] = rewardBytes[j];
-            i++;
-        }
-
-        /* Reset the reward for the next iteration if needed */
-        if (g_reward_reset) {
-            g_reward_reset = false;
-            g_reward = g_reward_reset_value;
-        }
-
-        /* Encode the termination signal */
-        if (g_termination) {
-            g_termination = false;  /* Reset the flag to false */
-            obs_rwd_buffer[i] = 1;
-        } else {
-            obs_rwd_buffer[i] = 0;
-        }
-
-        /* Send the obs_rwd_buffer over TCP to Python */
-        n_send = send(py_sockfd, obs_rwd_buffer, obs_rwd_buffer_size, 0);
-
-        /* Receive a buffer of bytes with the actions to take */
-        n_recv = recv(py_sockfd, &actions, sizeof(actions), 0);
-
-        frameskip_count = 0;
-
+    /*
+      W*H*3 for the WxH RGB image, +8 for the reward value (a double),
+      and +1 for the episode termination flag
+    */
+    if (g_settings->getBool("rgb_frames")) {
+        obs_rwd_buffer_size = W*H*3 + 8 + 1; // full RGB images
     } else {
-        // Set recv & send bytes to > 0 to avoid reporting errors in frameskips
-        n_recv = 1;
-        n_send = 1;
+        obs_rwd_buffer_size = W*H + 8 + 1; // grayscale images
     }
+
+    /* If obs_rwd_buffer is not initialized, allocate memory for it now */
+    if (!obs_rwd_buffer) {
+        obs_rwd_buffer = (unsigned char*) malloc(obs_rwd_buffer_size);
+    }
+
+    if (!raw_image)
+        return;
+
+    /* Copy RGB image into a flat u8 array (obs_rwd_buffer) */
+    int i = 0;
+    if (g_settings->getBool("rgb_frames")) {
+        for (int h=0; h<H; h++) {
+            for (int w=0; w<W; w++) {
+                c = raw_image->getPixel(w, h).color;
+                obs_rwd_buffer[i] = (c>>16) & 0xff;  // R
+                obs_rwd_buffer[i+1] = (c>>8) & 0xff; // G
+                obs_rwd_buffer[i+2] = c & 0xff;      // B
+                i = i + 3;
+            }
+        }
+    } else {
+        for (int h=0; h<H; h++) {
+            for (int w=0; w<W; w++) {
+                c = raw_image->getPixel(w, h).color;
+                obs_rwd_buffer[i] = (((c>>16) & 0xff) / 3) + (((c>>8) & 0xff) / 3) + ((c & 0xff) / 3);
+                i++;
+            }
+        }
+    }
+
+    /* Encode the reward (double) as  8 bytes at the end of the buffer */
+    char *rewardBytes = (char*)&g_reward;
+    for (int j=0; j<8; j++) {
+        obs_rwd_buffer[i] = rewardBytes[j];
+        i++;
+    }
+
+    /* Reset the reward for the next iteration if needed */
+    if (g_reward_reset) {
+        g_reward_reset = false;
+        g_reward = g_reward_reset_value;
+    }
+
+    /* Encode the termination signal */
+    if (g_termination) {
+        g_termination = false;  /* Reset the flag to false */
+        obs_rwd_buffer[i] = 1;
+    } else {
+        obs_rwd_buffer[i] = 0;
+    }
+
+    /* Send the obs_rwd_buffer over TCP to Python */
+    n_send = send(py_sockfd, obs_rwd_buffer, obs_rwd_buffer_size, 0);
+
+    /* Receive a buffer of bytes with the actions to take */
+    n_recv = recv(py_sockfd, &actions, sizeof(actions), 0);
 
     virtual_key_presses[KeyType::FORWARD] = actions[0];
     virtual_key_presses[KeyType::BACKWARD] = actions[1];
