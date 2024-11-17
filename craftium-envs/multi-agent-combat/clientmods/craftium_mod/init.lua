@@ -38,12 +38,14 @@ callback = function()
 
           local msg = minetest.deserialize(str_message)
 
-          if msg.agent ~= minetest.localplayer:get_name() then
+          if msg.agent == "server" then
              return
           end
 
-          if msg.reward ~= nil then
-             set_reward_once(msg.reward, 0.0)
+          if msg.agent == minetest.localplayer:get_name() then
+             set_reward_once(1.0, 0.0)
+          else
+             set_reward_once(-0.1, 0.0)
           end
 
           if msg.termination == true then

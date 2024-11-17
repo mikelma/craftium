@@ -63,7 +63,6 @@ minetest.register_on_punchplayer(function(player, hitter, time_from_last_punch, 
       channel:send_all(
          minetest.serialize({
                agent = hitter:get_player_name(),
-               reward = 1.0,
                termination = (player:get_hp() - 1) <= 5
          })
       )
