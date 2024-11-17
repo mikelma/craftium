@@ -20,7 +20,7 @@ class MarlCraftiumEnv():
             env_dir: os.PathLike,
             obs_width: int = 640,
             obs_height: int = 360,
-            init_frames: int = 2_000,
+            init_frames: int = 200,
             render_mode: Optional[str] = None,
             max_timesteps: Optional[int] = None,
             run_dir_prefix: Optional[os.PathLike] = None,
@@ -37,7 +37,9 @@ class MarlCraftiumEnv():
             rgb_observations: bool = True,
             gray_scale_keepdim: bool = False,
             seed: Optional[int] = None,
-            sync_mode: bool = True,
+            sync_mode: bool = False,
+            fps_max: int = 200,
+            pmul: Optional[int] = None,
     ):
         assert num_agents > 1, "Number of agents lower than 2. Use CraftiumEnv for single agent environments."
         self.num_agents = num_agents
@@ -91,6 +93,8 @@ class MarlCraftiumEnv():
             pipe_proc=pipe_proc,
             mt_server_port=mt_server_port,
             sync_mode=sync_mode,
+            fps_max=fps_max,
+            pmul=pmul,
         )
 
         # create a MT (client) instance for each agent
@@ -112,6 +116,8 @@ class MarlCraftiumEnv():
                 frameskip=frameskip,
                 rgb_frames=rgb_observations,
                 sync_mode=sync_mode,
+                fps_max=fps_max,
+                pmul=pmul,
             )
             self.mt_clients.append(client)
 

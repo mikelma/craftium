@@ -34,6 +34,8 @@ class Minetest():
             frameskip: int = 1,
             rgb_frames: bool = True,
             sync_mode: bool = False,
+            fps_max: int = 200,
+            pmul: Optional[None] = None,
     ):
         self.pipe_proc = pipe_proc
 
@@ -53,6 +55,10 @@ class Minetest():
 
         port = mt_port if mt_port is not None else random.randint(49152, 65535)
 
+        # set pmul to fps_max by default
+        if pmul is None:
+            pmul = fps_max
+
         config = dict(
             # Base config
             enable_sound=False,
@@ -63,8 +69,8 @@ class Minetest():
             screen_w=screen_w,
             screen_h=screen_h,
             vsync=False,
-            fps_max=4000,
-            fps_max_unfocused=4000,
+            fps_max=fps_max,
+            fps_max_unfocused=fps_max,
             undersampling=1,
             # fov=self.fov_y,
 
@@ -80,6 +86,15 @@ class Minetest():
 
             # Adapt HUD size to display size, based on (1024, 600) default
             # hud_scaling=self.display_size[0] / 1024,
+
+            # Physics
+            movement_acceleration_default = 3.0*pmul,
+            movement_acceleration_air = 2.0*pmul,
+            movement_acceleration_fast = 10.0*pmul,
+            movement_speed_walk = 4.0*pmul,
+            movement_speed_crouch = 1.35*pmul,
+            movement_speed_fast = 20.0*pmul,
+            movement_speed_climb = 3.0*pmul,
 
             # Attempt to improve performance. Impact unclear.
             server_map_save_interval=1000000,
@@ -232,7 +247,9 @@ class MTServerOnly():
             minetest_conf: dict[str, Any] = dict(),
             pipe_proc: bool = True,
             mt_server_port: Optional[int] = None,
-            sync_mode: bool = True,
+            sync_mode: bool = False,
+            fps_max: int = 200,
+            pmul: Optional[int] = None,
     ):
         self.pipe_proc = pipe_proc
 
@@ -249,6 +266,10 @@ class MTServerOnly():
 
         self.server_port = mt_server_port if mt_server_port is not None else random.randint(49152, 65535)
 
+        if pmul is None:
+            pmul = int(fps_max / 50)
+        pmul = max(1, pmul)  # should at least be 1
+
         config = dict(
             # Base config
             enable_sound=False,
@@ -257,8 +278,8 @@ class MTServerOnly():
             csm_restriction_flags=0,
             enable_mod_channels=True,
             vsync=False,
-            fps_max=4000,
-            fps_max_unfocused=4000,
+            fps_max=fps_max,
+            fps_max_unfocused=fps_max,
             undersampling=1,
             # fov=self.fov_y,
 
@@ -268,10 +289,14 @@ class MTServerOnly():
 
             sync_env_mode=sync_mode,
 
-            # Adapt HUD size to display size, based on (1024, 600) default
-            # hud_scaling=self.display_size[0] / 1024,
-
-            dedicated_server_step = 1/60,
+            # Physics
+            movement_acceleration_default=3.0*pmul,
+            movement_acceleration_air=2.0*pmul,
+            movement_acceleration_fast=10.0*pmul,
+            movement_speed_walk=4.0*pmul,
+            movement_speed_crouch=1.35*pmul,
+            movement_speed_fast=20.0*pmul,
+            movement_speed_climb=3.0*pmul,
 
             # Attempt to improve performance. Impact unclear.
             server_map_save_interval=1000000,
@@ -427,7 +452,9 @@ class MTClientOnly():
             pipe_proc: bool = True,
             frameskip: int = 1,
             rgb_frames: bool = True,
-            sync_mode: bool = True,
+            sync_mode: bool = False,
+            fps_max: int = 200,
+            pmul: Optional[int] = None,
     ):
         self.pipe_proc = pipe_proc
 
@@ -442,6 +469,10 @@ class MTClientOnly():
 
         print(f"==> Creating Minetest run directory: {self.run_dir}")
 
+        if pmul is None:
+            pmul = int(fps_max / 50)
+        pmul = max(1, pmul)  # should at least be 1
+
         config = dict(
             # Base config
             enable_sound=False,
@@ -452,8 +483,8 @@ class MTClientOnly():
             screen_w=screen_w,
             screen_h=screen_h,
             vsync=False,
-            fps_max=4000,
-            fps_max_unfocused=4000,
+            fps_max=fps_max,
+            fps_max_unfocused=fps_max,
             undersampling=1,
             # fov=self.fov_y,
 
@@ -467,10 +498,14 @@ class MTClientOnly():
 
             sync_env_mode=sync_mode,
 
-            # Adapt HUD size to display size, based on (1024, 600) default
-            # hud_scaling=self.display_size[0] / 1024,
-
-            dedicated_server_step = 1/60,
+            # Physics
+            movement_acceleration_default=3.0*pmul,
+            movement_acceleration_air=2.0*pmul,
+            movement_acceleration_fast=10.0*pmul,
+            movement_speed_walk=4.0*pmul,
+            movement_speed_crouch=1.35*pmul,
+            movement_speed_fast=20.0*pmul,
+            movement_speed_climb=3.0*pmul,
 
             # Attempt to improve performance. Impact unclear.
             server_map_save_interval=1000000,

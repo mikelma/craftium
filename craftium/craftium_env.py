@@ -65,6 +65,8 @@ class CraftiumEnv(Env):
             gray_scale_keepdim: bool = False,
             seed: Optional[int] = None,
             sync_mode: bool = False,
+            fps_max: int = 200,
+            pmul: Optional[None] = None,
     ):
         super(CraftiumEnv, self).__init__()
 
@@ -122,6 +124,8 @@ class CraftiumEnv(Env):
             frameskip=frameskip,
             rgb_frames=rgb_observations,
             sync_mode=sync_mode,
+            fps_max=fps_max,
+            pmul=pmul,
         )
 
         self.last_observation = None  # used in render if "rgb_array"
