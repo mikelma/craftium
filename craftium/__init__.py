@@ -93,7 +93,7 @@ register(
         env_dir=os.path.join(root_path, "craftium-envs/room"),
         obs_width=64,
         obs_height=64,
-        max_timesteps=2000,
+        max_timesteps=1000,
         init_frames=200,
     )
 )
@@ -116,7 +116,7 @@ register(
         env_dir=os.path.join(root_path, "craftium-envs/small-room"),
         obs_width=64,
         obs_height=64,
-        max_timesteps=1000,
+        max_timesteps=500,
         init_frames=200,
     )
 )
@@ -167,7 +167,7 @@ register(
         env_dir=os.path.join(root_path, "craftium-envs/speleo"),
         obs_width=64,
         obs_height=64,
-        max_timesteps=3000,
+        max_timesteps=2000,
         init_frames=200,
     )
 )
@@ -256,7 +256,7 @@ register(
         env_dir=os.path.join(root_path, "craftium-envs/procgen-dungeons"),
         obs_width=64,
         obs_height=64,
-        max_timesteps=5_000,
+        max_timesteps=4000,
         init_frames=200,
         minetest_conf=dict(
             give_initial_stuff=True,

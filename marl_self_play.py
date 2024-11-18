@@ -104,7 +104,7 @@ def make_env(fps_max, frameskip, mt_port, mt_wd):
             obs_width=64,
             obs_height=64,
             frameskip=frameskip,
-            max_timesteps=1000*frameskip,
+            max_timesteps=1000,
             rgb_observations=False,
             init_frames=200,
             sync_mode=False,

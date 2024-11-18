@@ -73,7 +73,7 @@ class CraftiumEnv(Env):
         self.obs_width = obs_width
         self.obs_height = obs_height
         self.init_frames = init_frames // frameskip
-        self.max_timesteps = None if max_timesteps is None else max_timesteps // frameskip
+        self.max_timesteps = max_timesteps
         self.gray_scale_keepdim = gray_scale_keepdim
         self.rgb_observations = rgb_observations
 
