@@ -167,7 +167,7 @@ register(
         env_dir=os.path.join(root_path, "craftium-envs/speleo"),
         obs_width=64,
         obs_height=64,
-        max_timesteps=2000,
+        max_timesteps=500,
         init_frames=200,
     )
 )
