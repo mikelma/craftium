@@ -50,6 +50,10 @@ class Args:
     """Number of times to save the agent's model"""
     mt_port: int = 49155
     """TCP port used by Minetest server and client communication. Multiple envs will use successive ports."""
+    fps_max: int = 200
+    """Target FPS to run the environment"""
+    pmul: Optional[int] = None
+    """Physics speed multiplier. Defaults to the default value of CraftiumEnv."""
 
     # Algorithm specific arguments
     env_id: str = "Craftium/ChopTree-v0"
@@ -96,7 +100,7 @@ class Args:
     """the number of iterations (computed in runtime)"""
 
 
-def make_env(env_id, idx, capture_video, run_name, mt_port, mt_wd, frameskip, seed):
+def make_env(env_id, idx, fps_max, pmul, capture_video, run_name, mt_port, mt_wd, frameskip, seed):
     def thunk():
         craftium_kwargs = dict(
             run_dir_prefix=mt_wd,
@@ -104,6 +108,8 @@ def make_env(env_id, idx, capture_video, run_name, mt_port, mt_wd, frameskip, se
             frameskip=frameskip,
             rgb_observations=False,
             seed=seed,
+            fps_max=fps_max,
+            pmul=pmul,
         )
         if capture_video and idx == 0:
             env = gym.make(env_id, render_mode="rgb_array", **craftium_kwargs)
@@ -195,7 +201,18 @@ if __name__ == "__main__":
     # env setup
     vector_env = gym.vector.SyncVectorEnv if not args.async_envs else gym.vector.AsyncVectorEnv
     envs = vector_env(
-        [make_env(args.env_id, i, args.capture_video, run_name, args.mt_port+i, args.mt_wd, args.frameskip, args.seed) for i in range(args.num_envs)],
+        [make_env(
+            args.env_id,
+            i,
+            args.fps_max,
+            args.pmul,
+            args.capture_video,
+            run_name,
+            args.mt_port+i,
+            args.mt_wd,
+            args.frameskip,
+            args.seed
+        ) for i in range(args.num_envs)],
     )
 
     assert isinstance(envs.single_action_space, gym.spaces.Discrete), "only discrete action space is supported"
