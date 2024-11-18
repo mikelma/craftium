@@ -95,6 +95,7 @@ register(
         obs_height=64,
         max_timesteps=1000,
         init_frames=200,
+        soft_reset=True,
     )
 )
 
@@ -118,6 +119,7 @@ register(
         obs_height=64,
         max_timesteps=500,
         init_frames=200,
+        soft_reset=True,
     )
 )
 

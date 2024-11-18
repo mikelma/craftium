@@ -40,6 +40,7 @@ class CraftiumEnv(Env):
     :param gray_scale_keepdim: If `True`, a singleton dimension will be added, i.e. observations are of the shape WxHx1. Otherwise, they are of shape WxH.
     :param seed: Random seed. Affects minetest's map generation and Lua's RNG (in mods).
     :param sync_mode: If set to true, minetest's internal client and server steps are synchronized. This is useful for training models slower than realtime.
+    :param soft_reset: If set to true, resets will have to be handled by the Lua mod and minetest won't be killed and rerun every call to restart. **IMPORTANT:** Only set this flag to `True` in environments that support this feature.
     """
     metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 30}
 
@@ -67,6 +68,7 @@ class CraftiumEnv(Env):
             sync_mode: bool = False,
             fps_max: int = 200,
             pmul: Optional[None] = None,
+            soft_reset: bool = False,
     ):
         super(CraftiumEnv, self).__init__()
 
@@ -76,6 +78,7 @@ class CraftiumEnv(Env):
         self.max_timesteps = max_timesteps
         self.gray_scale_keepdim = gray_scale_keepdim
         self.rgb_observations = rgb_observations
+        self.soft_reset = soft_reset
 
         # define the action space
         action_dict = {}
@@ -150,36 +153,39 @@ class CraftiumEnv(Env):
         super().reset(seed=seed)
         self.timesteps = 0
 
-        if self.mt_chann.is_open():
-            self.mt_chann.send_kill()
-            self.mt_chann.close_conn()
-            self.mt.close_pipes()
-            self.mt.wait_close()
+        if not self.soft_reset or not self.mt_chann.is_open():
+            if self.mt_chann.is_open():
+                self.mt_chann.send_kill()
+                self.mt_chann.close_conn()
+                self.mt.close_pipes()
+                self.mt.wait_close()
 
-        # start the new MT process
-        self.mt.start_process()
+            # start the new MT process
+            self.mt.start_process()
 
-        # open communication channel with minetest
-        try:
-            self.mt_chann.open_conn()
-        except Exception as e:
-            print("\n\x1b[1m[!] Error connecting to Minetest. Minetest probably failed to launch.")
-            print("  => Run's scratch directory should be available, containing stderr.txt and")
-            print("     stdout.txt useful for checking what went wrong.")
-            print("** Content of stderr.txt in the run's sratch directory:\x1b[0m")
-            print("~"*45, "\n")
-            with open(f"{self.mt.run_dir}/stderr.txt", "r") as f:
-                print(f.read())
-            print("~"*45)
-            print("\x1b[1mRaising catched exception (in case it's useful):\x1b[0m")
-            print("~"*45, "\n")
-            raise e
+            # open communication channel with minetest
+            try:
+                self.mt_chann.open_conn()
+            except Exception as e:
+                print("\n\x1b[1m[!] Error connecting to Minetest. Minetest probably failed to launch.")
+                print("  => Run's scratch directory should be available, containing stderr.txt and")
+                print("     stdout.txt useful for checking what went wrong.")
+                print("** Content of stderr.txt in the run's sratch directory:\x1b[0m")
+                print("~"*45, "\n")
+                with open(f"{self.mt.run_dir}/stderr.txt", "r") as f:
+                    print(f.read())
+                print("~"*45)
+                print("\x1b[1mRaising catched exception (in case it's useful):\x1b[0m")
+                print("~"*45, "\n")
+                raise e
 
-        # HACK skip some frames to let the game initialize
-        # TODO This "waiting" should be implemented in Minetest not in python
-        for _ in range(self.init_frames):
-            _observation, _reward, _term = self.mt_chann.receive()
-            self.mt_chann.send([0]*21, 0, 0)  # nop action
+            # HACK skip some frames to let the game initialize
+            # TODO This "waiting" should be implemented in Minetest not in python
+            for _ in range(self.init_frames):
+                _observation, _reward, _term = self.mt_chann.receive()
+                self.mt_chann.send([0]*21, 0, 0)  # nop action
+        else:
+            self.mt_chann.send_soft_reset()
 
         observation, _reward, _term = self.mt_chann.receive()
         if not self.gray_scale_keepdim and not self.rgb_observations:
