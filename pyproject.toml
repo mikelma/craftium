@@ -13,10 +13,11 @@ keywords = ["gymnasium", "minetest", "minecraft", "reinforcement learning"]
 dependencies = [
     "gymnasium==0.29.1",
     "PyYAML==6.0.1",
-    "stable_baselines3==2.3.2",
-    "torch==2.1.0",
-    "tyro==0.8.5",
 ]
+
+[project.optional-dependencies]
+# Packages needed to run the Deep RL examples
+examples = ["stable_baselines3==2.3.2", "torch==2.1.0", "tyro==0.8.5"]
 
 [tool.setuptools.packages.find]
 where = ["."]
