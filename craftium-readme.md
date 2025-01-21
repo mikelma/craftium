@@ -4,7 +4,7 @@
 
 <img src="../craftium-docs/imgs/craftium_logo.png" alt="Craftium logo" width="350" align="right">
 
-✨ *Imagine the features of Minecraft: open world, procedural generation, fully destructible voxel environments... but open source, without Java, easily extensible in [Lua](https://www.lua.org), and with the modern [Gymnasium API](https://gymnasium.farama.org/index.html) designed for RL... This is* **Craftium!** ✨
+✨ *Imagine the features of Minecraft: open world, procedural generation, fully destructible voxel environments... but open source, without Java, easily extensible in [Lua](https://www.lua.org), and with the modern [Gymnasium](https://gymnasium.farama.org/index.html) and [PettingZoo](https://pettingzoo.farama.org/) APIs for AI agent research... This is* **Craftium!** ✨
 
 **[[Docs](https://craftium.readthedocs.io/en/latest/)] [[GitHub](https://github.com/mikelma/craftium/)] [[Paper (ArXiv)](https://arxiv.org/abs/2407.03969)]**
 
@@ -15,12 +15,12 @@
   <img src="../craftium-docs/imgs/env_spiders_attack.gif" width="100", align="center">
 </p>
 
-[Craftium](https://craftium.readthedocs.io/en/latest/) is a fully open-source platform for creating Reinforcement Learning (RL) environments and tasks that provides a [Gymnasium](https://gymnasium.farama.org/index.html) wrapper for the [Minetest](https://www.minetest.net/) voxel game engine. Craftium forks Minetest to support:
+[Craftium](https://craftium.readthedocs.io/en/latest/) is a fully open-source platform for creating fast, rich, and diverse **single and multi-agent** environments. Craftium is based on the amazing [Minetest](https://www.minetest.net/) voxel game engine and the popular [Gymnasium](https://gymnasium.farama.org/index.html) and [PettingZoo](https://pettingzoo.farama.org/) APIs. Craftium forks Minetest to support:
 
-- Connecting to Craftium's Python process via TCP (sending observations, and other data; receiving action commands)
+- Connecting to Craftium's Python process (sending environment's data and receiving action commands)
 - Executing Craftium actions as keyboard and mouse controls.
 - Extesions to the Lua API for creating RL environments and tasks.
-- Minetest's client/server synchronization.
+- Minetest's client/server synchronization for slow agents (e.g., LLMs or VLMs).
 
 📚 Craftium's documentation can be found [here](https://craftium.readthedocs.io/en/latest/).
 
