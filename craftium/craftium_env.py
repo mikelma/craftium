@@ -85,7 +85,8 @@ class CraftiumEnv(Env):
         for act in ACTION_ORDER[:-1]:  # all actions except the last ("mouse")
             action_dict[act] = Discrete(2)  # 1/0: key pressed/not pressed
         # define the mouse action
-        action_dict[ACTION_ORDER[-1]] = Box(low=-1, high=1, shape=(2,), dtype=np.float32)
+        action_dict[ACTION_ORDER[-1]
+                    ] = Box(low=-1, high=1, shape=(2,), dtype=np.float32)
         self.action_space = Dict(action_dict)
 
         # define the observation space
@@ -95,7 +96,8 @@ class CraftiumEnv(Env):
         elif gray_scale_keepdim:
             shape.append(1)
 
-        self.observation_space = Box(low=0, high=255, shape=shape, dtype=np.uint8)
+        self.observation_space = Box(
+            low=0, high=255, shape=shape, dtype=np.uint8)
 
         assert render_mode is None or render_mode in self.metadata["render_modes"]
         self.render_mode = render_mode
@@ -167,15 +169,19 @@ class CraftiumEnv(Env):
             try:
                 self.mt_chann.open_conn()
             except Exception as e:
-                print("\n\x1b[1m[!] Error connecting to Minetest. Minetest probably failed to launch.")
-                print("  => Run's scratch directory should be available, containing stderr.txt and")
+                print(
+                    "\n\x1b[1m[!] Error connecting to Minetest. Minetest probably failed to launch.")
+                print(
+                    "  => Run's scratch directory should be available, containing stderr.txt and")
                 print("     stdout.txt useful for checking what went wrong.")
-                print("** Content of stderr.txt in the run's sratch directory:\x1b[0m")
+                print(
+                    "** Content of stderr.txt in the run's sratch directory:\x1b[0m")
                 print("~"*45, "\n")
                 with open(f"{self.mt.run_dir}/stderr.txt", "r") as f:
                     print(f.read())
                 print("~"*45)
-                print("\x1b[1mRaising catched exception (in case it's useful):\x1b[0m")
+                print(
+                    "\x1b[1mRaising catched exception (in case it's useful):\x1b[0m")
                 print("~"*45, "\n")
                 raise e
 
@@ -236,10 +242,17 @@ class CraftiumEnv(Env):
         if self.render_mode == "rgb_array":
             return self.last_observation
 
-    def close(self):
+    def close(self, clear: bool = True):
+        """
+        Closes the environment and removes temporary files.
+
+        :param clear: Whether to remove the MT working 
+        directory or not.
+        """
         if self.mt_chann.is_open():
             self.mt_chann.send_kill()
             self.mt_chann.close()
             self.mt.close_pipes()
             self.mt.wait_close()
-        self.mt.clear()
+        if clear:
+            self.mt.clear()

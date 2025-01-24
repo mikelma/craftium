@@ -55,7 +55,8 @@ class MarlCraftiumEnv():
         for act in ACTION_ORDER[:-1]:  # all actions except the last ("mouse")
             action_dict[act] = Discrete(2)  # 1/0: key pressed/not pressed
         # define the mouse action
-        action_dict[ACTION_ORDER[-1]] = Box(low=-1, high=1, shape=(2,), dtype=np.float32)
+        action_dict[ACTION_ORDER[-1]
+                    ] = Box(low=-1, high=1, shape=(2,), dtype=np.float32)
         self.action_space = Dict(action_dict)
 
         # define the observation space
@@ -65,7 +66,8 @@ class MarlCraftiumEnv():
         elif gray_scale_keepdim:
             shape.append(1)
 
-        self.observation_space = Box(low=0, high=255, shape=shape, dtype=np.uint8)
+        self.observation_space = Box(
+            low=0, high=255, shape=shape, dtype=np.uint8)
 
         assert render_mode is None or render_mode in self.metadata["render_modes"]
         self.render_mode = render_mode
@@ -121,7 +123,8 @@ class MarlCraftiumEnv():
             )
             self.mt_clients.append(client)
 
-        self.last_observations = [None]*num_agents  # used in render if "rgb_array"
+        # used in render if "rgb_array"
+        self.last_observations = [None]*num_agents
         self.timesteps = 0  # the timesteps counter
         self.current_agent_id = 0
 
@@ -138,8 +141,10 @@ class MarlCraftiumEnv():
         if self.mt_server.proc is None:
             self.mt_server.start_process()
             # HACK wait for the server to initialize before launching the clients
-            print("* Waiting for MT server to initialize. This is only required in the first call to reset")
-            time.sleep(5)  # TODO Use a an argument of the class instead of a constant
+            print(
+                "* Waiting for MT server to initialize. This is only required in the first call to reset")
+            # TODO Use a an argument of the class instead of a constant
+            time.sleep(5)
 
             for i in range(self.num_agents):
                 # start the new MT (client) process
@@ -174,7 +179,8 @@ class MarlCraftiumEnv():
         infos = self._get_info()
 
         # stack the observations of each agent
-        observations = np.vstack([np.expand_dims(obs, 0) for obs in observations])
+        observations = np.vstack([np.expand_dims(obs, 0)
+                                 for obs in observations])
 
         return observations, infos
 
@@ -213,7 +219,8 @@ class MarlCraftiumEnv():
         return observation, reward, termination, truncated, info
 
     def step(self, actions):
-        assert len(actions) == self.num_agents, f"The number of actions ({len(actions)}) must match with the number of agents ({self.num_agents})"
+        assert len(
+            actions) == self.num_agents, f"The number of actions ({len(actions)}) must match with the number of agents ({self.num_agents})"
 
         observations, rewards, terminations, truncations = [], [], [], []
         infos = dict()
@@ -227,7 +234,8 @@ class MarlCraftiumEnv():
             infos |= inf  # the | operator merges two dicts
 
         # stack the observations of each agent
-        observations = np.vstack([np.expand_dims(obs, 0) for obs in observations])
+        observations = np.vstack([np.expand_dims(obs, 0)
+                                 for obs in observations])
         rewards = np.array(rewards)
         terminations = np.array(terminations)
         truncations = np.array(truncations)
@@ -238,6 +246,12 @@ class MarlCraftiumEnv():
             return self.last_observations
 
     def close(self, clear: bool = True):
+        """
+        Closes the environment and removes temporary files.
+
+        :param clear: Whether to remove the MT working 
+        directory or not.
+        """
         # close all MT clients
         for i in range(self.num_agents):
             if self.mt_channs[i].is_open():
