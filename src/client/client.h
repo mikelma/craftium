@@ -617,4 +617,6 @@ private:
 
 	// The number of blocks the client will combine for mesh generation.
 	MeshGrid m_mesh_grid;
+
+	float m_craftium_lag = 0.0;
 };
