@@ -209,10 +209,13 @@ void Client::pyConnStep() {
     u32 c; // stores the RGBA pixel color
     bool kill;
 
-	/* Clear all virtual key presses except the movement ones (WASD) */
+	/* Clear all virtual key presses except the movement ones (WASD) and dig (L click) */
 	for (int i=0; i<KeyType::INTERNAL_ENUM_COUNT; i++) {
-		if (i != KeyType::FORWARD && i != KeyType::BACKWARD
-				&& i != KeyType::LEFT && i != KeyType::RIGHT) {
+		if (i != KeyType::FORWARD
+				&& i != KeyType::BACKWARD
+				&& i != KeyType::LEFT
+				&& i != KeyType::RIGHT
+				&& i != KeyType::DIG) {
 			virtual_key_presses[i] = false;
 		}
 	}
@@ -223,11 +226,12 @@ void Client::pyConnStep() {
         return;
     frameskip_count = 0;
 
-	/* Clear missing virtual key presses (WASD) */
+	/* Clear missing virtual key presses (WASD + L click) */
     virtual_key_presses[KeyType::FORWARD] = false;
     virtual_key_presses[KeyType::BACKWARD] = false;
     virtual_key_presses[KeyType::LEFT] = false;
     virtual_key_presses[KeyType::RIGHT] = false;
+    virtual_key_presses[KeyType::DIG] = false;
 
     /* Take the screenshot */
     irr::video::IVideoDriver *driver = m_rendering_engine->get_video_driver();
