@@ -5,13 +5,13 @@ from craftium.extra.random_map_generator import RandomMapGen
 
 # Generate a random map using the random dungeon generator provided by craftium
 mapgen = RandomMapGen(
-        n_rooms=2,
-        dispersion=0.4,
-        room_min_size=5,
-        room_max_size=10,
-        max_monsters_per_room=3,
-        monsters={"a": 0.4, "b": 0.3, "c": 0.2, "d": 0.1},
-    )
+    n_rooms=2,
+    dispersion=0.4,
+    room_min_size=5,
+    room_max_size=10,
+    max_monsters_per_room=3,
+    monsters={"a": 0.4, "b": 0.3, "c": 0.2, "d": 0.1},
+)
 
 ascii_map = mapgen.rasterize(wall_height=5)  # Convert map into string
 # Show the intermediate layer of the map (where the player and mobs are placed)
@@ -36,7 +36,7 @@ env_conf = dict(
 
 # Environment initialization
 max_timesteps = 10_000
-frameskip = 1
+frameskip = 5
 rgb_observations = True
 env = gym.make(
     "Craftium/ProcDungeons-v0",
@@ -44,6 +44,7 @@ env = gym.make(
     frameskip=frameskip,
     rgb_observations=rgb_observations,
     minetest_conf=env_conf,
+    pmul=20
 )
 
 # Main loop

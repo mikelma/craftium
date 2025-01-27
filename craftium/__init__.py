@@ -1,3 +1,5 @@
+from .minetest import is_minetest_build_dir
+import os
 from .craftium_env import CraftiumEnv
 from .multiagent_env import MarlCraftiumEnv
 from .wrappers import BinaryActionWrapper, DiscreteActionWrapper
@@ -16,8 +18,8 @@ DEFAULT_PROCDUNGEONS_CONF = dict(
     monster_type_d="mobs_monster:mese_monster",
     wall_material="default:steelblock",
     objective_item="default:diamond",
-    rwd_objective=100.0,
-    rwd_kill_monster=1.0,
+    rwd_objective=10.0,
+    rwd_kill_monster=0.5,
     soft_reset=True,
 )
 
@@ -63,9 +65,6 @@ def make_dungeon_env(
 #
 # Environment registrations:
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-import os
-from .minetest import is_minetest_build_dir
 
 
 # get the craftium's root directory, where the craftium-envs directory
@@ -132,7 +131,8 @@ register(
             name="DiscreteActionWrapper",
             entry_point="craftium.wrappers:DiscreteActionWrapper",
             kwargs=dict(
-                actions=["forward", "jump", "dig", "mouse x+", "mouse x-", "mouse y+", "mouse y-"],
+                actions=["forward", "jump", "dig", "mouse x+",
+                         "mouse x-", "mouse y+", "mouse y-"],
                 mouse_mov=0.5,
             ),
         )
@@ -227,12 +227,12 @@ register(
         init_frames=200,
         game_id="mineclone2",
         minetest_conf=dict(
-            max_block_generate_distance=3, # 16x3 blocks
+            max_block_generate_distance=3,  # 16x3 blocks
             mcl_logging_mobs_spawn=True,
             hud_scaling=0.5,
             fov=90,
             console_alpha=0,
-            ### Graphics Effects
+            # Graphics Effects
             smooth_lighting=False,
             performance_tradeoffs=True,
             enable_particles=False,

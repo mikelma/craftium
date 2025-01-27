@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 from collections import defaultdict
 import math
 
+
 class RandomMapGen():
     """Random dungeon map generator. This class is intended to be used
     for the `Craftium/ProcDungeons-v0` environment, but you could implement
@@ -17,6 +18,7 @@ class RandomMapGen():
     :param monsters: A dictionary with the `a`, `b`, `c`, and `d` keys (refers to the type of the monster), where values are the probability of spawning a monster of that type. Types are sorted from `a` less dangerous to, `d`, more.
     :param monsters_in_player_spawn: If set to `True`, monsters can spawn in the same room as the player.
     """
+
     def __init__(
             self,
             n_rooms: int = 4,
@@ -25,11 +27,12 @@ class RandomMapGen():
             dispersion: float = 1.,
             min_monsters_per_room: int = 0,
             max_monsters_per_room: int = 5,
-            monsters: dict[str, float] = {"a": 0.4, "b": 0.3, "c": 0.2, "d": 0.1},
+            monsters: dict[str, float] = {
+                "a": 0.4, "b": 0.3, "c": 0.2, "d": 0.1},
             monsters_in_player_spawn: bool = False,
     ):
         assert room_min_size >= 5, "Minimum room size must be >= 5"
-        assert room_min_size <= room_max_size , "Room min size must be smaller or equal to max size"
+        assert room_min_size <= room_max_size, "Room min size must be smaller or equal to max size"
         rooms = [[[0, 0],
                   list(np.random.randint(room_min_size, room_max_size+1, size=2))]
                  for _ in range(n_rooms)]
@@ -46,7 +49,7 @@ class RandomMapGen():
                 others_center = np.array(others).mean(axis=0).mean(axis=0)
                 center = np.array(rooms[i]).mean(axis=0)
                 d = (dispersion*(center - others_center)).astype(np.int64)
-                d[d==0] = np.random.randint(-1, 2)
+                d[d == 0] = np.random.randint(-1, 2)
 
                 rooms[i][0][0] += d[0]
                 rooms[i][1][0] += d[0]
@@ -76,7 +79,8 @@ class RandomMapGen():
         for i in range(n_rooms):
             # compute the _distances from the room i to the other rooms
             c = np.array(self._box_center(rooms[i]))
-            dists = [np.power(c - np.array(self._box_center(rooms[j])), 2).sum() for j in range(n_rooms) if i != j]
+            dists = [np.power(c - np.array(self._box_center(rooms[j])), 2).sum()
+                     for j in range(n_rooms) if i != j]
             indices = list(range(n_rooms))
             indices.remove(i)
             indices = np.array(indices)
@@ -87,7 +91,8 @@ class RandomMapGen():
                     self._line_intersects_box(cor, rooms[k]) for k in range(n_rooms) if k != i and k != j
                 ]) > 0
                 # the corridor should not intersect with other corridors
-                cor_intersects_cor = sum([self.lines_intersect(cor, c) for c in corrs]) > 0
+                cor_intersects_cor = sum(
+                    [self.lines_intersect(cor, c) for c in corrs]) > 0
                 if not (cor_intersects_rooms or cor_intersects_cor):
                     corrs.append(cor)
                     # if 0.5 > np.random.rand(): # add another (extra) corridor with 0.5 prob
@@ -106,7 +111,8 @@ class RandomMapGen():
         self.player_pos = corrs[idx1][idx2]
 
         # place the objective in the most distant room to the player
-        dists = [self._distance(self.player_pos, self._box_center(r)) for r in rooms]
+        dists = [self._distance(self.player_pos, self._box_center(r))
+                 for r in rooms]
         room_idx = np.argmax(dists)
         self.objective_pos = self._box_center(rooms[room_idx])
 
@@ -117,19 +123,21 @@ class RandomMapGen():
         monster_locs = []
         for room in rooms:
             if (not monsters_in_player_spawn
-                and self._box_center(room) == self.player_pos) or max_monsters_per_room == 0:
+                    and self._box_center(room) == self.player_pos) or max_monsters_per_room == 0:
                 continue
             # number of monsters in this room
             if min_monsters_per_room == max_monsters_per_room:
                 n = min_monsters_per_room
             else:
-                n = np.random.randint(min_monsters_per_room, max_monsters_per_room)
+                n = np.random.randint(
+                    min_monsters_per_room, max_monsters_per_room)
             type_idx = np.random.choice(monster_type_indices, p=monster_probs)
             # compute al locations within a room that a monster can spawn
             places = []
             for x in range(room[0, 0]+2, room[1, 0]-1):
                 for y in range(room[0, 1]+2, room[1, 1]-1):
-                    if not (self.objective_pos == np.array([x, y])).all(): # check the position isn't objective's
+                    # check the position isn't objective's
+                    if not (self.objective_pos == np.array([x, y])).all():
                         places.append([x, y])
             # select random placements for the monsters
             for idx in np.random.choice(len(places), min(n, len(places)), replace=False):
@@ -172,7 +180,7 @@ class RandomMapGen():
                 D -= 2*dx
             D += 2*dy
 
-    def rasterize(self, wall_height=2):
+    def rasterize(self, wall_height=2, ceiling=True):
         """Converts the generated map into an ASCII string.
 
         :params wall_height: Height of the walls of the dungeon.
@@ -231,6 +239,12 @@ class RandomMapGen():
         for type_idx, pos in self.monster_locs:
             layers[1][pos[1], pos[0]] = type_idx
 
+        if ceiling:
+            # add ceiling if needed (same pattern as the first layer)
+            l0 = layers[0].copy()
+            l0[l0 == 1] = 4
+            layers.append(l0)
+
         # convert layer matrices into a string
         s = ""
         for il, layer in enumerate(layers):
@@ -243,12 +257,14 @@ class RandomMapGen():
                         char = "@"
                     elif layer[i][j] == 3:
                         char = "O"
-                    elif layer[i][j] < 0: # negative values are monsters
+                    elif layer[i][j] == 4:
+                        char = "%"
+                    elif layer[i][j] < 0:  # negative values are monsters
                         char = self.monster_names[(-layer[i][j])-1]
                     s += char
                 if il < len(layers)-1 or i < nrows-1:
                     s += "\n"
-            if il < len(layers)-1: # skip separator in last layer
+            if il < len(layers)-1:  # skip separator in last layer
                 s += "-\n"
         return s
 
@@ -279,7 +295,7 @@ class RandomMapGen():
         def on_segment(p, q, r):
             """Check if point q lies on the segment pr"""
             if (min(p[0], r[0]) <= q[0] <= max(p[0], r[0]) and
-                min(p[1], r[1]) <= q[1] <= max(p[1], r[1])):
+                    min(p[1], r[1]) <= q[1] <= max(p[1], r[1])):
                 return True
             return False
 
@@ -434,6 +450,7 @@ class RandomMapGen():
         b1 = np.array(a).flatten()
         b2 = np.array(b).flatten()
         return not (b1[0] > b2[2] or b1[2] < b2[0] or b1[1] > b2[3] or b1[3] < b2[1])
+
 
 if __name__ == "__main__":
     mapgen = RandomMapGen(
