@@ -40,6 +40,7 @@ class CraftiumEnv(Env):
     :param gray_scale_keepdim: If `True`, a singleton dimension will be added, i.e. observations are of the shape WxHx1. Otherwise, they are of shape WxH.
     :param seed: Random seed. Affects minetest's map generation and Lua's RNG (in mods).
     :param sync_mode: If set to true, minetest's internal client and server steps are synchronized. This is useful for training models slower than realtime.
+    :param pmul: Physics multiplier. As craftium agent's take actions by frame, default movement speeds make the agent move slowly. When set to > 1, minetest's movement velocity and acceleration increase helping the agent to move at acceptable relative speeds. 
     :param soft_reset: If set to true, resets will have to be handled by the Lua mod and minetest won't be killed and rerun every call to restart. **IMPORTANT:** Only set this flag to `True` in environments that support this feature.
     """
     metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 30}
@@ -67,7 +68,7 @@ class CraftiumEnv(Env):
             seed: Optional[int] = None,
             sync_mode: bool = False,
             fps_max: int = 200,
-            pmul: Optional[None] = None,
+            pmul: int = 20,
             soft_reset: bool = False,
     ):
         super(CraftiumEnv, self).__init__()

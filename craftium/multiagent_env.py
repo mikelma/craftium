@@ -39,7 +39,7 @@ class MarlCraftiumEnv():
             seed: Optional[int] = None,
             sync_mode: bool = False,
             fps_max: int = 200,
-            pmul: Optional[int] = None,
+            pmul: int = 20,
     ):
         assert num_agents > 1, "Number of agents lower than 2. Use CraftiumEnv for single agent environments."
         self.num_agents = num_agents
