@@ -20,7 +20,6 @@ DEFAULT_PROCDUNGEONS_CONF = dict(
     objective_item="default:diamond",
     rwd_objective=10.0,
     rwd_kill_monster=0.5,
-    soft_reset=True,
 )
 
 
@@ -261,8 +260,8 @@ register(
         obs_height=64,
         max_timesteps=4000,
         init_frames=200,
+        soft_reset=True,
         minetest_conf=dict(
-            soft_reset=True,
             give_initial_stuff=True,
             initial_stuff="default:sword_steel",  # Provide the player with a sword
             performance_tradeoffs=True,
@@ -274,7 +273,7 @@ register(
             wall_material="default:steelblock",
             objective_item="default:diamond",  # item to serve as objective
             rwd_objective=10.0,  # Reward of collecting the objective item
-            rwd_kill_monster=1.0,  # Reward of killing a monster
+            rwd_kill_monster=0.5,  # Reward of killing a monster
             ascii_map="""
 #######
 #######
