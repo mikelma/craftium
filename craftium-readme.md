@@ -4,7 +4,7 @@
 
 <img src="../craftium-docs/imgs/craftium_logo.png" alt="Craftium logo" width="350" align="right">
 
-✨ *Imagine the features of Minecraft: open world, procedural generation, fully destructible voxel environments... but open source, without Java, easily extensible in [Lua](https://www.lua.org), and with the modern [Gymnasium](https://gymnasium.farama.org/index.html) and [PettingZoo](https://pettingzoo.farama.org/) APIs for AI single-and multi-agent research... This is* **Craftium!** ✨
+✨ *Imagine the richness of Minecraft: open worlds, procedural generation, fully destructible voxel environments... but open source, without Java, easily extensible in [Lua](https://www.lua.org), and with the modern [Gymnasium](https://gymnasium.farama.org/index.html) and [PettingZoo](https://pettingzoo.farama.org/) APIs for AI single-and multi-agent research... This is* **Craftium!** ✨
 
 **[[Docs](https://craftium.readthedocs.io/en/latest/)] [[GitHub](https://github.com/mikelma/craftium/)] [[Paper (ArXiv)](https://arxiv.org/abs/2407.03969)]**
 
@@ -39,7 +39,7 @@
 
 - **Fully open source 🤠:** Both, craftium and Luanti are fully open-source projects. This allowed us to modify Luanti's source code to tightly integrate it with our library, reducing the number of ugly hacks.
 
-- **No more Java ⚡:** The Minecraft game is written in Java, not a very friendly language for clusters and high-performance applications. Contrarily, Luanti is written in C++, much more friendly for clusters, and highly performant!
+- **No more Java 👹:** The Minecraft game is written in Java, not a very friendly language for clusters and high-performance applications. Contrarily, Luanti is written in C++, much more friendly for clusters, and highly performant!
 
 ## Installation ⚙️
 
