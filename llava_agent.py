@@ -15,16 +15,23 @@ from uuid import uuid4
 def parse_args():
     parser = ArgumentParser()
 
-    parser.add_argument("--frames", type=str, default="frames")
-    parser.add_argument("--train-mins", type=int, default=60)
+    parser.add_argument("--frames", type=str, default=None,
+                        help="Path to the directory where frames are saved. None by default, no frames will be saved.")
+    parser.add_argument("--train-mins", type=int, default=60,
+                        help="Maximum number of minutes to run the experiment")
+    parser.add_argument("--train-steps", type=int, default=None,
+                        help="Maximum number of iterations to run the experiment. None by default (limited by time, see --train-mins).")
+    parser.add_argument("--model", type=str, default="llava",
+                        help="Name of the VLM model to use (see ollama models)")
     parser.add_argument("--log", type=str,
-                        default="llm_agent_"+str(uuid4())+".csv")
+                        default=None, help="Path to the file where the CSV data will be saved")
 
     return parser.parse_args()
 
 
 def obs_to_bytes(observation):
-    """Converts an observation encoded as a numpy array into a bytes representation of a PNG image."""
+    """Converts an observation encoded as a numpy array into a 
+    bytes representation of a PNG image."""
     image = Image.fromarray(observation)
     image_bytes = io.BytesIO()
     image.save(image_bytes, format="PNG")
@@ -35,6 +42,10 @@ def obs_to_bytes(observation):
 
 if __name__ == "__main__":
     args = parse_args()
+
+    log_file = args.log
+    if log_file is None:
+        log_file = f"llm_{args.model}_"+str(uuid4())+".csv"
 
     config = dict(
         max_block_generate_distance=3,  # 16x3 blocks
@@ -61,10 +72,12 @@ if __name__ == "__main__":
     observation, info = env.reset()
 
     act_names = [
-        "do nothing", "move forward", "move backward", "move left", "move right",
-        "jump", "sneak", "use tool", "place",
-        "select hotbar slot 1", "select hotbar slot 2", "select hotbar slot 3", "select hotbar slot 4", "select hotbar slot 5",
-        "move camera right", "move camera left", "move camera up", "move camera down"]
+        "do nothing", "move forward", "move backward", "move left",
+        "move right", "jump", "sneak", "use tool", "place",
+        "select hotbar slot 1", "select hotbar slot 2", "select hotbar slot 3",
+        "select hotbar slot 4", "select hotbar slot 5",
+        "move camera right", "move camera left", "move camera up",
+        "move camera down"]
 
     objectives = ["is to chop a tree", "is to collect stone",
                   "is to collect iron", "is to find diamond blocks"]
@@ -75,15 +88,17 @@ if __name__ == "__main__":
     ep_ret = 0
     t_step = 0
     episode = 0
-    while (time.time() - start) / 60 < args.train_mins:
+    exp_truncate = False
+    while (time.time() - start) / 60 < args.train_mins and not exp_truncate:
         img_bytes, img = obs_to_bytes(observation)
-        img.save(os.path.join(
-            args.frames, f"frame_{str(t_step).zfill(7)}.png"), "PNG")
+        if args.frames is not None:
+            img.save(os.path.join(
+                args.frames, f"frame_{str(t_step).zfill(7)}.png"), "PNG")
 
         prompt = f"You are a reinforcement learning agent in the Minecraft game. You will be presented the current observation, and you have to select the next action with the ultimate objective to fulfill your goal. In this case, the goal {objectives[objective_id]}. You should fight monsters and hunt animals just as a secondary objective and survival. Available actions are: do nothing, move forward, move backward, move left, move right, jump, sneak, use tool, place, select hotbar slot 1, select hotbar slot 2, select hotbar slot 3, select hotbar slot 4, select hotbar slot 5, move camera right, move camera left, move camera up, move camera down. From now on, your responses must only contain the name of the action you will take, nothing else."
-        print("Prompt:", prompt)
+        # print("Prompt:", prompt)
 
-        response = ollama.generate("llava", prompt, images=[img_bytes])
+        response = ollama.generate(args.model, prompt, images=[img_bytes])
         content = response["response"]
         print("Response:", '"' + content + '"')
 
@@ -113,7 +128,8 @@ if __name__ == "__main__":
 
         ep_ret += reward
         print(
-            f"Step: {t_step}, Elapsed: {int(time.time()-start)}s, Reward: {reward}, Ep. ret.: {ep_ret}")
+            f"Step: {t_step}, Elapsed: {int(time.time()-start)}s, \
+            Reward: {reward}, Ep. ret.: {ep_ret}")
 
         # check if a stage has been completed
         if reward >= 128.0:
@@ -123,12 +139,12 @@ if __name__ == "__main__":
                 break
             print("\n[STAGE] Stage completed! The new objective {}\n")
 
-        with open(args.log, "a" if t_step > 0 else "w") as f:
+        with open(log_file, "a" if t_step > 0 else "w") as f:
             if t_step == 0:
                 f.write(
                     "t_step,episode,elapsed mins,reward,ep_ret,objective_id,id\n")
             f.write(
-                f"{t_step},{episode},{(time.time()-start)/60},{reward},{ep_ret},{objective_id},{args.log}\n")
+                f"{t_step},{episode},{(time.time()-start)/60},{reward},{ep_ret},{objective_id},{log_file}\n")
 
         if terminated or truncated:
             episode += 1
@@ -137,5 +153,8 @@ if __name__ == "__main__":
             objective_id = 0
         print()
         t_step += 1
+
+        if args.train_steps is not None:
+            exp_truncate = t_step >= args.train_steps
 
     env.close()
