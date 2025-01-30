@@ -19,6 +19,7 @@ nav:
     - API Reference: reference.md
   - GitHub: https://github.com/mikelma/craftium
   - Paper: https://arxiv.org/abs/2407.03969
+  - Luanti's main page: https://www.luanti.org/  
 
 theme:
   name: readthedocs

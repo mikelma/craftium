@@ -72,7 +72,6 @@ class CraftiumEnv(Env):
             soft_reset: bool = False,
     ):
         super(CraftiumEnv, self).__init__()
-
         self.obs_width = obs_width
         self.obs_height = obs_height
         self.init_frames = init_frames // frameskip

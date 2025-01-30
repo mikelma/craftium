@@ -1,28 +1,28 @@
 # Creating custom environments
 
-For creating custom environments you need the binary of the original minetest. Thus, the first step is to clone the original repo and build the binary following the instructions [here](https://github.com/minetest/minetest?tab=readme-ov-file#compiling). Note that you should have all the dependencies already met if you have craftium installed in your system.
+For creating custom environments you need the binary of the original Luanti game engine. Thus, the first step is to clone the original repo and build the binary following the instructions [here](https://github.com/luanti-org/luanti?tab=readme-ov-file#compiling). Note that you should have all the dependencies already met if you have craftium installed in your system.
 
-Once compiled, execute the minetest binary.
+Once compiled, execute the luanti binary.
 
 ```bash
-./bin/minetest
+./bin/luanti
 ```
 
 ## Installing the minetest game
 
-If the main menu doesn't display a clouded background with the "MINETEST GAME" banner, you might see the devtest game. Remember that minetest isn't a game per se, it's a game engine, and we'll need a game to build our environment on. Thus, the first step is to install the minetest default game ("minetest game").
+Remember that Luanti isn't a game per se, it's a game engine, and we'll need a game to build our environment on. Thus, the first step is to install the ["minetest game"](https://wiki.luanti.org/Games/Minetest_Game).
 
-Go to the "Content" tab, click "Browse online content", and find and install "Minetest Game". Once installed go to the main menu, a small minetest logo should appear at the bottom of the menu, click it to select the game.
+Go to the "Content" tab, click "Browse online content", and find and install "Minetest Game". Once installed go to the main menu, a small Luanti logo should appear at the bottom of the menu, click it to select the game.
 
 ![](./imgs/install_minetest_game.gif)
 
 ## Adding mods (optional)
 
-Before creating a world, you can install any of the many available mods for Minetest (check [ContentDB](https://content.minetest.net/) for all available mods!). Mods extend Minetest in many possible ways, adding extra functionality to the base minetest game, or can create complete games.
+Before creating a world, you can install any of the many available mods for Luanti (check [ContentDB](https://content.luanti.org/) for all available mods!). Mods extend Luanti in many ways, adding extra functionality to the base minetest game, or can create completely new games.
 
-For the sake of example, let's install the [superflat](https://content.minetest.net/packages/srifqi/superflat/) mod. This mod creates a flat world that can be very useful for generating our environments.
+For the sake of example, let's install the [superflat](https://content.luanti.org/packages/srifqi/superflat/) mod. This mod creates a flat world that can be very useful for generating our environments.
 
-To install the mod follow the same process as installing the minetest game: click the `Content` tab in the main menu, then click the `Browse online content` button. Finally, search for `superflat` and install it by clicking the green button with the plus sign:
+To install the mod follow the same process as installing the *minetest game*: click the `Content` tab in the main menu, then click the `Browse online content` button. Finally, search for `superflat` and install it by clicking the green button with the plus sign:
 
 ![](./imgs/install_mod.gif)
 
@@ -34,9 +34,9 @@ In this example, we will start from an empty environment in an infinite and flat
 
 ### Environment's Lua script
 
-Although environments can be manually created by playing in the newly created minetest world, in this example, we will create the environment using a mod (a Lua script). Creating minetest mods is outside the scope of this tutorial, but there's an excellent [minetest modding book](https://rubenwardy.com/minetest_modding_book/en/index.html) available, and the Minetest's API [reference](https://api.minetest.net/).
+Although environments can be manually created by playing in the newly created world, in this example, we will create the environment using a mod (a Lua script). Creating Luanti mods is outside the scope of this tutorial, but there's an excellent [Luanti's Modding Book](https://rubenwardy.com/minetest_modding_book/en/index.html) available, and the Luanti's API [reference](https://api.luanti.org/).
 
-Make sure to `cd` into the minetest's installation directory (the original one, not the one modified by craftium), and create a directory inside `mods/` with the name `craftium-builder`.
+Make sure to `cd` into the luanti's installation directory (the original one, not the one modified by craftium), and create a directory inside `mods/` with the name `craftium-builder`.
 
 Then create the following directory structure inside `mods/craftium-builder` with the specified contents:
 
@@ -53,12 +53,12 @@ SIZE = 10 -- the size of the room in blocks
 HEIGHT = 2 -- walls' height in blocks
 MATERIAL = "default:stone"
 
-minetest.register_on_joinplayer(function(_player, _last_login)
+core.register_on_joinplayer(function(_player, _last_login)
     -- Build the floor
     for x=0,SIZE do
        for z=0,SIZE do
           pos = {x = x, z = z, y = 4.5}
-          minetest.set_node(pos, { name = MATERIAL })
+          core.set_node(pos, { name = MATERIAL })
        end
     end
 
@@ -66,16 +66,16 @@ minetest.register_on_joinplayer(function(_player, _last_login)
     for i=0,SIZE do
        for h=1,HEIGHT do
           pos = {x = i, z = 0, y = 4.5 + h}
-          minetest.set_node(pos, { name = MATERIAL })
+          core.set_node(pos, { name = MATERIAL })
 
           pos = {x = i, z = SIZE, y = 4.5 + h}
-          minetest.set_node(pos, { name = MATERIAL })
+          core.set_node(pos, { name = MATERIAL })
 
           pos = {x = 0, z = i, y = 4.5 + h}
-          minetest.set_node(pos, { name = MATERIAL })
+          core.set_node(pos, { name = MATERIAL })
 
           pos = {x = SIZE, z = i, y = 4.5 + h}
-          minetest.set_node(pos, { name = MATERIAL })
+          core.set_node(pos, { name = MATERIAL })
        end
     end
 end)
@@ -114,13 +114,13 @@ SIZE = 10 -- the size of the room in blocks
 FLOOR = 4.5 -- height of the floor
 
 -- Executed when the player joins the game
-minetest.register_on_joinplayer(function(player, _last_login)
+core.register_on_joinplayer(function(player, _last_login)
       -- Set the player's initial position
       player:set_pos({x = SIZE / 2, z = 1, y = FLOOR + 1})
 
       -- --- Spawn a red block inside the room in a random position
       target_pos = {x = rand(1, SIZE-1), z = rand(5, SIZE-1), y = 5.5 }
-      minetest.set_node(target_pos, { name = "default:coral_orange" })
+      core.set_node(target_pos, { name = "default:coral_orange" })
 
       -- Disable HUD elements
       player:hud_set_flags({
@@ -131,12 +131,12 @@ minetest.register_on_joinplayer(function(player, _last_login)
 end)
 
 -- Executed on every timestep
-minetest.register_globalstep(function(dtime)
+core.register_globalstep(function(dtime)
       -- set timeofday to midday
-      minetest.set_timeofday(0.5)
+      core.set_timeofday(0.5)
 
       -- get the first connected player
-      local player = minetest.get_connected_players()[1]
+      local player = core.get_connected_players()[1]
 
       -- if the player is not connected end here
       if player == nil then
@@ -163,11 +163,11 @@ minetest.register_globalstep(function(dtime)
 end)
 ```
 
-Note that the mod above mostly uses Lua functions from the [Minetest's Lua API](https://api.minetest.net/). However, few functions (eg., `set_reward`) are specific to craftium, check [Extensions to the Minetest's Lua API](./lua_functions.md) for the complete list of Lua functions added by craftium and their documentation.
+Note that the mod above mostly uses Lua functions from the [Luanti's Lua API](https://api.luanti.org/). However, few functions (eg., `set_reward`) are specific to craftium, check [Extensions to the Luanti's Lua API](./lua_functions.md) for the complete list of Lua functions added by craftium and their documentation.
 
 !!! note "Playing like an agent"
 
-    At this step, you can load the minetest mod and play like an agent. However, note that the functions `set_reward()` and `set_termination` are functions only available in the craftium's modified version of minetest and not in the original minetest binary we are using to create the mod. To play the game like an agent, you have to comment or remove these functions from `init.lua`.
+    At this step, you can load the Luanti mod and play like an agent. However, note that the functions `set_reward()` and `set_termination` are functions only available in the craftium's modified version of Luanti and not in the original Luanti binary we are using to create the mod. To play the game like an agent, you have to comment or remove these functions from `init.lua`.
 
     **⚠️ Warning:** Be sure to leave the world's map in its initial state, otherwise the map will be saved and the initial state of the environment will be modified. For example, if you add or remove a block, be sure to remove or add it before exiting the game.
 
@@ -175,7 +175,7 @@ Note that the mod above mostly uses Lua functions from the [Minetest's Lua API](
 
 Once the environment is set up, the final step is to create a directory with all the data required to run our environment. First, create the directory (anywhere in your system) where the environment will be saved (for example, `small-room/`).
 
-Then, copy `mods/` (should have only one subdirectory with the mod of the previous step, `craftium-env`), `games/` (only include the `games/minetest_game` subdirectory, exclude `games/devtest`), and `worlds/` (should contain only one subdirectory `worlds/world`) from the minetest's build directory to `small-room/`.
+Then, copy `mods/` (should have only one subdirectory with the mod of the previous step, `craftium-env`), `games/` (only include the `games/minetest_game` subdirectory, exclude `games/devtest`), and `worlds/` (should contain only one subdirectory `worlds/world`) from the Luanti's build directory to `small-room/`.
 
 Finally, remove all the data about a player from the environment's world. This is done by removing the players' database: just `rm small-room/worlds/world/players.sqlite`.
 
@@ -183,7 +183,7 @@ Finally, remove all the data about a player from the environment's world. This i
 
 We are ready to test our newly created environment!
 
-The following python script should open a window with minetest and the environment loaded and playable!
+The following python script should open a window with Luanti and the environment loaded and playable!
 
 The only thing you might need to modify is the path to the directory where the environment's data has been saved (`./small-room/` for this example).
 
@@ -232,12 +232,12 @@ As expected, the player and the box start with a random position on opposite sid
 
 ## Next steps
 
-This tutorial shows a step-by-step guide to implementing a custom environment in minetest. For the sake of clarity, not every detail has been covered in this tutorial, but additional information on how to develop more complex (or simple) environments can be found in the following links:
+This tutorial shows a step-by-step guide to implementing a custom environment in Craftium. For the sake of clarity, not every detail has been covered in this tutorial, but additional information on how to develop more complex (or simple) environments can be found in the following links:
 
 - **[The Lua environment cookbook](./lua_env_cookbook.md)🧑‍🍳.** A collection of examples demonstrating how to accomplish many tasks from Lua mods in a Craftium environment.
 
 - **Craftium's environment implementations 🤖.** These are located in the [`craftium-envs`](https://github.com/mikelma/craftium/tree/main/craftium-envs) directory of the [repo](https://github.com/mikelma/craftium).
 
-- **Minetest's [modding book](https://rubenwardy.com/minetest_modding_book/en/index.html) 📖:** the best guide on how to create minetest mods.
+- **Luanti's [modding book](https://rubenwardy.com/minetest_modding_book/en/index.html) 📖:** the best guide on how to create Luanti mods.
 
-- **Minetest's API reference 🔎.** Contains all the available functionalities, and their documentation, of the minetest's Lua API.
+- **Luanti's API reference 🔎.** Contains all the available functionalities, and their documentation, of the Lua API.

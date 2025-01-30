@@ -12,6 +12,11 @@ import numpy as np
 
 
 class MarlCraftiumEnv():
+    """
+    The main class implementing the multi-agent version of Craftium environments. 
+
+    Check `CraftiumEnv` for parameters' documentation.
+    """
     metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 30}
 
     def __init__(
@@ -132,6 +137,8 @@ class MarlCraftiumEnv():
         return dict()
 
     def reset(self, **kwargs):
+        """Resets the environment."""
+
         self.timesteps = 0
 
         observations = []
@@ -185,6 +192,11 @@ class MarlCraftiumEnv():
         return observations, infos
 
     def step_agent(self, action):
+        """
+        Runs a single step of the currently selected agent (`env.current_agent_id`).
+
+        :param action
+        """
         self.timesteps += 1
 
         if self.current_agent_id == self.num_agents:
@@ -219,6 +231,10 @@ class MarlCraftiumEnv():
         return observation, reward, termination, truncated, info
 
     def step(self, actions):
+        """Runs an environment step per agent.
+
+        :param actions
+        """
         assert len(
             actions) == self.num_agents, f"The number of actions ({len(actions)}) must match with the number of agents ({self.num_agents})"
 

@@ -21,7 +21,15 @@ AVAIL_ENVS = {
     ),
 }
 
+
 def env(env_name: str, render_mode: Optional[str] = None, **kwargs):
+    """
+    Returns the PettingZoo version (`AECEnv`) of multi-agent Craftium environments.
+
+    :param env_name: Name of the environment to load.
+    :param render_mode: Rendering mode (`"rgb_array"` or `"human"`).
+    :param **kwargs: Additional keyword arguments to pass to the created Craftium environment (see `MarlCraftiumEnv`).
+    """
     env_dir = os.path.join(root_path, AVAIL_ENVS[env_name]["env_dir"])
     final_args = kwargs | AVAIL_ENVS[env_name]["conf"]
 
@@ -30,6 +38,7 @@ def env(env_name: str, render_mode: Optional[str] = None, **kwargs):
         render_mode,
         **final_args
     )
+
 
 class raw_env(AECEnv):
     metadata = {"render_modes": ["human", "rgb_array"], "name": "craftium_env"}
@@ -75,7 +84,8 @@ class raw_env(AECEnv):
         self.truncations = {agent: False for agent in self.agents}
         self.infos = {agent: infos for i, agent in enumerate(self.agents)}
         # self.state = {agent: observations[i] for i, agent in enumerate(self.agents)}
-        self.observations = {agent: observations[i] for i, agent in enumerate(self.agents)}
+        self.observations = {agent: observations[i]
+                             for i, agent in enumerate(self.agents)}
 
         # the agent_selector utility allows easy cyclic stepping through the agents list
         self._agent_selector = agent_selector(self.agents)
@@ -97,7 +107,8 @@ class raw_env(AECEnv):
         agent_id = self.agent_id_map[agent]
 
         self.env.current_agent_id = agent_id
-        observation, reward, termination, truncated, info = self.env.step_agent(action)
+        observation, reward, termination, truncated, info = self.env.step_agent(
+            action)
 
         self.observations[agent] = observation
         self.rewards[agent] = reward

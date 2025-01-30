@@ -1,4 +1,4 @@
-# Extensions to minetest's Lua API
+# Extensions to Luanti's Lua API
 
 Minetest has an extensive and powerful Lua API (check docs [here](https://api.minetest.net/)) that can be used to modify the behavior of the game engine and create mods or entire games. Craftium extends this API to include several functions needed to develop reinforcement learning environments (tutorial [here](./creating-envs.md)) such as the reward function and conditions for episode termination. The complete list of Lua functions added by craftium is provided below.
 
@@ -16,3 +16,9 @@ Minetest has an extensive and powerful Lua API (check docs [here](https://api.mi
 
 <br>
 `get_termination()`: Returns `1.0` if the termination flag is set to `true` in the current timestep, otherwise `0.0`.
+
+<br>
+`reset_termination()`: Resets the termination flag (to `False`). This function is used for soft resets.
+
+<br>
+`get_soft_reset()`: Returns `1.0` if the environment has to soft reset, `0.0` otherwise. This function is used in the soft reset context to check whether the `env.reset` has been called in the python side.

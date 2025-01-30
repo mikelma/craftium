@@ -107,7 +107,7 @@ The player is spawned in a closed cage with a spider inside it. The player is eq
 </center>
 
 
-The player has to survive and gather resources in an open world ([VoxeLibre](https://content.minetest.net/packages/Wuzzy/mineclone2/)). The environment is designed to have three different tracks: tools, hunt, and defend.
+The player has to survive and gather resources in an open world ([VoxeLibre](https://content.luanti.org/packages/Wuzzy/mineclone2/)). The environment is designed to have three different tracks: tools, hunt, and defend.
 Each track has milestones and rewards, ordered in a hierarchical tree of skills.
 
 <center>
@@ -128,7 +128,7 @@ Every time the player unlocks a milestone in any of the tracks, it receives a re
 <br>
 <br>
 
-In minetest, the time of day of the game is linked to the real clock time, where the day/night cycle lasts for 20 minutes by default (see this wiki [page](https://wiki.minetest.net/Time_of_day)). In this environment, the time of day is set according to the global timestep to maintain consistency and avoid relaying in "real" clock time while training RL agents.
+In Luanti, the time of day of the game is linked to the real clock time, where the day/night cycle lasts for 20 minutes by default (see this wiki [page](https://wiki.luanti.org/Time_of_day)). In this environment, the time of day is set according to the global timestep to maintain consistency and avoid relaying in "real" clock time while training RL agents.
 
 Additional information:
 
@@ -153,7 +153,7 @@ This environment showcases the flexibility of Craftium by implementing procedura
 
 In this case, craftium builds a dungeon environment specified by an ASCII map representation. ASCII maps can be defined by hand or (more interestingly) generated using a procedural map generator. Craftium provides a map generator class `RandomMapGen` (check the reference [here](./reference.md)), but you could use your own. Although the parameters of the reward function can be changed (see the section below), generally, the objective is to survive in a labyrinthic dungeon full of monstrous creatures and reach the objective (a diamond by default).
 
-This environment uses the following minetest mods: [`Superflat`](https://content.minetest.net/packages/srifqi/superflat/), [`mobs`](https://content.minetest.net/packages/TenPlus1/mobs/), and [`mobs_monster`](https://content.minetest.net/packages/TenPlus1/mobs_monster/). Refer to the mods' documentation for further information (e.g., available monsters).
+This environment uses the following Luanti mods: [`Superflat`](https://content.luanti.org/packages/srifqi/superflat/), [`mobs`](https://content.luanti.org/packages/TenPlus1/mobs/), and [`mobs_monster`](https://content.luanti.org/packages/TenPlus1/mobs_monster/). Refer to the mods' documentation for further information (e.g., available monsters).
 
 General information:
 

@@ -312,7 +312,6 @@ class MTServerOnly():
             emergequeue_limit_diskonly=1000000,
             emergequeue_limit_generate=1000000,
         )
-
         # overwrite config settings with those set via minetest_conf
         for key, value in minetest_conf.items():
             config[key] = value

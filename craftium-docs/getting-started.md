@@ -53,7 +53,7 @@ Finally, check the [page](./obs-and-acts.md) on observations and actions for a c
 
 ## Using `CraftiumEnv`
 
-The example above employs Gymnasium's `make` utility to load the environments registered by craftium. In this section we explain how to load environments without using the `make` utility, directly employing `CraftiumEnv`. `CraftiumEnv` is craftium's main class, wrapping the modified minetest game in the Gymnasium API.
+The example above employs Gymnasium's `make` utility to load the environments registered by craftium. In this section we explain how to load environments without using the `make` utility, directly employing `CraftiumEnv`. `CraftiumEnv` is craftium's main class, wrapping the modified Luanti engine in the Gymnasium API.
 
 To import `CraftiumEnv` just:
 

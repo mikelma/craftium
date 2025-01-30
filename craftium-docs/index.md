@@ -1,5 +1,5 @@
 
-> ✨ *Imagine the features of Minecraft: open world, procedural generation, fully destructible voxel environments... but open source, without Java, easily extensible in [Lua](https://www.lua.org), and with the modern [Gymnasium API](https://gymnasium.farama.org/index.html) designed for RL... This is* **Craftium!** ✨
+✨ *Imagine the richness of Minecraft: open worlds, procedural generation, fully destructible voxel environments... but open source, without Java, easily extensible in [Lua](https://www.lua.org), and with the modern [Gymnasium](https://gymnasium.farama.org/index.html) and [PettingZoo](https://pettingzoo.farama.org/) APIs for AI single-and multi-agent research... This is* **Craftium!** ✨
 
 <center>
 <img src="imgs/craftium_logo.png" alt="Craftium logo" width="350" align="right">
@@ -14,7 +14,7 @@
 </p>
 
 
-Craftium is a fully open-source platform for creating Reinforcement Learning (RL) environents and tasks that provides a [Gymnasium](https://gymnasium.farama.org/index.html) wrapper for the [Minetest](https://www.minetest.net/) voxel game engine.
+[Craftium](https://craftium.readthedocs.io/en/latest/) is a fully open-source platform for creating fast, rich, and diverse **single and multi-agent** environments. Craftium is based on the amazing [Luanti](https://www.luanti.org/) voxel game engine and the popular [Gymnasium](https://gymnasium.farama.org/index.html) and [PettingZoo](https://pettingzoo.farama.org/) APIs.
 
 Check the [installation](./installation.md) instructions and the [getting started](./getting-started.md) pages to start using craftium!
 
@@ -24,17 +24,19 @@ Check the [installation](./installation.md) instructions and the [getting starte
 
 ## Features ✨
 
-- **Super extensible 🧩:** Minetest is built with modding in mind! The game engine is completely extensible using the [Lua](https://www.lua.org) programming language. Easily create mods to implement the environment that suits the needs of your research! See [environments](./environments.md) for a showcase of what is possible with craftium.
+- **Super extensible 🧩:** Luanti is built with modding in mind! The game engine is completely extensible using the [Lua](https://www.lua.org) programming language. Easily create mods to implement the environment that suits the needs of your research! See [environments](https://craftium.readthedocs.io/en/latest/environments/) for a showcase of what is possible with craftium.
 
-- **Extensive documentation 📚:** Craftium extensively [documents](https://craftium.readthedocs.io) how to [use](./getting-started.md) existing [environments](./environments.md) and [create](./creating-envs.md) new ones. The documentation also includes a low-level [reference](./reference.md) of the exported Python classes and gymnasium [Wrappers](./wrappers.md), [extensions to the Lua API](./lua_functions.md), and [code examples](./lua_env_cookbook.md). Moreover, Craftium greatly benefits from existing Minetest documentation like the [wiki](https://wiki.minetest.net/Main_Page), [reference](https://api.minetest.net/), and [modding book](https://rubenwardy.com/minetest_modding_book/en/basics/getting_started.html).
+- **Blazingly fast ⚡:** Craftium achieves +2K steps per second more than Minecraft-based alternatives! Environment richness, 3D, computational efficiency all meet in craftium!
 
-- **Modern RL API 🤖:** Craftium slightly modifies Mintest to communicate with Python, and implements the well-known [Gymnasium](https://gymnasium.farama.org/index.html)'s [Env](https://gymnasium.farama.org/api/env/) API. This opens the door to a huge number of existing tools and libraries compatible with this API, such as [stable-baselines3](https://stable-baselines3.readthedocs.io) or [CleanRL](https://github.com/vwxyzjn/cleanrl).
+- **Extensive documentation 📚:** Craftium extensively [documents](https://craftium.readthedocs.io) how to [use](https://craftium.readthedocs.io/en/latest/getting-started/) existing [environments](https://craftium.readthedocs.io/en/latest/environments) and [create](https://craftium.readthedocs.io/en/latest/creating-envs/) new ones. The documentation also includes a low-level [reference](https://craftium.readthedocs.io/en/latest/reference/) of the exported Python classes and gymnasium [Wrappers](https://craftium.readthedocs.io/en/latest/wrappers/), [extensions to the Lua API](https://craftium.readthedocs.io/en/latest/lua_functions/), and [code examples](https://craftium.readthedocs.io/en/latest/lua_env_cookbook/). Moreover, Craftium greatly benefits from existing Luanti documentation like the [wiki](https://wiki.luanti.org/), [reference](https://api.luanti.org/), and [modding book](https://rubenwardy.com/minetest_modding_book/en/basics/getting_started.html).
 
-- **Fully open source 🤠:** Craftium is based on the Minetest and Gymnasium, both open-source projects.
+- **Modern API 🤖:** Craftium implements the well-known [Gymnasium](https://gymnasium.farama.org/index.html)'s [PettingZoo](https://pettingzoo.farama.org/) APIs, opening the door to a huge number of existing tools and libraries compatible with these APIs. For example, [stable-baselines3](https://stable-baselines3.readthedocs.io) or [CleanRL](https://github.com/vwxyzjn/cleanrl) (check [examples](#examples-) section!).
 
-- **No more Java ⚡:** The Minecraft game is written in Java, not a very friendly language for clusters and high-performance applications. Contrarily, Minetest is written in C++, much more friendly for clusters, and highly performant!
+- **Fully open source 🤠:** Both, craftium and Luanti are fully open-source projects. This allowed us to modify Luanti's source code to tightly integrate it with our library, reducing the number of ugly hacks.
 
-## Citing Craftium
+- **No more Java 👹:** The Minecraft game is written in Java, not a very friendly language for clusters and high-performance applications. Contrarily, Luanti is written in C++, much more friendly for clusters, and highly performant!
+
+## Citing Craftium 📑
 
 To cite Craftium in publications:
 

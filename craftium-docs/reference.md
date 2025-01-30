@@ -11,6 +11,16 @@
     options:
         show_root_heading: true
 
+::: craftium.multiagent_env.MarlCraftiumEnv
+    handler: python
+    options:
+        show_root_heading: true
+
+::: craftium.pettingzoo_env.env
+    handler: python
+    options:
+        show_root_heading: true
+
 ::: craftium.wrappers.BinaryActionWrapper
     handler: python
     options:
