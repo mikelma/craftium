@@ -66,8 +66,8 @@ class BinaryActionWrapper(ActionWrapper):
 
     def action(self, action):
         if isinstance(action, list) or isinstance(action, np.ndarray):
-            return [self.process(act) for act in action]
-        return self.process(action)
+            return self.process(action)
+        return self.process([action])
 
 
 class DiscreteActionWrapper(ActionWrapper):
