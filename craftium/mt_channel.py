@@ -24,19 +24,19 @@ class MtChannel():
         self.connfd = None
 
         # pre-compute the number of bytes that we should receive from MT.
-        # the RGB image + 8 bytes of the reward + 1 of the soft-reset flag
+        # the RGB image + 8 bytes of the reward + 1 of the soft-reset flag + 4 that indicates the length of the upcoming MessagePack payload for info
         self.n_chan = 3 if rgb_imgs else 1
-        self.rec_bytes = img_width*img_height*self.n_chan + 8 + 1
+        self.rec_bytes = img_width*img_height*self.n_chan + 8 + 1 + 4
 
     def receive(self):
-        img, reward, termination = mt_server.server_recv(
+        img, reward, termination, info = mt_server.server_recv(
             self.connfd,
             self.rec_bytes,
             self.img_width,
             self.img_height,
             self.n_chan,
         )
-        return img, reward, termination
+        return img, reward, termination, info
 
     def send(self, keys: list[int], mouse_x: int, mouse_y: int, soft_reset: bool = False, kill: bool = False):
         assert len(keys) == 21, f"Keys list must be of length 21 and is {len(keys)}"

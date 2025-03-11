@@ -12,6 +12,7 @@
 #include <sys/types.h>
 #include <unistd.h> // read(), write(), close()
 #include <poll.h>
+#include <msgpack.h>
 
 #define SA struct sockaddr
 
@@ -149,12 +150,98 @@ static PyObject* server_recv(PyObject* self, PyObject* args) {
     return NULL;
   }
 
-  // Retreive the termination flag (last byte in the buffer) and reward (8 bytes)
-  int termination = (int) buff[n_bytes-1];
+  // Retreive size of the info buffer(last 4 bytes) the termination flag (1 bute) and reward (8 bytes)
+  int n_bytes_info;
+  memcpy(&n_bytes_info, &buff[n_bytes-4], 4);
+
+  int termination = (int) buff[n_bytes-5];
   PyObject* py_termination = PyBool_FromLong(termination);
 
-  memcpy(&reward, &buff[n_bytes-9], sizeof(reward));
+  memcpy(&reward, &buff[n_bytes-13], sizeof(reward));
   PyObject* py_reward = PyFloat_FromDouble(reward);
+
+  // Create the python information dictionary
+  PyObject* py_info = PyDict_New();
+  
+  if (n_bytes_info > 0){
+    // Info will be sent 
+    // Create the buffer where the received info will be stored
+    unsigned char *info_buff = (unsigned char*)malloc(n_bytes_info);
+    if (info_buff == NULL) {
+      PyErr_SetString(PyExc_Exception, "Failed to allocate memory for recv information buffer");
+      return NULL;
+    }
+    
+    // Receive the info buffer
+    n_read = read_large_from_socket(connfd, info_buff, n_bytes_info);
+
+    if (n_read < 0) {
+      PyErr_SetString(PyExc_ConnectionError, "Failed to receive info from MT, error reading from socket.");
+      return NULL;
+    } else if (n_read == 0) {
+      close(connfd);
+      PyErr_SetString(PyExc_ConnectionError, "Failed to receive info from MT. Connection closed by peer: is MT down?");
+      return NULL;
+    }
+    
+    // deserialize the information buffer and crate a python dictionary
+    msgpack_unpacked info;
+    msgpack_unpacked_init(&info);
+
+    if (msgpack_unpack_next(&info, info_buff, n_bytes_info, NULL)) {
+      msgpack_object obj = info.data;
+
+      if (obj.type == MSGPACK_OBJECT_MAP) {
+        msgpack_object_map map = obj.via.map;
+
+        for (size_t i = 0; i < map.size; i++) {
+          msgpack_object key = map.ptr[i].key;
+          msgpack_object value = map.ptr[i].val;
+          
+          if (key.type == MSGPACK_OBJECT_STR){
+            if(value.type == MSGPACK_OBJECT_FLOAT64){
+              char *key_str = strndup(key.via.str.ptr, key.via.str.size);
+              PyDict_SetItemString(py_info, key_str, PyFloat_FromDouble(value.via.f64));
+              free(key_str);
+            } else if (value.type == MSGPACK_OBJECT_POSITIVE_INTEGER){
+              char *key_str = strndup(key.via.str.ptr, key.via.str.size);
+              PyDict_SetItemString(py_info, key_str, PyFloat_FromDouble((double)value.via.u64));
+              free(key_str);
+            } else if (value.type == MSGPACK_OBJECT_NEGATIVE_INTEGER){
+              char *key_str = strndup(key.via.str.ptr, key.via.str.size);
+              PyDict_SetItemString(py_info, key_str, PyFloat_FromDouble((double)value.via.i64));
+              free(key_str);
+            } else {
+              PyErr_SetString(PyExc_RuntimeError, "Received msgpack value is not type double");
+              msgpack_unpacked_destroy(&info);
+              free(info_buff);
+              return NULL;
+            }
+          } else {
+            PyErr_SetString(PyExc_RuntimeError, "Received msgpack key is not type string");
+            msgpack_unpacked_destroy(&info);
+            free(info_buff);
+            return NULL;
+          }
+        }
+      } else {
+        PyErr_SetString(PyExc_RuntimeError, "Expected a map but got a different type");
+        msgpack_unpacked_destroy(&info);
+        free(info_buff);
+        return NULL;
+      }
+    } else {
+      PyErr_SetString(PyExc_RuntimeError, "Failed to unpack data");
+      msgpack_unpacked_destroy(&info);
+      free(info_buff);
+      return NULL;
+    }
+
+    msgpack_unpacked_destroy(&info);
+    free(info_buff);
+  }
+  
+
 
   // Create the numpy array of the image
   npy_intp dims[3] = {obs_height, obs_width, n_channels};
@@ -168,13 +255,14 @@ static PyObject* server_recv(PyObject* self, PyObject* args) {
   // This makes sure that NumPy handles the data lifecycle properly.
   PyArray_ENABLEFLAGS((PyArrayObject*)array, NPY_ARRAY_OWNDATA);
 
-  PyObject* tuple = PyTuple_Pack(3, array, py_reward, py_termination);
+  PyObject* tuple = PyTuple_Pack(4, array, py_reward, py_termination, py_info);
 
   // Decreases the reference count of Python objects. Useful if the
   // objects' lifetime is no longer needed after creating the tuple.
   Py_DECREF(array);
   Py_DECREF(py_reward);
   Py_DECREF(py_termination);
+  Py_DECREF(py_info);
 
   return tuple;
 }

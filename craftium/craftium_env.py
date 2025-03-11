@@ -136,8 +136,6 @@ class CraftiumEnv(Env):
         self.last_observation = None  # used in render if "rgb_array"
         self.timesteps = 0  # the timesteps counter
 
-    def _get_info(self):
-        return dict()
 
     def reset(
         self,
@@ -188,18 +186,16 @@ class CraftiumEnv(Env):
             # HACK skip some frames to let the game initialize
             # TODO This "waiting" should be implemented in Minetest not in python
             for _ in range(self.init_frames):
-                _observation, _reward, _term = self.mt_chann.receive()
+                _observation, _reward, _term, _info = self.mt_chann.receive()
                 self.mt_chann.send([0]*21, 0, 0)  # nop action
         else:
             self.mt_chann.send_soft_reset()
 
-        observation, _reward, _term = self.mt_chann.receive()
+        observation, _reward, _term, info = self.mt_chann.receive()
         if not self.gray_scale_keepdim and not self.rgb_observations:
             observation = observation[:, :, 0]
 
         self.last_observation = observation
-
-        info = self._get_info()
 
         return observation, info
 
@@ -226,13 +222,11 @@ class CraftiumEnv(Env):
         self.mt_chann.send(keys, mouse_x, mouse_y)
 
         # receive the new info from minetest
-        observation, reward, termination = self.mt_chann.receive()
+        observation, reward, termination, info = self.mt_chann.receive()
         if not self.gray_scale_keepdim and not self.rgb_observations:
             observation = observation[:, :, 0]
 
         self.last_observation = observation
-
-        info = self._get_info()
 
         truncated = self.max_timesteps is not None and self.timesteps >= self.max_timesteps
 

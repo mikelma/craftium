@@ -89,6 +89,11 @@ ServerScripting::ServerScripting(Server* server):
         lua_register(L, "reset_termination", lua_reset_termination);
         lua_register(L, "get_termination", lua_get_termination);
         lua_register(L, "get_soft_reset", lua_get_soft_reset);
+        lua_register(L, "set_info", lua_set_info);
+		lua_register(L, "reset_info", lua_reset_info);
+		lua_register(L, "get_from_info", lua_get_from_info);
+		lua_register(L, "remove_from_info", lua_remove_from_info);
+		
 
 	// Initialize our lua_api modules
 	InitializeModApi(L, top);

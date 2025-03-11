@@ -70,6 +70,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "craftium.h"
 #include "gui/mainmenumanager.h"
 #include <chrono>
+#include <msgpack.hpp>
 
 extern gui::IGUIEnvironment* guienv;
 
@@ -244,12 +245,12 @@ void Client::pyConnStep() {
 
     /*
       W*H*3 for the WxH RGB image, +8 for the reward value (a double),
-      and +1 for the episode termination flag
+      +1 for the episode termination flag and + 4 for the size of the information buffer (integer)
     */
     if (g_settings->getBool("rgb_frames")) {
-        obs_rwd_buffer_size = W*H*3 + 8 + 1; // full RGB images
+        obs_rwd_buffer_size = W*H*3 + 8 + 1 + 4; // full RGB images
     } else {
-        obs_rwd_buffer_size = W*H + 8 + 1; // grayscale images
+        obs_rwd_buffer_size = W*H + 8 + 1 + 4 ; // grayscale images
     }
 
     /* If obs_rwd_buffer is not initialized, allocate memory for it now */
@@ -302,10 +303,37 @@ void Client::pyConnStep() {
     } else {
         obs_rwd_buffer[i] = 0;
     }
+	i++;
+	
+	/* Serialize the info unordered_map using msgpack*/
+	msgpack::sbuffer info_buffer; 
+    msgpack::pack(info_buffer, g_info);
 
+	/* Encode the info_buffer's size into obs_rwd_buffer*/
+	int infoSize;
+	if (g_info.size() == 0){
+		infoSize = 0;
+	}else{
+		infoSize = info_buffer.size();
+	}
+
+	unsigned char *infoSizeBytes = (unsigned char*)&infoSize;
+	for (int j=0; j<4; j++) {
+        obs_rwd_buffer[i] = infoSizeBytes[j];
+        i++;
+    }
+	
     /* Send the obs_rwd_buffer over TCP to Python */
     n_send = send(py_sockfd, obs_rwd_buffer, obs_rwd_buffer_size, 0);
 
+	/* If the map is empty, instead of sending an empty dictionary, no buffer will be sent, instead of sending an empty dictionary*/
+	if (g_info.size() > 0){
+	/* Send the info_buffer over TCP to Python */
+    n_send = send(py_sockfd, info_buffer.data(), info_buffer.size(), 0);
+	}
+
+
+	
     /* Receive a buffer of bytes with the actions to take */
     n_recv = recv(py_sockfd, &actions, sizeof(actions), 0);
 

@@ -16,6 +16,10 @@
 #include "../settings.h"
 
 
+#include <string>
+#include <unordered_map>
+
+
 inline char actions[27];
 
 /*
@@ -169,6 +173,8 @@ inline double g_reward_reset_value = 0.0; /* The value to reset the reward to */
 inline bool g_termination = false; /* Global variable with the termination flag */
 inline bool g_soft_reset = false; /* Global variable with the termination flag */
 
+inline std::unordered_map<std::string, double> g_info;  /* Global variable wirh the information dictionary */
+
 extern "C" {
 #include <lualib.h>
 }
@@ -218,3 +224,37 @@ inline static int lua_get_soft_reset(lua_State *L) {
     lua_pushnumber(L, (int)g_soft_reset);
     return 1; /* number of results */
 }
+
+inline static int lua_set_info(lua_State *L) {
+    std::string par_name = lua_tostring(L, 1);
+    double par_value = lua_tonumber(L, 2);
+    g_info[par_name] = par_value;
+    return 0; /* number of results */
+}
+
+
+inline static int lua_reset_info(lua_State *L) {
+    g_info.clear();
+    return 0; /* number of results */
+}
+
+
+inline static int lua_get_from_info(lua_State *L) {
+    lua_pushnumber(L, g_info[lua_tostring(L, 1)]);
+    return 1; /* number of results */
+}
+
+
+inline static int lua_remove_from_info(lua_State *L){
+    
+    auto iter = g_info.find(lua_tostring(L, 1));
+
+    // Delete the pair with key if found
+    if (iter != g_info.end()) {
+        g_info.erase(iter);
+    }
+
+    return 0; /* number of results */
+}
+
+
