@@ -93,6 +93,7 @@ ServerScripting::ServerScripting(Server* server):
 		lua_register(L, "reset_info", lua_reset_info);
 		lua_register(L, "get_from_info", lua_get_from_info);
 		lua_register(L, "remove_from_info", lua_remove_from_info);
+		lua_register(L, "info_contains", lua_info_contains);
 		
 
 	// Initialize our lua_api modules

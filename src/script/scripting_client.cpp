@@ -64,6 +64,7 @@ ClientScripting::ClientScripting(Client *client):
 		lua_register(L, "reset_info", lua_reset_info);
 		lua_register(L, "get_from_info", lua_get_from_info);
 		lua_register(L, "remove_from_info", lua_remove_from_info);
+		lua_register(L, "info_contains", lua_info_contains);
 
 	lua_newtable(L);
 	lua_setfield(L, -2, "ui");

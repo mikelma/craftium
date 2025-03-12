@@ -72,7 +72,41 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <chrono>
 #include <msgpack.hpp>
 
+#include <unordered_map>
+#include <variant>
+#include <string>
+
 extern gui::IGUIEnvironment* guienv;
+
+/*
+  Define custom serialization for std::variant
+*/
+
+namespace msgpack {
+    MSGPACK_API_VERSION_NAMESPACE(MSGPACK_DEFAULT_API_NS) {
+        namespace adaptor {
+
+            template <>
+            struct pack<std::variant<double, std::string>> {
+                template <typename Stream>
+                packer<Stream>& operator()(msgpack::packer<Stream>& o, const std::variant<double, std::string>& v) const {
+                    if (std::holds_alternative<double>(v)) {
+                        o.pack_array(2);
+                        o.pack(0);
+                        o.pack(std::get<double>(v));
+                    } else if (std::holds_alternative<std::string>(v)){
+                        o.pack_array(2);
+                        o.pack(1);
+                        o.pack(std::get<std::string>(v));
+                    }
+                    return o;
+                }
+            };
+        }
+    }
+}
+
+
 
 /*
 	Utility classes
@@ -305,15 +339,16 @@ void Client::pyConnStep() {
     }
 	i++;
 	
-	/* Serialize the info unordered_map using msgpack*/
-	msgpack::sbuffer info_buffer; 
-    msgpack::pack(info_buffer, g_info);
-
+	// msgpack buffer for info
+	msgpack::sbuffer info_buffer;
+	
 	/* Encode the info_buffer's size into obs_rwd_buffer*/
 	int infoSize;
 	if (g_info.size() == 0){
 		infoSize = 0;
 	}else{
+		/* Serialize the info unordered_map using msgpack*/ 
+		msgpack::pack(info_buffer, g_info);
 		infoSize = info_buffer.size();
 	}
 

@@ -18,6 +18,7 @@
 
 #include <string>
 #include <unordered_map>
+#include <variant>
 
 
 inline char actions[27];
@@ -173,7 +174,7 @@ inline double g_reward_reset_value = 0.0; /* The value to reset the reward to */
 inline bool g_termination = false; /* Global variable with the termination flag */
 inline bool g_soft_reset = false; /* Global variable with the termination flag */
 
-inline std::unordered_map<std::string, double> g_info;  /* Global variable wirh the information dictionary */
+inline std::unordered_map<std::string, std::variant<double, std::string>> g_info;  /* Global variable wirh the information dictionary */
 
 extern "C" {
 #include <lualib.h>
@@ -226,10 +227,25 @@ inline static int lua_get_soft_reset(lua_State *L) {
 }
 
 inline static int lua_set_info(lua_State *L) {
-    std::string par_name = lua_tostring(L, 1);
-    double par_value = lua_tonumber(L, 2);
-    g_info[par_name] = par_value;
-    return 0; /* number of results */
+    const char *key = lua_tostring(L, 1);
+    if (!key){
+        return 0;
+    }
+    if (lua_type(L, 2) == LUA_TNUMBER) {
+        double val = lua_tonumber(L, 2);
+        g_info[key] = val;
+        return 0; /* number of results */
+    } else if (lua_type(L, 2) == LUA_TSTRING) {
+        std::string val = lua_tostring(L, 2);
+        g_info[key] = val;
+        return 0; /* number of results */
+    } else if (lua_type(L,2) == LUA_TBOOLEAN){
+        double val = lua_toboolean(L, 2);
+        g_info[key] = val;
+        return 0; /* number of results */
+    }else {
+        return 0;
+    }
 }
 
 
@@ -240,7 +256,29 @@ inline static int lua_reset_info(lua_State *L) {
 
 
 inline static int lua_get_from_info(lua_State *L) {
-    lua_pushnumber(L, g_info[lua_tostring(L, 1)]);
+
+    const char *key = lua_tostring(L,1);
+    if (!key) {
+        lua_pushnil(L);
+        return 1;
+    }
+
+    auto iter = g_info.find(key);
+    if (iter == g_info.end()){
+        lua_pushnil(L);
+        return 1;
+    }
+
+
+    std::visit([&](const auto& value) {
+        using T = std::decay_t<decltype(value)>;
+        if constexpr (std::is_same_v<T, double>) {
+            lua_pushnumber(L, value);
+        } else if constexpr (std::is_same_v<T, std::string>) {
+            lua_pushstring(L, value.c_str());
+        }
+    }, iter->second);
+
     return 1; /* number of results */
 }
 
@@ -255,6 +293,15 @@ inline static int lua_remove_from_info(lua_State *L){
     }
 
     return 0; /* number of results */
+}
+
+inline static int lua_info_contains(lua_State *L){
+    
+    auto iter = g_info.find(lua_tostring(L, 1));
+
+    lua_pushboolean(L, iter != g_info.end());
+
+    return 1; /* number of results */
 }
 
 

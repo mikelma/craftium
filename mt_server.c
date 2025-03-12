@@ -199,24 +199,55 @@ static PyObject* server_recv(PyObject* self, PyObject* args) {
           msgpack_object value = map.ptr[i].val;
           
           if (key.type == MSGPACK_OBJECT_STR){
-            if(value.type == MSGPACK_OBJECT_FLOAT64){
-              char *key_str = strndup(key.via.str.ptr, key.via.str.size);
-              PyDict_SetItemString(py_info, key_str, PyFloat_FromDouble(value.via.f64));
-              free(key_str);
-            } else if (value.type == MSGPACK_OBJECT_POSITIVE_INTEGER){
-              char *key_str = strndup(key.via.str.ptr, key.via.str.size);
-              PyDict_SetItemString(py_info, key_str, PyFloat_FromDouble((double)value.via.u64));
-              free(key_str);
-            } else if (value.type == MSGPACK_OBJECT_NEGATIVE_INTEGER){
-              char *key_str = strndup(key.via.str.ptr, key.via.str.size);
-              PyDict_SetItemString(py_info, key_str, PyFloat_FromDouble((double)value.via.i64));
-              free(key_str);
+            if (value.type == MSGPACK_OBJECT_ARRAY && value.via.array.size == 2){
+              int type_tag = value.via.array.ptr[0].via.i64;  //0 -> number      1 -> string
+              if (type_tag == 0){
+                //deserialize as number
+                if(value.via.array.ptr[1].type == MSGPACK_OBJECT_FLOAT64){
+                  char *key_str = strndup(key.via.str.ptr, key.via.str.size);
+                  PyDict_SetItemString(py_info, key_str, PyFloat_FromDouble(value.via.array.ptr[1].via.f64));
+                  free(key_str);
+                } else if (value.via.array.ptr[1].type == MSGPACK_OBJECT_POSITIVE_INTEGER){
+                  char *key_str = strndup(key.via.str.ptr, key.via.str.size);
+                  PyDict_SetItemString(py_info, key_str, PyFloat_FromDouble((double)value.via.array.ptr[1].via.u64));
+                  free(key_str);
+                } else if (value.via.array.ptr[1].type == MSGPACK_OBJECT_NEGATIVE_INTEGER){
+                  char *key_str = strndup(key.via.str.ptr, key.via.str.size);
+                  PyDict_SetItemString(py_info, key_str, PyFloat_FromDouble((double)value.via.array.ptr[1].via.i64));
+                  free(key_str);
+                } else {
+                  PyErr_Format(PyExc_RuntimeError, "Received msgpack value is not supported. Type: %d", value.via.array.ptr[1].type);
+                  msgpack_unpacked_destroy(&info);
+                  free(info_buff);
+                  return NULL;
+                }
+              }else if(type_tag == 1){
+                //deserialize as string
+                if (value.via.array.ptr[1].type == MSGPACK_OBJECT_STR){
+                  char *key_str = strndup(key.via.str.ptr, key.via.str.size);
+                  char *val_str = strndup(value.via.array.ptr[1].via.str.ptr, value.via.array.ptr[1].via.str.size);
+                  PyObject *py_value_str = PyUnicode_FromString(val_str);
+                  PyDict_SetItemString(py_info, key_str, py_value_str);
+                  Py_DECREF(py_value_str);
+                  free(key_str);
+                } else {
+                  PyErr_Format(PyExc_RuntimeError, "Received msgpack value is not supported. Type: %d", value.type);
+                  msgpack_unpacked_destroy(&info);
+                  free(info_buff);
+                  return NULL;
+                }
+              }else{
+                PyErr_SetString(PyExc_RuntimeError, "Error while deserializing value");
+                msgpack_unpacked_destroy(&info);
+                free(info_buff);
+                return NULL;
+              }
             } else {
-              PyErr_SetString(PyExc_RuntimeError, "Received msgpack value is not type double");
+              PyErr_SetString(PyExc_RuntimeError, "Error while deserializing value");
               msgpack_unpacked_destroy(&info);
               free(info_buff);
               return NULL;
-            }
+            } 
           } else {
             PyErr_SetString(PyExc_RuntimeError, "Received msgpack key is not type string");
             msgpack_unpacked_destroy(&info);
