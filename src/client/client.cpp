@@ -96,32 +96,18 @@ namespace msgpack {
                 template <typename Stream>
                 packer<Stream>& operator()(msgpack::packer<Stream>& o, const std::variant<List, Dict, bool, int, float, double, std::string>& v) const {
                     if (std::holds_alternative<bool>(v)) { 
-                        o.pack_array(2);
-                        o.pack(0); // Type identifier for bool
                         o.pack(std::get<bool>(v));
-                    } else if (std::holds_alternative<int>(v)){ 
-                        o.pack_array(2);
-                        o.pack(1); // Type identifier for int
+                    } else if (std::holds_alternative<int>(v)){
                         o.pack(std::get<int>(v));
                     }else if (std::holds_alternative<float>(v)){
-                        o.pack_array(2);
-                        o.pack(2); // Type identifier for float
                         o.pack(std::get<float>(v));
                     }else if (std::holds_alternative<double>(v)){ 
-                        o.pack_array(2);
-                        o.pack(3); // Type identifier for double
                         o.pack(std::get<double>(v));
                     }else if (std::holds_alternative<std::string>(v)){
-                        o.pack_array(2);
-                        o.pack(4); // Type identifier for string
                         o.pack(std::get<std::string>(v));
                     }else if (std::holds_alternative<List>(v)){
-                        o.pack_array(2);
-                        o.pack(5); // Type identifier for List
                         o.pack(std::get<List>(v));
                     } else if (std::holds_alternative<Dict>(v)){
-                        o.pack_array(2);
-                        o.pack(6); // Type identifier for Dict
                         o.pack(std::get<Dict>(v));
                     }
                     return o;
@@ -134,24 +120,14 @@ namespace msgpack {
                 template <typename Stream>
                 packer<Stream>& operator()(msgpack::packer<Stream>& o, const std::variant<bool, int, float, double, std::string>& v) const {
                     if (std::holds_alternative<bool>(v)) {
-                        o.pack_array(2);
-                        o.pack(0); // Type identifier for bool
                         o.pack(std::get<bool>(v));
                     } else if (std::holds_alternative<int>(v)){
-                        o.pack_array(2);
-                        o.pack(1); // Type identifier for int
                         o.pack(std::get<int>(v));
                     }else if (std::holds_alternative<float>(v)){
-                        o.pack_array(2);
-                        o.pack(2); // Type identifier for float
                         o.pack(std::get<float>(v));
                     }else if (std::holds_alternative<double>(v)){
-                        o.pack_array(2);
-                        o.pack(3); // Type identifier for double
                         o.pack(std::get<double>(v));
                     }else if (std::holds_alternative<std::string>(v)){
-                        o.pack_array(2);
-                        o.pack(4); // Type identifier for string
                         o.pack(std::get<std::string>(v));
                     }
                     return o;

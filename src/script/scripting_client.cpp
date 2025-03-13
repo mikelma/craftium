@@ -65,6 +65,10 @@ ClientScripting::ClientScripting(Client *client):
 		lua_register(L, "get_from_info", lua_get_from_info);
 		lua_register(L, "remove_from_info", lua_remove_from_info);
 		lua_register(L, "info_contains", lua_info_contains);
+		lua_register(L, "set_empty_list", lua_set_empty_list);
+		lua_register(L, "add_to_list", lua_add_to_list);
+		lua_register(L, "set_empty_dict", lua_set_empty_dict);
+		lua_register(L, "add_to_dict", lua_add_to_dict);
 
 	lua_newtable(L);
 	lua_setfield(L, -2, "ui");

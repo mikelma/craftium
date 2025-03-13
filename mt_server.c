@@ -121,6 +121,86 @@ int read_large_from_socket(int socket_fd, char *buffer, int total_size) {
     return total_bytes;
 }
 
+static PyObject* python_dict_from_msgpack_map(msgpack_object_map map);
+
+static PyObject* python_list_from_msgpack_array(msgpack_object_array array){
+  PyObject* py_list = PyList_New(array.size);
+
+  for (size_t i = 0; i < array.size; i++) {
+    msgpack_object elem = array.ptr[i];
+    
+    if (elem.type == MSGPACK_OBJECT_BOOLEAN){
+      PyList_SetItem(py_list, i, PyBool_FromLong(elem.via.boolean)); 
+    } else if (elem.type == MSGPACK_OBJECT_POSITIVE_INTEGER){
+      PyList_SetItem(py_list, i, PyLong_FromUnsignedLongLong(elem.via.u64));
+    } else if (elem.type == MSGPACK_OBJECT_NEGATIVE_INTEGER){
+      PyList_SetItem(py_list, i, PyLong_FromLongLong(elem.via.i64));
+    } else if(elem.type == MSGPACK_OBJECT_FLOAT32){
+      PyList_SetItem(py_list, i, PyFloat_FromDouble(elem.via.f64));
+    } else if(elem.type == MSGPACK_OBJECT_FLOAT64){
+      PyList_SetItem(py_list, i, PyFloat_FromDouble(elem.via.f64));
+    } else if (elem.type == MSGPACK_OBJECT_STR){
+      char *elem_str = strndup(elem.via.str.ptr, elem.via.str.size);
+      PyList_SetItem(py_list, i, PyUnicode_FromString(elem_str));
+      free(elem_str);
+    } else if (elem.type == MSGPACK_OBJECT_ARRAY){
+      PyObject* elem_py_list = python_list_from_msgpack_array(elem.via.array);
+      PyList_SetItem(py_list, i, elem_py_list);
+      Py_DECREF(elem_py_list);    
+    } else if (elem.type == MSGPACK_OBJECT_MAP){
+      PyObject* elem_py_dict = python_dict_from_msgpack_map(elem.via.map);
+      PyList_SetItem(py_list, i, elem_py_dict);
+      Py_DECREF(elem_py_dict);    
+    } else {
+      PyErr_SetString(PyExc_RuntimeError, "Unsuported type received");
+      return NULL;
+    }
+  }
+  return py_list;
+}
+
+static PyObject* python_dict_from_msgpack_map(msgpack_object_map map){
+  PyObject* py_dict = PyDict_New();
+  
+  for (size_t i = 0; i < map.size; i++) {
+    msgpack_object key = map.ptr[i].key;
+    msgpack_object value = map.ptr[i].val;
+    
+    char *key_str = strndup(key.via.str.ptr, key.via.str.size);
+    
+    if (value.type == MSGPACK_OBJECT_BOOLEAN){
+      PyDict_SetItemString(py_dict, key_str, PyBool_FromLong(value.via.boolean));
+    } else if (value.type == MSGPACK_OBJECT_POSITIVE_INTEGER){
+      PyDict_SetItemString(py_dict, key_str, PyLong_FromUnsignedLongLong(value.via.u64));
+    } else if (value.type == MSGPACK_OBJECT_NEGATIVE_INTEGER){
+      PyDict_SetItemString(py_dict, key_str, PyLong_FromLongLong(value.via.i64));
+    } else if(value.type == MSGPACK_OBJECT_FLOAT32){
+      PyDict_SetItemString(py_dict, key_str, PyFloat_FromDouble(value.via.f64));
+    } else if(value.type == MSGPACK_OBJECT_FLOAT64){
+      PyDict_SetItemString(py_dict, key_str, PyFloat_FromDouble(value.via.f64));
+    } else if (value.type == MSGPACK_OBJECT_STR){
+      char *val_str = strndup(value.via.str.ptr, value.via.str.size);
+      PyDict_SetItemString(py_dict, key_str, PyUnicode_FromString(val_str));
+      free(val_str);
+    } else if (value.type == MSGPACK_OBJECT_ARRAY){
+      PyObject* val_py_list = python_list_from_msgpack_array(value.via.array);
+      PyDict_SetItemString(py_dict, key_str, val_py_list);
+      Py_DECREF(val_py_list);    
+    } else if (value.type == MSGPACK_OBJECT_MAP){
+      PyObject* val_py_dict = python_dict_from_msgpack_map(value.via.map);
+      PyDict_SetItemString(py_dict, key_str, val_py_dict);
+      Py_DECREF(val_py_dict);    
+    } else {
+      PyErr_SetString(PyExc_RuntimeError, "Unsuported type received");
+      return NULL;
+    }
+    free(key_str);
+  }
+  return py_dict;
+}
+
+
+
 static PyObject* server_recv(PyObject* self, PyObject* args) {
   int connfd, n_bytes, obs_width, obs_height, n_read, n_channels;
   double reward;
@@ -160,18 +240,19 @@ static PyObject* server_recv(PyObject* self, PyObject* args) {
   memcpy(&reward, &buff[n_bytes-13], sizeof(reward));
   PyObject* py_reward = PyFloat_FromDouble(reward);
 
-  // Create the python information dictionary
-  PyObject* py_info = PyDict_New();
-  
+  PyObject* py_info = 0;
+
   if (n_bytes_info > 0){
+
     // Info will be sent 
     // Create the buffer where the received info will be stored
+
     unsigned char *info_buff = (unsigned char*)malloc(n_bytes_info);
     if (info_buff == NULL) {
       PyErr_SetString(PyExc_Exception, "Failed to allocate memory for recv information buffer");
       return NULL;
     }
-    
+
     // Receive the info buffer
     n_read = read_large_from_socket(connfd, info_buff, n_bytes_info);
 
@@ -183,7 +264,7 @@ static PyObject* server_recv(PyObject* self, PyObject* args) {
       PyErr_SetString(PyExc_ConnectionError, "Failed to receive info from MT. Connection closed by peer: is MT down?");
       return NULL;
     }
-    
+
     // deserialize the information buffer and crate a python dictionary
     msgpack_unpacked info;
     msgpack_unpacked_init(&info);
@@ -194,140 +275,8 @@ static PyObject* server_recv(PyObject* self, PyObject* args) {
       if (obj.type == MSGPACK_OBJECT_MAP) {
         msgpack_object_map map = obj.via.map;
 
-        for (size_t i = 0; i < map.size; i++) {
-          msgpack_object key = map.ptr[i].key;
-          msgpack_object value = map.ptr[i].val;
-          
-          if (key.type == MSGPACK_OBJECT_STR){
-            char *key_str = strndup(key.via.str.ptr, key.via.str.size);
-            if (value.type == MSGPACK_OBJECT_ARRAY && value.via.array.size == 2){
-              int type_tag = value.via.array.ptr[0].via.i64;  
-              /*
-              0->bool
-              1->int
-              2->float
-              3->double
-              4->string
-              5->List
-              6->Dict
-              */
-              if (type_tag == 0){   //bool
-                if (value.via.array.ptr[1].type == MSGPACK_OBJECT_BOOLEAN){
-                  PyDict_SetItemString(py_info, key_str, PyBool_FromLong(value.via.array.ptr[1].via.boolean));
-                } else {
+        py_info = python_dict_from_msgpack_map(map);
 
-                }
-              }else if (type_tag == 1){ //int
-                if (value.via.array.ptr[1].type == MSGPACK_OBJECT_POSITIVE_INTEGER){
-                  PyDict_SetItemString(py_info, key_str, PyLong_FromUnsignedLongLong(value.via.array.ptr[1].via.u64));
-                } else if (value.via.array.ptr[1].type == MSGPACK_OBJECT_NEGATIVE_INTEGER){
-                  PyDict_SetItemString(py_info, key_str, PyLong_FromLongLong(value.via.array.ptr[1].via.i64));
-                } else {
-
-                }
-              }else if (type_tag == 2){ //float
-                if(value.via.array.ptr[1].type == MSGPACK_OBJECT_FLOAT32){
-                  PyDict_SetItemString(py_info, key_str, PyFloat_FromDouble(value.via.array.ptr[1].via.f64));
-                } else if (value.via.array.ptr[1].type == MSGPACK_OBJECT_POSITIVE_INTEGER){
-                  PyDict_SetItemString(py_info, key_str, PyFloat_FromDouble(value.via.array.ptr[1].via.u64));
-                } else if (value.via.array.ptr[1].type == MSGPACK_OBJECT_NEGATIVE_INTEGER){
-                  PyDict_SetItemString(py_info, key_str, PyFloat_FromDouble(value.via.array.ptr[1].via.i64));
-                } else {
-                  
-                }
-              }else if (type_tag == 3){ //double
-                if(value.via.array.ptr[1].type == MSGPACK_OBJECT_FLOAT64){
-                  PyDict_SetItemString(py_info, key_str, PyFloat_FromDouble(value.via.array.ptr[1].via.f64));
-                } else if (value.via.array.ptr[1].type == MSGPACK_OBJECT_POSITIVE_INTEGER){
-                  PyDict_SetItemString(py_info, key_str, PyFloat_FromDouble(value.via.array.ptr[1].via.u64));
-                } else if (value.via.array.ptr[1].type == MSGPACK_OBJECT_NEGATIVE_INTEGER){
-                  PyDict_SetItemString(py_info, key_str, PyFloat_FromDouble(value.via.array.ptr[1].via.i64));
-                } else {
-                  
-                }
-              }else if (type_tag == 4){ //string
-                if (value.via.array.ptr[1].type == MSGPACK_OBJECT_STR){
-                  char *val_str = strndup(value.via.array.ptr[1].via.str.ptr, value.via.array.ptr[1].via.str.size);
-                  PyDict_SetItemString(py_info, key_str, PyUnicode_FromString(val_str));
-                  free(val_str);
-                } else {
-                  
-                }
-              }else if (type_tag == 5){ //List
-                if (value.via.array.ptr[1].type == MSGPACK_OBJECT_ARRAY){
-                  
-                }
-              }else if (type_tag == 6){ //Dict
-                if (value.via.array.ptr[1].type == MSGPACK_OBJECT_MAP){
-                  
-                }
-              }else{
-                PyErr_SetString(PyExc_RuntimeError, "Error while deserializing value");
-                msgpack_unpacked_destroy(&info);
-                free(info_buff);
-                free(key_str);
-                return NULL;
-              }
-              /*
-              if (type_tag == 0){
-                //deserialize as number
-                if(value.via.array.ptr[1].type == MSGPACK_OBJECT_FLOAT64){
-                  char *key_str = strndup(key.via.str.ptr, key.via.str.size);
-                  PyDict_SetItemString(py_info, key_str, PyFloat_FromDouble(value.via.array.ptr[1].via.f64));
-                  free(key_str);
-                } else if (value.via.array.ptr[1].type == MSGPACK_OBJECT_POSITIVE_INTEGER){
-                  char *key_str = strndup(key.via.str.ptr, key.via.str.size);
-                  PyDict_SetItemString(py_info, key_str, PyFloat_FromDouble((double)value.via.array.ptr[1].via.u64));
-                  free(key_str);
-                } else if (value.via.array.ptr[1].type == MSGPACK_OBJECT_NEGATIVE_INTEGER){
-                  char *key_str = strndup(key.via.str.ptr, key.via.str.size);
-                  PyDict_SetItemString(py_info, key_str, PyFloat_FromDouble((double)value.via.array.ptr[1].via.i64));
-                  free(key_str);
-                } else {
-                  PyErr_Format(PyExc_RuntimeError, "Received msgpack value is not supported. Type: %d", value.via.array.ptr[1].type);
-                  msgpack_unpacked_destroy(&info);
-                  free(info_buff);
-                  return NULL;
-                }
-              }else if(type_tag == 1){
-                //deserialize as string
-                if (value.via.array.ptr[1].type == MSGPACK_OBJECT_STR){
-                  char *key_str = strndup(key.via.str.ptr, key.via.str.size);
-                  char *val_str = strndup(value.via.array.ptr[1].via.str.ptr, value.via.array.ptr[1].via.str.size);
-                  PyObject *py_value_str = PyUnicode_FromString(val_str);
-                  PyDict_SetItemString(py_info, key_str, py_value_str);
-                  Py_DECREF(py_value_str);
-                  free(key_str);
-                } else {
-                  PyErr_Format(PyExc_RuntimeError, "Received msgpack value is not supported. Type: %d", value.type);
-                  msgpack_unpacked_destroy(&info);
-                  free(info_buff);
-                  return NULL;
-                }
-              }else{
-                PyErr_SetString(PyExc_RuntimeError, "Error while deserializing value");
-                msgpack_unpacked_destroy(&info);
-                free(info_buff);
-                return NULL;
-              }
-              */
-            } else {
-              PyErr_SetString(PyExc_RuntimeError, "Error while deserializing value");
-              msgpack_unpacked_destroy(&info);
-              free(info_buff);
-              free(key_str);
-              return NULL;
-            } 
-
-            free(key_str);
-          
-          } else {
-            PyErr_SetString(PyExc_RuntimeError, "Received msgpack key is not type string");
-            msgpack_unpacked_destroy(&info);
-            free(info_buff);
-            return NULL;
-          }
-        }
       } else {
         PyErr_SetString(PyExc_RuntimeError, "Expected a map but got a different type");
         msgpack_unpacked_destroy(&info);
@@ -343,9 +292,14 @@ static PyObject* server_recv(PyObject* self, PyObject* args) {
 
     msgpack_unpacked_destroy(&info);
     free(info_buff);
-  }
-  
 
+
+
+  } else {
+    // No info will be sent 
+    // Info is just empty dict
+    py_info = PyDict_New();
+  }
 
   // Create the numpy array of the image
   npy_intp dims[3] = {obs_height, obs_width, n_channels};

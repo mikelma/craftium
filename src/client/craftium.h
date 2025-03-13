@@ -316,4 +316,109 @@ inline static int lua_info_contains(lua_State *L){
     return 1; /* number of results */
 }
 
+inline static int lua_set_empty_list(lua_State *L){
+    const char *key = lua_tostring(L, 1);
+    if (!key){
+        return 0;
+    }
+    
+    g_info[key] = List();
+    return 0; /* number of results */
+
+}
+
+inline static int lua_add_to_list(lua_State *L){
+    const char *key = lua_tostring(L, 1);
+    if (!key){
+        return 0;
+    }
+    
+    Value val;
+
+    if (lua_type(L,2) == LUA_TBOOLEAN){
+        val = lua_toboolean(L, 2);
+    } else if (lua_type(L, 2) == LUA_TNUMBER) {
+        lua_Number num = lua_tonumber(L, 2); 
+        if (static_cast<lua_Integer>(num) == num) {
+            val = static_cast<int>(num);
+        } else if (static_cast<float>(num) == num) {
+            val = static_cast<float>(num);
+        } else {
+            val = static_cast<double>(num);
+        }
+    } else if (lua_type(L, 2) == LUA_TSTRING) {
+        val = lua_tostring(L, 2);
+    } else {
+        return 0;
+    }
+
+    auto iter = g_info.find(key);
+    if (iter == g_info.end()){
+        g_info[key] = List{val};
+        return 0;
+    } else if (!std::holds_alternative<List>(iter->second)){
+        return 0;
+    }
+
+    std::get<List>(iter->second).push_back(val);
+
+    return 0;
+
+}
+
+inline static int lua_set_empty_dict(lua_State *L){
+    const char *key = lua_tostring(L, 1);
+    if (!key){
+        return 0;
+    }
+    
+    g_info[key] = Dict();
+    return 0; /* number of results */
+
+}
+
+inline static int lua_add_to_dict(lua_State *L){
+    const char *key = lua_tostring(L, 1);
+    if (!key){
+        return 0;
+    }
+
+    const char *key2 = lua_tostring(L, 2);
+    if (!key2){
+        return 0;
+    }
+    
+    Value val;
+
+    if (lua_type(L,3) == LUA_TBOOLEAN){
+        val = lua_toboolean(L, 3);
+    } else if (lua_type(L, 3) == LUA_TNUMBER) {
+        lua_Number num = lua_tonumber(L, 3); 
+        if (static_cast<lua_Integer>(num) == num) {
+            val = static_cast<int>(num);
+        } else if (static_cast<float>(num) == num) {
+            val = static_cast<float>(num);
+        } else {
+            val = static_cast<double>(num);
+        }
+    } else if (lua_type(L, 3) == LUA_TSTRING) {
+        val = lua_tostring(L, 3);
+    } else {
+        return 0;
+    }
+
+    auto iter = g_info.find(key);
+    if (iter == g_info.end()){
+        g_info[key] = Dict{{key2, val}};
+        return 0;
+    } else if (!std::holds_alternative<Dict>(iter->second)){
+        return 0;
+    }
+
+    std::get<Dict>(iter->second)[key2]=val;
+
+    return 0;
+
+}
+
 
