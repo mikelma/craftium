@@ -70,33 +70,88 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "craftium.h"
 #include "gui/mainmenumanager.h"
 #include <chrono>
-#include <msgpack.hpp>
 
+#include <msgpack.hpp>
 #include <unordered_map>
+#include <vector>
 #include <variant>
 #include <string>
 
 extern gui::IGUIEnvironment* guienv;
 
-/*
-  Define custom serialization for std::variant
-*/
+// Specialization of msgpack::adaptor::pack for serializing std::variant 
+// Ensures MsgPack correct serialization of variant types
+
+using Value = std::variant<bool, int, float, double, std::string>;
+using List = std::vector<Value>;
+using Dict = std::unordered_map<std::string, Value>;
+using InfoMap = std::unordered_map<std::string, std::variant<List, Dict, bool, int, float, double, std::string>>;
 
 namespace msgpack {
     MSGPACK_API_VERSION_NAMESPACE(MSGPACK_DEFAULT_API_NS) {
         namespace adaptor {
-
+			// for packing InfoMap (variant<List, Dict, bool, int, float, double, std::string>)
             template <>
-            struct pack<std::variant<double, std::string>> {
+            struct pack<std::variant<List, Dict, bool, int, float, double, std::string>> {
                 template <typename Stream>
-                packer<Stream>& operator()(msgpack::packer<Stream>& o, const std::variant<double, std::string>& v) const {
-                    if (std::holds_alternative<double>(v)) {
+                packer<Stream>& operator()(msgpack::packer<Stream>& o, const std::variant<List, Dict, bool, int, float, double, std::string>& v) const {
+                    if (std::holds_alternative<bool>(v)) { 
                         o.pack_array(2);
-                        o.pack(0);
+                        o.pack(0); // Type identifier for bool
+                        o.pack(std::get<bool>(v));
+                    } else if (std::holds_alternative<int>(v)){ 
+                        o.pack_array(2);
+                        o.pack(1); // Type identifier for int
+                        o.pack(std::get<int>(v));
+                    }else if (std::holds_alternative<float>(v)){
+                        o.pack_array(2);
+                        o.pack(2); // Type identifier for float
+                        o.pack(std::get<float>(v));
+                    }else if (std::holds_alternative<double>(v)){ 
+                        o.pack_array(2);
+                        o.pack(3); // Type identifier for double
                         o.pack(std::get<double>(v));
-                    } else if (std::holds_alternative<std::string>(v)){
+                    }else if (std::holds_alternative<std::string>(v)){
                         o.pack_array(2);
-                        o.pack(1);
+                        o.pack(4); // Type identifier for string
+                        o.pack(std::get<std::string>(v));
+                    }else if (std::holds_alternative<List>(v)){
+                        o.pack_array(2);
+                        o.pack(5); // Type identifier for List
+                        o.pack(std::get<List>(v));
+                    } else if (std::holds_alternative<Dict>(v)){
+                        o.pack_array(2);
+                        o.pack(6); // Type identifier for Dict
+                        o.pack(std::get<Dict>(v));
+                    }
+                    return o;
+                }
+            };
+
+			// for packing Value (variant<bool, int, float, double, std::string>)
+            template <>
+            struct pack<std::variant<bool, int, float, double, std::string>> {
+                template <typename Stream>
+                packer<Stream>& operator()(msgpack::packer<Stream>& o, const std::variant<bool, int, float, double, std::string>& v) const {
+                    if (std::holds_alternative<bool>(v)) {
+                        o.pack_array(2);
+                        o.pack(0); // Type identifier for bool
+                        o.pack(std::get<bool>(v));
+                    } else if (std::holds_alternative<int>(v)){
+                        o.pack_array(2);
+                        o.pack(1); // Type identifier for int
+                        o.pack(std::get<int>(v));
+                    }else if (std::holds_alternative<float>(v)){
+                        o.pack_array(2);
+                        o.pack(2); // Type identifier for float
+                        o.pack(std::get<float>(v));
+                    }else if (std::holds_alternative<double>(v)){
+                        o.pack_array(2);
+                        o.pack(3); // Type identifier for double
+                        o.pack(std::get<double>(v));
+                    }else if (std::holds_alternative<std::string>(v)){
+                        o.pack_array(2);
+                        o.pack(4); // Type identifier for string
                         o.pack(std::get<std::string>(v));
                     }
                     return o;
@@ -361,10 +416,10 @@ void Client::pyConnStep() {
     /* Send the obs_rwd_buffer over TCP to Python */
     n_send = send(py_sockfd, obs_rwd_buffer, obs_rwd_buffer_size, 0);
 
-	/* If the map is empty, instead of sending an empty dictionary, no buffer will be sent, instead of sending an empty dictionary*/
+	/* If the map is empty, instead of sending an empty dictionary, no buffer will be sent */
 	if (g_info.size() > 0){
-	/* Send the info_buffer over TCP to Python */
-    n_send = send(py_sockfd, info_buffer.data(), info_buffer.size(), 0);
+		/* Send the info_buffer over TCP to Python */
+		n_send = send(py_sockfd, info_buffer.data(), info_buffer.size(), 0);
 	}
 
 

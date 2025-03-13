@@ -174,7 +174,12 @@ inline double g_reward_reset_value = 0.0; /* The value to reset the reward to */
 inline bool g_termination = false; /* Global variable with the termination flag */
 inline bool g_soft_reset = false; /* Global variable with the termination flag */
 
-inline std::unordered_map<std::string, std::variant<double, std::string>> g_info;  /* Global variable wirh the information dictionary */
+using Value = std::variant<bool, int, float, double, std::string>;
+using List = std::vector<Value>;
+using Dict = std::unordered_map<std::string, Value>;
+using InfoMap = std::unordered_map<std::string, std::variant<List, Dict, bool, int, float, double, std::string>>;
+
+inline InfoMap g_info;  /* Global variable with the information dictionary */
 
 extern "C" {
 #include <lualib.h>
@@ -227,23 +232,30 @@ inline static int lua_get_soft_reset(lua_State *L) {
 }
 
 inline static int lua_set_info(lua_State *L) {
+
     const char *key = lua_tostring(L, 1);
     if (!key){
         return 0;
     }
-    if (lua_type(L, 2) == LUA_TNUMBER) {
-        double val = lua_tonumber(L, 2);
+    if (lua_type(L,2) == LUA_TBOOLEAN){
+        bool val = lua_toboolean(L, 2);
         g_info[key] = val;
+        return 0; /* number of results */
+    } else if (lua_type(L, 2) == LUA_TNUMBER) {
+        lua_Number num = lua_tonumber(L, 2); 
+        if (static_cast<lua_Integer>(num) == num) {
+            g_info[key] = static_cast<int>(num);
+        } else if (static_cast<float>(num) == num) {
+            g_info[key] = static_cast<float>(num);
+        } else {
+            g_info[key] = static_cast<double>(num);
+        }
         return 0; /* number of results */
     } else if (lua_type(L, 2) == LUA_TSTRING) {
         std::string val = lua_tostring(L, 2);
         g_info[key] = val;
         return 0; /* number of results */
-    } else if (lua_type(L,2) == LUA_TBOOLEAN){
-        double val = lua_toboolean(L, 2);
-        g_info[key] = val;
-        return 0; /* number of results */
-    }else {
+    } else {
         return 0;
     }
 }
