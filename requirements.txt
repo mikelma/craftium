@@ -1,8 +1,8 @@
 gymnasium==0.29.1
-numpy==2.0.1
+numpy>=2.0.1
 PyYAML==6.0.1
-setuptools==66.1.1
+setuptools>=66.1.1
 stable_baselines3==2.3.2
-torch==2.1.0
+torch==2.6.0
 tyro==0.8.5
 pybind11==2.13.1

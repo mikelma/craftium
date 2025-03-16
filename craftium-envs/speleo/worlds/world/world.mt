@@ -9,3 +9,4 @@ world_name = world
 server_announce = false
 load_mod_superflat = false
 load_mod_craftium_env = mods/craftium_env
+load_mod_voxel_api = mods/voxel_api

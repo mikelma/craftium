@@ -60,6 +60,9 @@ ClientScripting::ClientScripting(Client *client):
         lua_register(L, "reset_termination", lua_reset_termination);
         lua_register(L, "get_termination", lua_get_termination);
         lua_register(L, "get_soft_reset", lua_get_soft_reset);
+        lua_register(L, "set_voxel_data", lua_set_voxel_data);
+        lua_register(L, "set_voxel_light_data", lua_set_voxel_light_data);
+        lua_register(L, "set_voxel_param2_data", lua_set_voxel_param2_data);
 
 	lua_newtable(L);
 	lua_setfield(L, -2, "ui");

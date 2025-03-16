@@ -1,7 +1,13 @@
+voxel_radius = {
+	x = minetest.settings:get("voxel_obs_rx"),
+	y = minetest.settings:get("voxel_obs_ry"),
+	z = minetest.settings:get("voxel_obs_rz")
+}
+
 -- names of the items included in the initial inventory
 init_tools = { "mcl_tools:axe_stone", "mcl_torches:torch 256" }
 
-timeofday_step = 1 / (10000 * minetest.settings:get("frameskip")) -- day/night cycle lasts 10K steps
+timeofday_step = 1 / 5000 -- day/night cycle lasts 5000 steps
 timeofday = 0.5 -- start episode at midday
 
 -- executed when the player joins the game
@@ -17,12 +23,12 @@ minetest.register_on_joinplayer(function(player, _last_login)
 
 	-- setup initial inventory
 	local inv = player:get_inventory()
-	for i = 1, #init_tools do
+	for i=1, #init_tools do
 		inv:add_item("main", init_tools[i])
 	end
 
 	-- set player's initial position
-	player:set_pos({ x = 120, z = 92, y = 16.5 })
+	player:set_pos({x = 120, z = 92, y = 16.5 })
 end)
 
 -- turn on the termination flag if the agent dies
@@ -37,6 +43,22 @@ minetest.register_globalstep(function(dtime)
 	end
 	minetest.set_timeofday(timeofday)
 	timeofday = timeofday + timeofday_step
+
+	local player = minetest.get_connected_players()[1]
+
+	-- if the player is not connected end here
+	if player == nil then
+		return nil
+	end
+
+	-- if the player is connected:
+	local player_pos = player:get_pos()
+	if minetest.settings:get("voxel_obs") then
+		local voxel_data, voxel_light_data, voxel_param2_data = voxel_api:get_voxel_data(player_pos, voxel_radius)
+		set_voxel_data(voxel_data)
+		set_voxel_light_data(voxel_light_data)
+		set_voxel_param2_data(voxel_param2_data)
+	end
 end)
 
 --
@@ -81,14 +103,14 @@ stages = {
 		provides = { "mcl_tools:pick_diamond", "mcl_tools:sword_diamond", "mcl_tools:axe_diamond" },
 		reward = 2048.0,
 	},
-	{ name = "end" },
+	{ name = "end" }
 }
 
 curr_stage = 1 -- index of the current stage
 
 minetest.register_on_dignode(function(pos, node)
 	-- table of the next stage
-	local snext = stages[curr_stage + 1]
+	local snext = stages[curr_stage+1]
 
 	-- there's nothing to do if we reached the last stage
 	if snext.name == "end" then
@@ -111,7 +133,7 @@ minetest.register_on_dignode(function(pos, node)
 		for _, player in pairs(minetest.get_connected_players()) do
 			local inv = player:get_inventory()
 			inv:set_list("main", {}) -- empty inventory
-			for i = 1, #init_tools do -- reset initial inventory (in the same slots)
+			for i=1, #init_tools do -- reset initial inventory (in the same slots)
 				inv:add_item("main", init_tools[i])
 			end
 			for i = 1, #snext.provides do -- add the unlocked tools
@@ -124,6 +146,7 @@ minetest.register_on_dignode(function(pos, node)
 	end
 end)
 
+
 --
 -- Hunt and Defend
 -- ~~~~~~~~~~~~~~~
@@ -134,12 +157,13 @@ for name, _ in pairs(mcl_mobs.spawning_mobs) do -- for all mobs that spawn
 	local mob_type = mob_def.type
 	local old_on_punch = mob_def.on_punch
 	mob_def.on_punch = function(self, puncher, time_from_last_punch, tool_capabilities, dir)
-		local damage = tool_capabilities.damage_groups and tool_capabilities.damage_groups.fleshy or 1
+		local damage = tool_capabilities.damage_groups
+			and tool_capabilities.damage_groups.fleshy or 1
 		-- provide a different reward for each type of punched mob
 		if mob_type == "monster" then
 			set_reward_once(damage, 0.0)
 		elseif mob_type == "animal" then
-			set_reward_once(damage * 0.5, 0.0)
+			set_reward_once(damage*0.5, 0.0)
 		elseif mob_type == "npc" then
 			set_reward_once(-10.0, 0.0)
 		end

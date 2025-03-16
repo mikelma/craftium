@@ -13,6 +13,8 @@
 #include <semaphore.h>
 #include <fcntl.h>
 
+#include <cstdint>
+
 #include "../settings.h"
 
 
@@ -169,6 +171,10 @@ inline double g_reward_reset_value = 0.0; /* The value to reset the reward to */
 inline bool g_termination = false; /* Global variable with the termination flag */
 inline bool g_soft_reset = false; /* Global variable with the termination flag */
 
+inline std::vector<uint32_t> g_voxel_data = std::vector<uint32_t>(1,0);
+inline std::vector<uint32_t> g_voxel_light_data = std::vector<uint32_t>(1,0);
+inline std::vector<uint32_t> g_voxel_param2_data = std::vector<uint32_t>(1,0);
+
 extern "C" {
 #include <lualib.h>
 }
@@ -217,4 +223,41 @@ inline static int lua_get_termination(lua_State *L) {
 inline static int lua_get_soft_reset(lua_State *L) {
     lua_pushnumber(L, (int)g_soft_reset);
     return 1; /* number of results */
+}
+
+inline static std::vector<uint32_t> lua_set_array_uint32_t(lua_State* L) {
+
+    // Get the returned table
+    std::vector<uint32_t> result;
+
+    if (!lua_istable(L, -1)) {
+        throw std::runtime_error("Expected table return when calling lua_set_array_uint32_t");
+    }
+
+    // Iterate through the table
+    lua_pushnil(L);  // First key
+    while (lua_next(L, -2) != 0) {
+        // Value is at -1, key at -2
+        result.push_back(lua_tointeger(L, -1));
+        lua_pop(L, 1);  // Remove value, keep key for next iteration
+    }
+
+    // Clean up the stack
+    lua_pop(L, 1);
+    return result;
+}
+
+inline static int lua_set_voxel_data(lua_State* L) {
+	g_voxel_data = lua_set_array_uint32_t(L);
+	return 0;
+}
+
+inline static int lua_set_voxel_light_data(lua_State* L) {
+	g_voxel_light_data = lua_set_array_uint32_t(L);
+	return 0;
+}
+
+inline static int lua_set_voxel_param2_data(lua_State* L) {
+	g_voxel_param2_data = lua_set_array_uint32_t(L);
+	return 0;
 }

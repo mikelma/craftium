@@ -8,5 +8,6 @@ gameid = minetest
 world_name = room
 server_announce = false
 load_mod_superflat = mods/superflat
-load_mod_craftium_room = mods/craftium_mod
+load_mod_craftium_room = mods/craftium_env
 load_mod_craftium_chop_tree = false
+load_mod_voxel_api = mods/voxel_api

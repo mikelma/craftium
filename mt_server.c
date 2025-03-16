@@ -12,8 +12,68 @@
 #include <sys/types.h>
 #include <unistd.h> // read(), write(), close()
 #include <poll.h>
+#include <stdint.h>
 
 #define SA struct sockaddr
+
+// Recursive function to print elements of an arbitrary-dimensional array
+void print_array_recursive(uint8_t* data, npy_intp* shape, npy_intp* strides, int ndim, int dim_index, npy_intp* indices) {
+    if (dim_index == ndim - 1) {
+        // Base case: print the elements in the last dimension
+        printf("[");
+        for (npy_intp i = 0; i < shape[dim_index]; ++i) {
+            indices[dim_index] = i;
+
+            // Compute the flat index based on strides and indices
+            npy_intp flat_index = 0;
+            for (int j = 0; j < ndim; ++j) {
+                flat_index += indices[j] * strides[j] / sizeof(uint8_t);
+            }
+
+            printf("%u", data[flat_index]);
+            if (i < shape[dim_index] - 1) {
+                printf(", ");
+            }
+        }
+        printf("]");
+    } else {
+        // Recursive case: iterate through the current dimension
+        printf("[");
+        for (npy_intp i = 0; i < shape[dim_index]; ++i) {
+            indices[dim_index] = i;
+            print_array_recursive(data, shape, strides, ndim, dim_index + 1, indices);
+            if (i < shape[dim_index] - 1) {
+                printf(", ");
+            }
+        }
+        printf("]");
+    }
+}
+
+// Wrapper function
+void print_array(PyObject* array) {
+    PyArrayObject* np_array = (PyArrayObject*)array;
+
+    // Get the data buffer, shape, and strides
+    uint8_t* data = (uint8_t*)PyArray_DATA(np_array);
+    npy_intp* shape = PyArray_DIMS(np_array);
+    npy_intp* strides = PyArray_STRIDES(np_array);
+    int ndim = PyArray_NDIM(np_array);
+
+    // Allocate an indices array for recursive traversal
+    npy_intp* indices = (npy_intp*)calloc(ndim, sizeof(npy_intp));
+    if (!indices) {
+        fprintf(stderr, "Failed to allocate memory for indices.\n");
+        return;
+    }
+
+    // Start the recursive print
+    print_array_recursive(data, shape, strides, ndim, 0, indices);
+    printf("\n");
+
+    // Free allocated memory
+    free(indices);
+}
 
 static PyObject* init_server(PyObject* self, PyObject* args) { // , PyObject* args) {
   int port, sockfd, connfd;
@@ -121,13 +181,15 @@ int read_large_from_socket(int socket_fd, char *buffer, int total_size) {
 }
 
 static PyObject* server_recv(PyObject* self, PyObject* args) {
-  int connfd, n_bytes, obs_width, obs_height, n_read, n_channels;
+  int connfd, n_bytes, obs_width, obs_height, n_read, n_channels, n_vox_channels, voxel_x, voxel_y, voxel_z;
+  float dtime;
   double reward;
+  int32_t yaw, pitch;
   char *buff;
 
-  if (!PyArg_ParseTuple(args, "iiiii", &connfd, &n_bytes, &obs_width, &obs_height, &n_channels)) {
+  if (!PyArg_ParseTuple(args, "iiiiiiiii", &connfd, &n_bytes, &obs_width, &obs_height, &n_channels, &n_vox_channels, &voxel_x, &voxel_y, &voxel_z)) {
     PyErr_SetString(PyExc_TypeError,
-                    "Arguments must be 5 integers: connection's fd, num. of bytes to read, obs. width and height, and num. channels.");
+                    "Arguments must be 9 integers: connection's fd, num. of bytes to read, obs. width and height, num. channels, num. vox channels, voxel_obs x,y and z dims.");
     return NULL;
   }
 
@@ -141,40 +203,111 @@ static PyObject* server_recv(PyObject* self, PyObject* args) {
   n_read = read_large_from_socket(connfd, buff, n_bytes);
 
   if (n_read < 0) {
+    free(buff);
     PyErr_SetString(PyExc_ConnectionError, "Failed to receive from MT, error reading from socket.");
     return NULL;
   } else if (n_read == 0) {
+    free(buff);
     close(connfd);
     PyErr_SetString(PyExc_ConnectionError, "Failed to receive from MT. Connection closed by peer: is MT down?");
     return NULL;
   }
 
-  // Retreive the termination flag (last byte in the buffer) and reward (8 bytes)
+  // Retrieve the termination flag and reward
   int termination = (int) buff[n_bytes-1];
   PyObject* py_termination = PyBool_FromLong(termination);
 
   memcpy(&reward, &buff[n_bytes-9], sizeof(reward));
   PyObject* py_reward = PyFloat_FromDouble(reward);
 
-  // Create the numpy array of the image
+  // Retrieve the delta time
+  memcpy(&dtime, &buff[n_bytes-13], sizeof(dtime));
+  PyObject* py_dtime = PyFloat_FromDouble((double)dtime);
+
+  // Retrieve backwards the yaw [4], pitch [4], velocity [12] and position [12] = 32 bytes
+  float* array_pos_data = (float*)malloc(3 * sizeof(float));
+  float* array_vel_data = (float*)malloc(3 * sizeof(float));
+  memcpy(&yaw, &buff[n_bytes-17], sizeof(int32_t));
+  memcpy(&pitch, &buff[n_bytes-21], sizeof(int32_t));
+  memcpy(array_vel_data, &buff[n_bytes-33], 3 * sizeof(float));
+  memcpy(array_pos_data, &buff[n_bytes-45], 3 * sizeof(float));
+  npy_intp dims_v3f[1] = {3};
+  PyObject* pyarray_pos = PyArray_SimpleNewFromData(1, dims_v3f, NPY_FLOAT32, array_pos_data);
+  PyObject* pyarray_vel = PyArray_SimpleNewFromData(1, dims_v3f, NPY_FLOAT32, array_vel_data);
+  PyObject* py_pitch = PyLong_FromSsize_t(pitch);
+  PyObject* py_yaw = PyLong_FromSsize_t(yaw);
+
+  // Create separate memory allocations for the RGB and voxel data
+  char* array_rgb_data = (char*)malloc(obs_height * obs_width * n_channels);
+  uint32_t* array_vox_data = (uint32_t*)malloc(voxel_x * voxel_y * voxel_z * n_vox_channels * sizeof(uint32_t));
+
+  if (!array_rgb_data || !array_vox_data) {
+    free(buff);
+    free(array_rgb_data);
+    free(array_vox_data);
+    free(array_pos_data);
+    free(array_vel_data);
+    Py_XDECREF(py_termination);
+    Py_XDECREF(py_reward);
+    Py_XDECREF(py_dtime);
+    Py_XDECREF(pyarray_pos);
+    Py_XDECREF(pyarray_vel);
+    Py_XDECREF(py_pitch);
+    Py_XDECREF(py_yaw);
+    PyErr_SetString(PyExc_Exception, "Failed to allocate memory for array data");
+    return NULL;
+  }
+
+  // Copy the RGB data
+  memcpy(array_rgb_data, buff, obs_height * obs_width * n_channels);
+  // Copy the voxel data, converting from bytes to uint32_t
+  memcpy(array_vox_data, buff + obs_height * obs_width * n_channels,
+         voxel_x * voxel_y * voxel_z * n_vox_channels * sizeof(uint32_t));
+
+  // Free the original buffer as we no longer need it
+  free(buff);
+
+  // Create the numpy arrays with their own separate memory
   npy_intp dims[3] = {obs_height, obs_width, n_channels};
-  PyObject* array = PyArray_SimpleNewFromData(3, dims, NPY_UINT8, buff);
-  if (!array) {
+  PyObject* pyarray_rgb = PyArray_SimpleNewFromData(3, dims, NPY_UINT8, array_rgb_data);
+
+  npy_intp dims_vox[4] = {voxel_z, voxel_y, voxel_x, n_vox_channels};
+  PyObject* pyarray_vox = PyArray_SimpleNewFromData(4, dims_vox, NPY_UINT32, array_vox_data);
+
+  if (!pyarray_rgb || !pyarray_vox) {
+    free(array_rgb_data);
+    free(array_vox_data);
+    Py_XDECREF(pyarray_rgb);
+    Py_XDECREF(pyarray_vox);
+    Py_XDECREF(py_termination);
+    Py_XDECREF(py_reward);
+    Py_XDECREF(py_dtime);
+    Py_XDECREF(pyarray_pos);
+    Py_XDECREF(pyarray_vel);
+    Py_XDECREF(py_pitch);
+    Py_XDECREF(py_yaw);
     PyErr_SetString(PyExc_RuntimeError, "Failed to create NumPy array");
     return NULL;
   }
 
-  // Make the NumPy array own its data.
-  // This makes sure that NumPy handles the data lifecycle properly.
-  PyArray_ENABLEFLAGS((PyArrayObject*)array, NPY_ARRAY_OWNDATA);
+  // Now it's safe to enable OWNDATA as each array has its own allocation
+  PyArray_ENABLEFLAGS((PyArrayObject*)pyarray_pos, NPY_ARRAY_OWNDATA);
+  PyArray_ENABLEFLAGS((PyArrayObject*)pyarray_vel, NPY_ARRAY_OWNDATA);
+  PyArray_ENABLEFLAGS((PyArrayObject*)pyarray_rgb, NPY_ARRAY_OWNDATA);
+  PyArray_ENABLEFLAGS((PyArrayObject*)pyarray_vox, NPY_ARRAY_OWNDATA);
 
-  PyObject* tuple = PyTuple_Pack(3, array, py_reward, py_termination);
+  PyObject* tuple = PyTuple_Pack(9, pyarray_rgb, pyarray_vox, pyarray_pos, pyarray_vel, py_pitch, py_yaw, py_dtime, py_reward, py_termination);
 
-  // Decreases the reference count of Python objects. Useful if the
-  // objects' lifetime is no longer needed after creating the tuple.
-  Py_DECREF(array);
+  // Safe to DECREF everything as tuple has increased their reference counts
   Py_DECREF(py_reward);
+  Py_DECREF(py_dtime);
   Py_DECREF(py_termination);
+  Py_DECREF(pyarray_pos);
+  Py_DECREF(pyarray_vel);
+  Py_DECREF(py_pitch);
+  Py_DECREF(py_yaw);
+  Py_DECREF(pyarray_rgb);
+  Py_DECREF(pyarray_vox);
 
   return tuple;
 }

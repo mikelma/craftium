@@ -12,10 +12,17 @@ class MtChannel():
             img_width: int,
             img_height: int,
             listen_timeout: int = 2000,
-            rgb_imgs: bool = True
+            rgb_imgs: bool = True,
+            voxel_obs: bool = False,
+            voxel_obs_rx: int = 20,
+            voxel_obs_ry: int = 10,
+            voxel_obs_rz: int = 20,
     ):
         self.img_width = img_width
         self.img_height = img_height
+        self.voxel_obs_dx = 2 * voxel_obs_rx + 1
+        self.voxel_obs_dy = 2 * voxel_obs_ry + 1
+        self.voxel_obs_dz = 2 * voxel_obs_rz + 1
         self.listen_timeout = listen_timeout
 
         self.port, self.sockfd = mt_server.init_server()
@@ -26,17 +33,23 @@ class MtChannel():
         # pre-compute the number of bytes that we should receive from MT.
         # the RGB image + 8 bytes of the reward + 1 of the soft-reset flag
         self.n_chan = 3 if rgb_imgs else 1
-        self.rec_bytes = img_width*img_height*self.n_chan + 8 + 1
+        self.n_vox_chan = 3 if voxel_obs else 0
+        self.rec_bytes = (img_width*img_height*self.n_chan + 32 + 4 + 8 + 1
+                          + self.voxel_obs_dx*self.voxel_obs_dy*self.voxel_obs_dz*self.n_vox_chan*4)
 
     def receive(self):
-        img, reward, termination = mt_server.server_recv(
+        img, vox_obs, pos, vel, pitch, yaw, dtime, reward, termination = mt_server.server_recv(
             self.connfd,
             self.rec_bytes,
             self.img_width,
             self.img_height,
             self.n_chan,
+            self.n_vox_chan,
+            self.voxel_obs_dx,
+            self.voxel_obs_dy,
+            self.voxel_obs_dz,
         )
-        return img, reward, termination
+        return img, vox_obs, pos/1000., vel/1000., pitch/100., yaw/100., dtime, reward, termination # pos,vel / 1000 to match 1 unit = 1 node.
 
     def send(self, keys: list[int], mouse_x: int, mouse_y: int, soft_reset: bool = False, kill: bool = False):
         assert len(keys) == 21, f"Keys list must be of length 21 and is {len(keys)}"

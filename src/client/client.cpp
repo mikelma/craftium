@@ -203,9 +203,9 @@ void Client::startPyConn()
     printf("\n[INFO] PyConn started in port %d\n\n", py_port);
 }
 
-void Client::pyConnStep() {
+void Client::pyConnStep(LocalPlayer *myplayer, float dtime){
     // NOTE: the `actions` array is defined in craftium.h
-    int n_send, n_recv, W, H, obs_rwd_buffer_size;
+    int n_send, n_recv, W, H, Xv, Yv, Zv, obs_rwd_buffer_size;
     u32 c; // stores the RGBA pixel color
     bool kill;
 
@@ -246,11 +246,19 @@ void Client::pyConnStep() {
       W*H*3 for the WxH RGB image, +8 for the reward value (a double),
       and +1 for the episode termination flag
     */
+    // [RGB, (pos,vel,pitch,yaw), dtime, reward, termination]
     if (g_settings->getBool("rgb_frames")) {
-        obs_rwd_buffer_size = W*H*3 + 8 + 1; // full RGB images
+        obs_rwd_buffer_size = W*H*3 + 32 + 4 + 8 + 1; // full RGB images
     } else {
-        obs_rwd_buffer_size = W*H + 8 + 1; // grayscale images
+        obs_rwd_buffer_size = W*H + 32 + 4 + 8 + 1; // grayscale images
     }
+
+	Xv = 2 * g_settings->getU32("voxel_obs_rx") + 1;
+	Yv = 2 * g_settings->getU32("voxel_obs_ry") + 1;
+	Zv = 2 * g_settings->getU32("voxel_obs_rz") + 1;
+	if (g_settings->getBool("voxel_obs")) {
+        obs_rwd_buffer_size += Xv*Yv*Zv*3*4; // voxel observation
+	}
 
     /* If obs_rwd_buffer is not initialized, allocate memory for it now */
     if (!obs_rwd_buffer) {
@@ -281,6 +289,42 @@ void Client::pyConnStep() {
             }
         }
     }
+
+    if (g_settings->getBool("voxel_obs")) {
+		/* Encode the voxel observation as 3 arrays,
+		VoxelManip:get_data(), VoxelManip:get_light_data(), VoxelManip:get_param2_data() */
+		int j = 0;
+		for (int z=0; z<Zv; z++) {
+			for (int y=0; y<Yv; y++) {
+				for (int x=0; x<Xv; x++) {
+                    memcpy(&obs_rwd_buffer[i], &g_voxel_data[j], sizeof(uint32_t));
+                    memcpy(&obs_rwd_buffer[i+4], &g_voxel_light_data[j], sizeof(uint32_t));
+                    memcpy(&obs_rwd_buffer[i+8], &g_voxel_param2_data[j], sizeof(uint32_t));
+                    i = i + 12; // Advance by 12 bytes (3 * sizeof(uint32_t))
+					j++;
+				}
+			}
+		}
+	}
+
+	// Encode the player position (3 floats), velocity (3 floats), pitch (1 u32), yaw (1 u32)
+	v3f pf           = myplayer->getPosition() * 100;
+	v3f sf           = myplayer->getSpeed() * 100;
+	s32 pitch        = myplayer->getPitch() * 100;
+	s32 yaw          = myplayer->getYaw() * 100;
+	memcpy(&obs_rwd_buffer[i], &pf.X, sizeof(float));
+	memcpy(&obs_rwd_buffer[i+4], &pf.Y, sizeof(float));
+	memcpy(&obs_rwd_buffer[i+8], &pf.Z, sizeof(float));
+	memcpy(&obs_rwd_buffer[i+12], &sf.X, sizeof(float));
+	memcpy(&obs_rwd_buffer[i+16], &sf.Y, sizeof(float));
+	memcpy(&obs_rwd_buffer[i+20], &sf.Z, sizeof(float));
+	memcpy(&obs_rwd_buffer[i+24], &pitch, sizeof(s32));
+	memcpy(&obs_rwd_buffer[i+28], &yaw, sizeof(s32));
+	i = i + 32;
+
+	// Encode the delta time
+	memcpy(&obs_rwd_buffer[i], &dtime, sizeof(float));
+	i = i + 4;
 
     /* Encode the reward (double) as  8 bytes at the end of the buffer */
     char *rewardBytes = (char*)&g_reward;
@@ -776,16 +820,14 @@ void Client::step(float dtime)
 		Handle environment
 	*/
 	LocalPlayer *player = m_env.getLocalPlayer();
-
 	auto begin = std::chrono::steady_clock::now();
-    pyConnStep();
+    pyConnStep(player, dtime);
 	auto end = std::chrono::steady_clock::now();
 	std::chrono::duration<float> duration = end - begin;
     float seconds = duration.count();
 	m_craftium_lag = seconds;
 
 	// printf("dtime: %f, delta (lag): %lf\n", dtime, seconds);
-
 
 	// Step environment (also handles player controls)
 	m_env.step(dtime);

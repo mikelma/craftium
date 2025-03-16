@@ -4,20 +4,36 @@ voxel_radius = {
 	z = minetest.settings:get("voxel_obs_rz")
 }
 
+-- Positive reward if a tree block is dug
+minetest.register_on_dignode(function(pos, node)
+	if string.find(node["name"], "tree") then
+		-- Give a 1.0 reward once and then reset reward to 0.0 value
+		set_reward_once(1.0, 0.0)
+	end
+end)
+
+-- Turn on the termination flag if the agent dies
+minetest.register_on_dieplayer(function(ObjectRef, reason)
+	set_termination()
+end)
+
 -- Executed when the player joins the game
 minetest.register_on_joinplayer(function(player, _last_login)
-	-- Set the players initial position
-	player:set_pos({x = 24.3, y = 5.5, z=-36.3})
+	-- set timeofday to midday
+	minetest.set_timeofday(0.5)
 
 	-- Disable HUD elements
 	player:hud_set_flags({
 		hotbar = false,
 		crosshair = false,
 		healthbar = false,
+		chat = false,
 	})
 end)
 
 minetest.register_globalstep(function(dtime)
+
+	-- get the first connected player
 	local player = minetest.get_connected_players()[1]
 
 	-- if the player is not connected end here
@@ -34,12 +50,4 @@ minetest.register_globalstep(function(dtime)
 		set_voxel_param2_data(voxel_param2_data)
 	end
 
-	-- set the reward to the inverse of the player's
-	-- position on the Y axis (depth)
-	set_reward(-player_pos.y)
-end)
-
-minetest.register_on_dieplayer(function(_player, _reason)
-	-- End episode if the player dies
-	set_termination()
 end)
