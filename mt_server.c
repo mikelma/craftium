@@ -125,32 +125,45 @@ static PyObject* python_dict_from_msgpack_map(msgpack_object_map map);
 
 static PyObject* python_list_from_msgpack_array(msgpack_object_array array){
   PyObject* py_list = PyList_New(array.size);
+  PyObject* py_elem = 0;
 
   for (size_t i = 0; i < array.size; i++) {
     msgpack_object elem = array.ptr[i];
     
     if (elem.type == MSGPACK_OBJECT_BOOLEAN){
-      PyList_SetItem(py_list, i, PyBool_FromLong(elem.via.boolean)); 
+      py_elem = PyBool_FromLong(elem.via.boolean);
+      PyList_SetItem(py_list, i, py_elem);
+      Py_DECREF(py_elem); 
     } else if (elem.type == MSGPACK_OBJECT_POSITIVE_INTEGER){
-      PyList_SetItem(py_list, i, PyLong_FromUnsignedLongLong(elem.via.u64));
+      py_elem = PyLong_FromUnsignedLongLong(elem.via.u64);
+      PyList_SetItem(py_list, i, py_elem);
+      Py_DECREF(py_elem); 
     } else if (elem.type == MSGPACK_OBJECT_NEGATIVE_INTEGER){
-      PyList_SetItem(py_list, i, PyLong_FromLongLong(elem.via.i64));
+      py_elem = PyLong_FromLongLong(elem.via.i64);
+      PyList_SetItem(py_list, i, py_elem);
+      Py_DECREF(py_elem); 
     } else if(elem.type == MSGPACK_OBJECT_FLOAT32){
-      PyList_SetItem(py_list, i, PyFloat_FromDouble(elem.via.f64));
+      py_elem = PyFloat_FromDouble(elem.via.f64);
+      PyList_SetItem(py_list, i, py_elem);
+      Py_DECREF(py_elem); 
     } else if(elem.type == MSGPACK_OBJECT_FLOAT64){
-      PyList_SetItem(py_list, i, PyFloat_FromDouble(elem.via.f64));
+      py_elem = PyFloat_FromDouble(elem.via.f64);
+      PyList_SetItem(py_list, i, py_elem);
+      Py_DECREF(py_elem); 
     } else if (elem.type == MSGPACK_OBJECT_STR){
       char *elem_str = strndup(elem.via.str.ptr, elem.via.str.size);
-      PyList_SetItem(py_list, i, PyUnicode_FromString(elem_str));
+      py_elem = PyUnicode_FromString(elem_str);
+      PyList_SetItem(py_list, i, py_elem);
+      Py_DECREF(py_elem); 
       free(elem_str);
     } else if (elem.type == MSGPACK_OBJECT_ARRAY){
-      PyObject* elem_py_list = python_list_from_msgpack_array(elem.via.array);
-      PyList_SetItem(py_list, i, elem_py_list);
-      Py_DECREF(elem_py_list);    
+      py_elem = python_list_from_msgpack_array(elem.via.array);
+      PyList_SetItem(py_list, i, py_elem);
+      Py_DECREF(py_elem);    
     } else if (elem.type == MSGPACK_OBJECT_MAP){
-      PyObject* elem_py_dict = python_dict_from_msgpack_map(elem.via.map);
-      PyList_SetItem(py_list, i, elem_py_dict);
-      Py_DECREF(elem_py_dict);    
+      py_elem = python_dict_from_msgpack_map(elem.via.map);
+      PyList_SetItem(py_list, i, py_elem);
+      Py_DECREF(py_elem);    
     } else {
       PyErr_SetString(PyExc_RuntimeError, "Unsuported type received");
       return NULL;
@@ -161,6 +174,8 @@ static PyObject* python_list_from_msgpack_array(msgpack_object_array array){
 
 static PyObject* python_dict_from_msgpack_map(msgpack_object_map map){
   PyObject* py_dict = PyDict_New();
+
+  PyObject* py_value = 0;
   
   for (size_t i = 0; i < map.size; i++) {
     msgpack_object key = map.ptr[i].key;
@@ -169,27 +184,39 @@ static PyObject* python_dict_from_msgpack_map(msgpack_object_map map){
     char *key_str = strndup(key.via.str.ptr, key.via.str.size);
     
     if (value.type == MSGPACK_OBJECT_BOOLEAN){
-      PyDict_SetItemString(py_dict, key_str, PyBool_FromLong(value.via.boolean));
+      py_value = PyBool_FromLong(value.via.boolean);
+      PyDict_SetItemString(py_dict, key_str, py_value);
+      Py_DECREF(py_value);
     } else if (value.type == MSGPACK_OBJECT_POSITIVE_INTEGER){
-      PyDict_SetItemString(py_dict, key_str, PyLong_FromUnsignedLongLong(value.via.u64));
+      py_value = PyLong_FromUnsignedLongLong(value.via.u64);
+      PyDict_SetItemString(py_dict, key_str, py_value);
+      Py_DECREF(py_value);
     } else if (value.type == MSGPACK_OBJECT_NEGATIVE_INTEGER){
-      PyDict_SetItemString(py_dict, key_str, PyLong_FromLongLong(value.via.i64));
+      py_value = PyLong_FromLongLong(value.via.i64);
+      PyDict_SetItemString(py_dict, key_str, py_value);
+      Py_DECREF(py_value);
     } else if(value.type == MSGPACK_OBJECT_FLOAT32){
-      PyDict_SetItemString(py_dict, key_str, PyFloat_FromDouble(value.via.f64));
+      py_value = PyFloat_FromDouble(value.via.f64);
+      PyDict_SetItemString(py_dict, key_str, py_value);
+      Py_DECREF(py_value);
     } else if(value.type == MSGPACK_OBJECT_FLOAT64){
-      PyDict_SetItemString(py_dict, key_str, PyFloat_FromDouble(value.via.f64));
+      py_value = PyFloat_FromDouble(value.via.f64);
+      PyDict_SetItemString(py_dict, key_str, py_value);
+      Py_DECREF(py_value);
     } else if (value.type == MSGPACK_OBJECT_STR){
       char *val_str = strndup(value.via.str.ptr, value.via.str.size);
-      PyDict_SetItemString(py_dict, key_str, PyUnicode_FromString(val_str));
+      py_value = PyUnicode_FromString(val_str);
+      PyDict_SetItemString(py_dict, key_str, py_value);
+      Py_DECREF(py_value);
       free(val_str);
     } else if (value.type == MSGPACK_OBJECT_ARRAY){
-      PyObject* val_py_list = python_list_from_msgpack_array(value.via.array);
-      PyDict_SetItemString(py_dict, key_str, val_py_list);
-      Py_DECREF(val_py_list);    
+      py_value = python_list_from_msgpack_array(value.via.array);
+      PyDict_SetItemString(py_dict, key_str, py_value);
+      Py_DECREF(py_value);    
     } else if (value.type == MSGPACK_OBJECT_MAP){
-      PyObject* val_py_dict = python_dict_from_msgpack_map(value.via.map);
-      PyDict_SetItemString(py_dict, key_str, val_py_dict);
-      Py_DECREF(val_py_dict);    
+      py_value = python_dict_from_msgpack_map(value.via.map);
+      PyDict_SetItemString(py_dict, key_str, py_value);
+      Py_DECREF(py_value);    
     } else {
       PyErr_SetString(PyExc_RuntimeError, "Unsuported type received");
       return NULL;
