@@ -125,50 +125,52 @@ static PyObject* python_dict_from_msgpack_map(msgpack_object_map map);
 
 static PyObject* python_list_from_msgpack_array(msgpack_object_array array){
   PyObject* py_list = PyList_New(array.size);
-  PyObject* py_elem = 0;
 
+  PyObject* py_elem = 0;
+  
   for (size_t i = 0; i < array.size; i++) {
     msgpack_object elem = array.ptr[i];
     
     if (elem.type == MSGPACK_OBJECT_BOOLEAN){
       py_elem = PyBool_FromLong(elem.via.boolean);
       PyList_SetItem(py_list, i, py_elem);
-      Py_DECREF(py_elem); 
     } else if (elem.type == MSGPACK_OBJECT_POSITIVE_INTEGER){
       py_elem = PyLong_FromUnsignedLongLong(elem.via.u64);
       PyList_SetItem(py_list, i, py_elem);
-      Py_DECREF(py_elem); 
     } else if (elem.type == MSGPACK_OBJECT_NEGATIVE_INTEGER){
       py_elem = PyLong_FromLongLong(elem.via.i64);
       PyList_SetItem(py_list, i, py_elem);
-      Py_DECREF(py_elem); 
     } else if(elem.type == MSGPACK_OBJECT_FLOAT32){
       py_elem = PyFloat_FromDouble(elem.via.f64);
-      PyList_SetItem(py_list, i, py_elem);
-      Py_DECREF(py_elem); 
+      PyList_SetItem(py_list, i, py_elem); 
     } else if(elem.type == MSGPACK_OBJECT_FLOAT64){
       py_elem = PyFloat_FromDouble(elem.via.f64);
       PyList_SetItem(py_list, i, py_elem);
-      Py_DECREF(py_elem); 
     } else if (elem.type == MSGPACK_OBJECT_STR){
       char *elem_str = strndup(elem.via.str.ptr, elem.via.str.size);
       py_elem = PyUnicode_FromString(elem_str);
       PyList_SetItem(py_list, i, py_elem);
-      Py_DECREF(py_elem); 
       free(elem_str);
     } else if (elem.type == MSGPACK_OBJECT_ARRAY){
       py_elem = python_list_from_msgpack_array(elem.via.array);
+      if(py_elem == NULL){
+        return NULL;
+      }
       PyList_SetItem(py_list, i, py_elem);
       Py_DECREF(py_elem);    
     } else if (elem.type == MSGPACK_OBJECT_MAP){
       py_elem = python_dict_from_msgpack_map(elem.via.map);
+      if(py_elem == NULL){
+        return NULL;
+      }
       PyList_SetItem(py_list, i, py_elem);
       Py_DECREF(py_elem);    
     } else {
-      PyErr_SetString(PyExc_RuntimeError, "Unsuported type received");
+      PyErr_Format(PyExc_RuntimeError, "Unsuported type received: %d", elem.type);
       return NULL;
     }
   }
+
   return py_list;
 }
 
@@ -211,14 +213,20 @@ static PyObject* python_dict_from_msgpack_map(msgpack_object_map map){
       free(val_str);
     } else if (value.type == MSGPACK_OBJECT_ARRAY){
       py_value = python_list_from_msgpack_array(value.via.array);
+      if(py_value == NULL){
+        return NULL;
+      }
       PyDict_SetItemString(py_dict, key_str, py_value);
       Py_DECREF(py_value);    
     } else if (value.type == MSGPACK_OBJECT_MAP){
       py_value = python_dict_from_msgpack_map(value.via.map);
+      if(py_value == NULL){
+        return NULL;
+      }
       PyDict_SetItemString(py_dict, key_str, py_value);
       Py_DECREF(py_value);    
     } else {
-      PyErr_SetString(PyExc_RuntimeError, "Unsuported type received");
+      PyErr_Format(PyExc_RuntimeError, "Unsuported type received: %d", value.type);
       return NULL;
     }
     free(key_str);
@@ -303,6 +311,9 @@ static PyObject* server_recv(PyObject* self, PyObject* args) {
         msgpack_object_map map = obj.via.map;
 
         py_info = python_dict_from_msgpack_map(map);
+        if(py_info == NULL){
+          return NULL;
+        }
 
       } else {
         PyErr_SetString(PyExc_RuntimeError, "Expected a map but got a different type");

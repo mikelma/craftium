@@ -281,15 +281,26 @@ inline static int lua_get_from_info(lua_State *L) {
         return 1;
     }
 
+    if (std::holds_alternative<List>(iter->second) || std::holds_alternative<Dict>(iter->second)){
+        lua_pushnil(L);
+        return 1;
+    }
 
-    std::visit([&](const auto& value) {
-        using T = std::decay_t<decltype(value)>;
-        if constexpr (std::is_same_v<T, double>) {
-            lua_pushnumber(L, value);
-        } else if constexpr (std::is_same_v<T, std::string>) {
-            lua_pushstring(L, value.c_str());
-        }
-    }, iter->second);
+
+
+    if (std::holds_alternative<bool>(iter->second)){
+        lua_pushboolean(L, std::get<bool>(iter->second));
+    } else if (std::holds_alternative<int>(iter->second)) {
+        lua_pushinteger(L,std::get<int>(iter->second));
+    } else if (std::holds_alternative<float>(iter->second)) {
+        lua_pushnumber(L,std::get<float>(iter->second));
+    } else if (std::holds_alternative<double>(iter->second)) {
+        lua_pushnumber(L, std::get<double>(iter->second));
+    } else if (std::holds_alternative<std::string>(iter->second)) {
+        lua_pushstring(L,std::get<std::string>(iter->second).c_str());
+    } else {
+        lua_pushnil(L);
+    }
 
     return 1; /* number of results */
 }
