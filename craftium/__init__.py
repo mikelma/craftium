@@ -95,6 +95,7 @@ register(
         max_timesteps=1000,
         init_frames=200,
         soft_reset=True,
+        _voxel_obs_available=True,
     )
 )
 
@@ -119,6 +120,7 @@ register(
         max_timesteps=500,
         init_frames=200,
         soft_reset=True,
+        _voxel_obs_available=True,
     )
 )
 
@@ -143,10 +145,11 @@ register(
         obs_height=64,
         max_timesteps=2000,
         init_frames=200,
-        minetest_conf=dict(
+        _minetest_conf=dict(
             give_initial_stuff=True,
             initial_stuff="default:axe_steel",
         ),
+        _voxel_obs_available=True,
     )
 )
 
@@ -171,6 +174,7 @@ register(
         obs_height=64,
         max_timesteps=500,
         init_frames=200,
+        _voxel_obs_available=True,
     )
 )
 
@@ -195,10 +199,11 @@ register(
         obs_height=64,
         max_timesteps=4000,
         init_frames=200,
-        minetest_conf=dict(
+        _minetest_conf=dict(
             give_initial_stuff=True,
             initial_stuff="default:sword_steel",
         ),
+        _voxel_obs_available=True,
     )
 )
 
@@ -225,17 +230,18 @@ register(
         max_timesteps=10_000,
         init_frames=200,
         game_id="mineclone2",
-        minetest_conf=dict(
-            max_block_generate_distance=3,  # 16x3 blocks
+        _minetest_conf=dict(
+            max_block_generate_distance=3, # 16x3 blocks
             mcl_logging_mobs_spawn=True,
             hud_scaling=0.5,
             fov=90,
             console_alpha=0,
-            # Graphics Effects
+            ### Graphics Effects
             smooth_lighting=False,
             performance_tradeoffs=True,
             enable_particles=False,
         ),
+        _voxel_obs_available=True,
     )
 )
 
@@ -261,7 +267,7 @@ register(
         max_timesteps=4000,
         init_frames=200,
         soft_reset=True,
-        minetest_conf=dict(
+        _minetest_conf=dict(
             give_initial_stuff=True,
             initial_stuff="default:sword_steel",  # Provide the player with a sword
             performance_tradeoffs=True,
@@ -348,5 +354,6 @@ register(
          ##########
                     """.replace("\n", "\\n"),
         ),
+        _voxel_obs_available=True,
     )
 )

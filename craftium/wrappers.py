@@ -1,5 +1,5 @@
 import numpy as np
-from gymnasium import ActionWrapper, Env
+from gymnasium import Wrapper, ActionWrapper, Env
 from gymnasium.spaces import MultiBinary, Discrete
 
 from .craftium_env import ACTION_ORDER
@@ -121,3 +121,52 @@ class DiscreteActionWrapper(ActionWrapper):
         if isinstance(action, list) or isinstance(action, np.ndarray):
             return [self.process(act) for act in action]
         return self.process(action)
+
+def enu_to_nue(east, north, up):
+    return north, up, east
+
+class NueToEnuVoxelObs(Wrapper):
+    """A Gymnasium `Wrapper` that changes the order of the axes of the voxel_obs returned by info from NUE to ENU.
+
+    The voxel_obs is a 4D numpy array with shape (x, y, z, vox_channels) returned by Craftium environments.
+    The original order of the axes  is (North, Up, East). This wrapper changes the order of the axes to (East, North, Up).
+    :param env: The environment to wrap.
+    """
+    def __init__(self, env: Env):
+        Wrapper.__init__(self, env)
+        assert hasattr(self.env, "metadata") and self.env.metadata.get("voxel_observations_enabled", False), \
+            "The environment must have voxel observations enabled."
+        # need two different methods if the env is vectorized or not
+        if hasattr(self.env.unwrapped, "num_envs"):
+            self.apply_wrapper = self._apply_wrapper_vectorized_env
+        else:
+            self.apply_wrapper = self._apply_wrapper_single_env
+
+    def reset(self, **kwargs):
+        obs, info = self.env.reset(**kwargs)
+        info = self.apply_wrapper(info)
+        return obs, info
+
+    def step(self, action):
+        obs, reward, term, trunc, info = self.env.step(action)
+        info = self.apply_wrapper(info)
+        return obs, reward, term, trunc, info
+
+    def _apply_wrapper_single_env(self, info):
+        # NUEC -> ENUC
+        info["voxel_obs"] = info["voxel_obs"].transpose(2, 0, 1, 3)
+        # (3[nue],) -> (3[enu],)
+        info["player_pos"] = info["player_pos"][[2, 0, 1]]
+        info["player_vel"] = info["player_vel"][[2, 0, 1]]
+        info["player_yaw"] = -info["player_yaw"]
+        info["player_pitch"] = -info["player_pitch"]
+        return info
+
+    def _apply_wrapper_vectorized_env(self, info):
+        # need to account for the batch dimension, so BNUEC -> BENUC
+        info["voxel_obs"] = info["voxel_obs"].transpose(0, 3, 1, 2, 4)
+        # (B, 3[nue]) -> (B, 3[enu])
+        info["player_pos"] = info["player_pos"][:, [2, 0, 1]]
+        info["player_vel"] = info["player_vel"][:, [2, 0, 1]]
+        info["player_yaw"] = (info["player_yaw"] + 90) % 360
+        return info

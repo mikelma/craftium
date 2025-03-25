@@ -1,5 +1,6 @@
 import os
 from typing import Optional, Any
+from copy import deepcopy
 
 from .mt_channel import MtChannel
 from .minetest import Minetest
@@ -23,6 +24,10 @@ class CraftiumEnv(Env):
     :param env_dir: Directory of the environment to load (should contain `worlds` and `games` directories).
     :param obs_width: The width of the observation image in pixels.
     :param obs_height: The height of the observation image in pixels.
+    :param enable_voxel_obs: Whether to enable voxel observations. Can only be enabled if _voxel_obs_available is True. The voxel observation is a 3D grid of dimensions (2*voxel_obs_rx+1, 2*voxel_obs_ry+1, 2*voxel_obs_rz+1, 3). The last dimension contains the voxel node ID, the light data, and the param2 data for each voxel.
+    :param voxel_obs_rx: The radius of the voxel observation in the x-axis (North).
+    :param voxel_obs_ry: The radius of the voxel observation in the y-axis (Up).
+    :param voxel_obs_rz: The radius of the voxel observation in the z-axis (East).
     :param init_frames: The number of frames to wait for Minetest to load.
     :param render_mode: Render mode ("human" or "rgb_array"), see [Env.render](https://gymnasium.farama.org/api/env/#gymnasium.Env.render).
     :param max_timesteps: Maximum number of timesteps until episode termination. Disabled if set to `None`.
@@ -42,14 +47,20 @@ class CraftiumEnv(Env):
     :param sync_mode: If set to true, minetest's internal client and server steps are synchronized. This is useful for training models slower than realtime.
     :param pmul: Physics multiplier. As craftium agent's take actions by frame, default movement speeds make the agent move slowly. When set to > 1, minetest's movement velocity and acceleration increase helping the agent to move at acceptable relative speeds. 
     :param soft_reset: If set to true, resets will have to be handled by the Lua mod and minetest won't be killed and rerun every call to restart. **IMPORTANT:** Only set this flag to `True` in environments that support this feature.
+    :param _minetest_conf: The default minetest configuration provided during environment registration.
+    :param _voxel_obs_available: This flag indicates environments that support voxel observations during registration (do not manually override).
     """
-    metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 30}
+    metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 30, "voxel_observations_enabled": False}
 
     def __init__(
             self,
             env_dir: os.PathLike,
             obs_width: int = 640,
             obs_height: int = 360,
+            enable_voxel_obs: bool = False,
+            voxel_obs_rx: int = 20,
+            voxel_obs_ry: int = 10,
+            voxel_obs_rz: int = 20,
             init_frames: int = 15,
             render_mode: Optional[str] = None,
             max_timesteps: Optional[int] = None,
@@ -70,8 +81,25 @@ class CraftiumEnv(Env):
             fps_max: int = 200,
             pmul: int = 20,
             soft_reset: bool = False,
+            _minetest_conf: dict[str, Any] = dict(),
+            _voxel_obs_available: bool = False,
     ):
         super(CraftiumEnv, self).__init__()
+
+        if enable_voxel_obs:
+            if _voxel_obs_available:
+                self.metadata["voxel_observations_enabled"] = True
+            else:
+                raise ValueError("Voxel observations are not supported for this environment. Set `enable_voxel_obs` to `False` "
+                                 "or use a different environment.")
+
+        _minetest_conf.update(minetest_conf)
+
+        #  out auto enlargement of fov for aspect ratios smaller than 16/10
+        aspect_ratio = obs_width / obs_height
+        if aspect_ratio < 16/10 and 'fov' in _minetest_conf:
+            _minetest_conf['fov'] = _minetest_conf['fov'] / np.clip(np.sqrt((16/10)/aspect_ratio), 1.0, 1.4)
+
         self.obs_width = obs_width
         self.obs_height = obs_height
         self.init_frames = init_frames // frameskip
@@ -106,6 +134,10 @@ class CraftiumEnv(Env):
         self.mt_chann = MtChannel(
             img_width=self.obs_width,
             img_height=self.obs_height,
+            voxel_obs=enable_voxel_obs,
+            voxel_obs_rx=voxel_obs_rx,
+            voxel_obs_ry=voxel_obs_ry,
+            voxel_obs_rz=voxel_obs_rz,
             listen_timeout=mt_listen_timeout,
             rgb_imgs=rgb_observations,
         )
@@ -121,9 +153,13 @@ class CraftiumEnv(Env):
             sync_dir=env_dir,
             screen_w=obs_width,
             screen_h=obs_height,
+            voxel_obs=enable_voxel_obs,
+            voxel_obs_rx=voxel_obs_rx,
+            voxel_obs_ry=voxel_obs_ry,
+            voxel_obs_rz=voxel_obs_rz,
             minetest_dir=minetest_dir,
             tcp_port=self.mt_chann.port,
-            minetest_conf=minetest_conf,
+            minetest_conf=_minetest_conf,
             pipe_proc=pipe_proc,
             mt_port=mt_port,
             frameskip=frameskip,
@@ -138,6 +174,9 @@ class CraftiumEnv(Env):
 
     def _get_info(self):
         return dict()
+
+    def get_mt_config(self):
+        return deepcopy(self.mt.config)
 
     def reset(
         self,
@@ -161,6 +200,11 @@ class CraftiumEnv(Env):
                 self.mt_chann.close_conn()
                 self.mt.close_pipes()
                 self.mt.wait_close()
+
+            if options is not None:
+                self.mt.overwrite_config(options["minetest_conf"])
+            if seed is not None:
+                self.mt.overwrite_config({"fixed_map_seed": seed})
 
             # start the new MT process
             self.mt.start_process()
@@ -188,18 +232,24 @@ class CraftiumEnv(Env):
             # HACK skip some frames to let the game initialize
             # TODO This "waiting" should be implemented in Minetest not in python
             for _ in range(self.init_frames):
-                _observation, _reward, _term = self.mt_chann.receive()
+                _observation, _voxobs, _pos, _vel, _pitch, _yaw, _dtime, _reward, _term = self.mt_chann.receive()
                 self.mt_chann.send([0]*21, 0, 0)  # nop action
         else:
             self.mt_chann.send_soft_reset()
 
-        observation, _reward, _term = self.mt_chann.receive()
+        observation, voxobs, pos, vel, pitch, yaw, dtime, _reward, _term = self.mt_chann.receive()
         if not self.gray_scale_keepdim and not self.rgb_observations:
             observation = observation[:, :, 0]
 
         self.last_observation = observation
 
         info = self._get_info()
+        info["voxel_obs"] = voxobs
+        info["player_pos"] = pos
+        info["player_vel"] = vel
+        info["player_pitch"] = pitch
+        info["player_yaw"] = yaw
+        info["mt_dtime"] = dtime
 
         return observation, info
 
@@ -226,13 +276,19 @@ class CraftiumEnv(Env):
         self.mt_chann.send(keys, mouse_x, mouse_y)
 
         # receive the new info from minetest
-        observation, reward, termination = self.mt_chann.receive()
+        observation, voxobs, pos, vel, pitch, yaw, dtime, reward, termination = self.mt_chann.receive()
         if not self.gray_scale_keepdim and not self.rgb_observations:
             observation = observation[:, :, 0]
 
         self.last_observation = observation
 
         info = self._get_info()
+        info["voxel_obs"] = voxobs
+        info["player_pos"] = pos
+        info["player_vel"] = vel
+        info["player_pitch"] = pitch
+        info["player_yaw"] = yaw
+        info["mt_dtime"] = dtime
 
         truncated = self.max_timesteps is not None and self.timesteps >= self.max_timesteps
 

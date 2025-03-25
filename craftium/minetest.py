@@ -28,6 +28,10 @@ class Minetest():
             sync_dir: Optional[os.PathLike] = None,
             screen_w: int = 640,
             screen_h: int = 360,
+            voxel_obs: bool = False,
+            voxel_obs_rx: int = 20,
+            voxel_obs_ry: int = 10,
+            voxel_obs_rz: int = 20,
             minetest_dir: Optional[str] = None,
             minetest_conf: dict[str, Any] = dict(),
             pipe_proc: bool = True,
@@ -42,7 +46,7 @@ class Minetest():
 
         # create a dedicated directory for this run
         if run_dir is None:
-            self.run_dir = f"./minetest-run-{uuid4()}"
+            self.run_dir = f"minetest-run-{uuid4()}"
             if run_dir_prefix is not None:
                 self.run_dir = os.path.join(run_dir_prefix, self.run_dir)
         else:
@@ -50,7 +54,7 @@ class Minetest():
         # delete the directory if it already exists
         if os.path.exists(self.run_dir):
             shutil.rmtree(self.run_dir)
-        os.mkdir(self.run_dir)
+        os.makedirs(self.run_dir)
 
         print(f"==> Creating Minetest run directory: {self.run_dir}")
 
@@ -65,6 +69,10 @@ class Minetest():
             enable_mod_channels=True,
             screen_w=screen_w,
             screen_h=screen_h,
+            voxel_obs=voxel_obs,
+            voxel_obs_rx=voxel_obs_rx,
+            voxel_obs_ry=voxel_obs_ry,
+            voxel_obs_rz=voxel_obs_rz,
             vsync=False,
             fps_max=fps_max,
             fps_max_unfocused=fps_max,
@@ -119,6 +127,7 @@ class Minetest():
             config["fixed_map_seed"] = seed
 
         self._write_config(config, os.path.join(self.run_dir, "minetest.conf"))
+        self.config = config
 
         # get the craftium's root directory, the place where all the data
         # needed by craftium's is located
@@ -192,10 +201,19 @@ class Minetest():
         if os.path.exists(self.run_dir):
             shutil.rmtree(self.run_dir)
 
+    def overwrite_config(self, new_partial_config: dict[str, Any]):
+        for key, value in new_partial_config.items():
+            self.config[key] = value
+        self._write_config(self.config, os.path.join(self.run_dir, "minetest.conf"))
+
     def _write_config(self, config: dict[str, Any], path: os.PathLike):
         with open(path, "w") as f:
             for key, value in config.items():
-                f.write(f"{key} = {value}\n")
+                if isinstance(value, dict):
+                    for kkey, vvalue in value.items():
+                        f.write(f"{key}.{kkey} = {vvalue}\n")
+                else:
+                    f.write(f"{key} = {value}\n")
 
     def _create_mt_dirs(
             self,
@@ -254,7 +272,7 @@ class MTServerOnly():
         self.pipe_proc = pipe_proc
 
         # create a dedicated directory for this run
-        self.run_dir = f"./minetest-srv--{uuid4()}"
+        self.run_dir = f"minetest-srv--{uuid4()}"
         if run_dir_prefix is not None:
             self.run_dir = os.path.join(run_dir_prefix, self.run_dir)
         # delete the directory if it already exists
@@ -320,6 +338,7 @@ class MTServerOnly():
             config["fixed_map_seed"] = seed
 
         self._write_config(config, os.path.join(self.run_dir, "minetest.conf"))
+        self.config = config
 
         # get the craftium's root directory, the place where all the data
         # needed by craftium's is located
@@ -391,6 +410,11 @@ class MTServerOnly():
         if os.path.exists(self.run_dir):
             shutil.rmtree(self.run_dir)
 
+    def overwrite_config(self, new_partial_config: dict[str, Any]):
+        for key, value in new_partial_config.items():
+            self.config[key] = value
+        self._write_config(self.config, os.path.join(self.run_dir, "minetest.conf"))
+
     def _write_config(self, config: dict[str, Any], path: os.PathLike):
         with open(path, "w") as f:
             for key, value in config.items():
@@ -446,6 +470,10 @@ class MTClientOnly():
             sync_dir: Optional[os.PathLike] = None,
             screen_w: int = 640,
             screen_h: int = 360,
+            voxel_obs: bool = False,
+            voxel_obs_rx: int = 20,
+            voxel_obs_ry: int = 10,
+            voxel_obs_rz: int = 20,
             minetest_dir: Optional[str] = None,
             minetest_conf: dict[str, Any] = dict(),
             pipe_proc: bool = True,
@@ -477,6 +505,10 @@ class MTClientOnly():
             enable_mod_channels=True,
             screen_w=screen_w,
             screen_h=screen_h,
+            voxel_obs=voxel_obs,
+            voxel_obs_rx=voxel_obs_rx,
+            voxel_obs_ry=voxel_obs_ry,
+            voxel_obs_rz=voxel_obs_rz,
             vsync=False,
             fps_max=fps_max,
             fps_max_unfocused=fps_max,
@@ -528,6 +560,7 @@ class MTClientOnly():
             config["fixed_map_seed"] = seed
 
         self._write_config(config, os.path.join(self.run_dir, "minetest.conf"))
+        self.config = config
 
         # get the craftium's root directory, the place where all the data
         # needed by craftium's is located

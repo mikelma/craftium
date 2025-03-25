@@ -1,6 +1,6 @@
 [build-system]
 build-backend = "setuptools.build_meta"
-requires = ["numpy==2.0.1", "setuptools==66.1.1", "pybind11==2.13.1"]
+requires = ["numpy>=2.0.1", "setuptools>=66.1.1", "pybind11==2.13.1"]
 
 [project]
 name = "craftium"
@@ -17,7 +17,7 @@ dependencies = [
 
 [project.optional-dependencies]
 # Packages needed to run the Deep RL examples
-examples = ["stable_baselines3==2.3.2", "torch==2.1.0", "tyro==0.8.5"]
+examples = ["stable_baselines3==2.3.2", "torch==2.6.0", "tyro==0.8.5"]
 
 [tool.setuptools.packages.find]
 where = ["."]

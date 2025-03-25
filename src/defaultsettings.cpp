@@ -137,6 +137,10 @@ void set_default_settings()
 	settings->setDefault("craftium_port", "55555");
 	settings->setDefault("frameskip", "1");
 	settings->setDefault("rgb_frames", "true");
+	settings->setDefault("voxel_obs", "false");
+	settings->setDefault("voxel_obs_rx", "20");
+	settings->setDefault("voxel_obs_ry", "10");
+	settings->setDefault("voxel_obs_rz", "20");
 
 	// Keymap
 	settings->setDefault("remote_port", "30000");

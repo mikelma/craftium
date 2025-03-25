@@ -162,11 +162,11 @@ class MarlCraftiumEnv():
                 # HACK skip some frames to let the game initialize
                 # TODO This "waiting" should be implemented in Minetest not in python
                 for _ in range(self.init_frames):
-                    _observation, _reward, _term = self.mt_channs[i].receive()
+                    _observation, _voxobs, _pos, _vel, _pitch, _yaw, _dtime, _reward, _term = self.mt_channs[i].receive()
                     self.mt_channs[i].send([0]*21, 0, 0)  # nop action
 
                 # receive the new info from minetest
-                observation, reward, _termination = self.mt_channs[i].receive()
+                observation, _voxobs, _pos, _vel, _pitch, _yaw, _dtime, reward, _term = self.mt_channs[i].receive()
                 if not self.gray_scale_keepdim and not self.rgb_observations:
                     observation = observation[:, :, 0]
                 observations.append(observation)
@@ -177,7 +177,7 @@ class MarlCraftiumEnv():
                 # send a soft reset to the MT client
                 self.mt_channs[i].send_soft_reset()
                 # receive a new observation from minetest
-                observation, reward, _termination = self.mt_channs[i].receive()
+                observation, _voxobs, _pos, _vel, _pitch, _yaw, _dtime, reward, _term = self.mt_channs[i].receive()
                 if not self.gray_scale_keepdim and not self.rgb_observations:
                     observation = observation[:, :, 0]
                 observations.append(observation)
@@ -219,7 +219,7 @@ class MarlCraftiumEnv():
         self.mt_channs[agent_id].send(keys, mouse_x, mouse_y)
 
         # receive the new info from minetest
-        observation, reward, termination = self.mt_channs[agent_id].receive()
+        observation, _voxobs, _pos, _vel, _pitch, _yaw, _dtime, reward, termination = self.mt_channs[agent_id].receive()
         if not self.gray_scale_keepdim and not self.rgb_observations:
             observation = observation[:, :, 0]
 
