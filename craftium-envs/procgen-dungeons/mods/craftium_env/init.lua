@@ -78,6 +78,8 @@ minetest.register_on_joinplayer(function(player, _last_login)
 		for c in string.gmatch(row, ".") do
 			if c == "#" then
 				minetest.set_node({x = x, y = y, z = z}, { name = material_wall })
+			elseif c == "%" then
+				minetest.set_node({ x = x, y = y, z = z }, { name = "default:glass" })
 			elseif c == "O" then
 				objective_pos = {x = x, y = y+1, z = z}
 				respawn_objective()
