@@ -402,7 +402,7 @@ inline static int lua_add_to_dict(lua_State *L){
     Value val;
 
     if (lua_type(L,3) == LUA_TBOOLEAN){
-        val = lua_toboolean(L, 3);
+        val = (bool)lua_toboolean(L, 3);
     } else if (lua_type(L, 3) == LUA_TNUMBER) {
         lua_Number num = lua_tonumber(L, 3); 
         if (static_cast<lua_Integer>(num) == num) {
@@ -432,4 +432,81 @@ inline static int lua_add_to_dict(lua_State *L){
 
 }
 
+inline static int lua_dict_contains(lua_State *L){
+    const char *key = lua_tostring(L, 1);
+    if (!key){
+        lua_pushnil(L);
+        return 1;
+    }
 
+    const char *key2 = lua_tostring(L, 2);
+    if (!key2){
+        lua_pushnil(L);
+        return 1;
+    }
+
+    auto iter = g_info.find(key);
+    if (iter == g_info.end()){
+        lua_pushnil(L);
+        return 1;
+    }
+
+    if (!std::holds_alternative<Dict>(iter->second)){
+        lua_pushnil(L);
+        return 1;
+    }
+
+    auto iter2 = std::get<Dict>(iter->second).find(key2);
+
+    lua_pushboolean(L, iter2 != std::get<Dict>(iter->second).end());
+
+    return 1; /* number of results */
+}
+
+inline static int lua_get_from_dict(lua_State *L) {
+
+    const char *key = lua_tostring(L,1);
+    if (!key) {
+        lua_pushnil(L);
+        return 1;
+    }
+
+    const char *key2 = lua_tostring(L,2);
+    if (!key2) {
+        lua_pushnil(L);
+        return 1;
+    }
+
+    auto iter = g_info.find(key);
+    if (iter == g_info.end()){
+        lua_pushnil(L);
+        return 1;
+    }
+
+    if (!std::holds_alternative<Dict>(iter->second)){
+        lua_pushnil(L);
+        return 1;
+    }
+
+    auto iter2 = std::get<Dict>(iter->second).find(key2);
+    if (iter2 == std::get<Dict>(iter->second).end()){
+        lua_pushnil(L);
+        return 1;
+    }
+
+    if (std::holds_alternative<bool>(iter2->second)){
+        lua_pushboolean(L, std::get<bool>(iter2->second));
+    } else if (std::holds_alternative<int>(iter2->second)) {
+        lua_pushinteger(L,std::get<int>(iter2->second));
+    } else if (std::holds_alternative<float>(iter2->second)) {
+        lua_pushnumber(L,std::get<float>(iter2->second));
+    } else if (std::holds_alternative<double>(iter2->second)) {
+        lua_pushnumber(L, std::get<double>(iter2->second));
+    } else if (std::holds_alternative<std::string>(iter2->second)) {
+        lua_pushstring(L,std::get<std::string>(iter2->second).c_str());
+    } else {
+        lua_pushnil(L);
+    }
+
+    return 1; /* number of results */
+}

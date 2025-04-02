@@ -69,6 +69,8 @@ ClientScripting::ClientScripting(Client *client):
 		lua_register(L, "add_to_list", lua_add_to_list);
 		lua_register(L, "set_empty_dict", lua_set_empty_dict);
 		lua_register(L, "add_to_dict", lua_add_to_dict);
+		lua_register(L, "dict_contains", lua_dict_contains);
+		lua_register(L, "get_from_dict", lua_get_from_dict);
 
 	lua_newtable(L);
 	lua_setfield(L, -2, "ui");
