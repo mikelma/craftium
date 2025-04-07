@@ -132,7 +132,7 @@ int read_large_from_socket(int socket_fd, char **buffer_ptr, int total_size) {
         }
         total_bytes += bytes_received;
     }
-    return total_size;
+    return total_bytes;
 }
 
 static PyObject* python_dict_from_msgpack_map(msgpack_object_map map);
