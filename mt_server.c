@@ -93,7 +93,21 @@ static PyObject* server_listen(PyObject* self, PyObject* args) {
 
 #define BUFFER_SIZE 8192
 
-int read_large_from_socket(int socket_fd, char *buffer, int total_size) {
+int read_large_from_socket(int socket_fd, char **buffer_ptr, int total_size) {
+    int info_size = 0;
+    int bytes_received_info = recv(socket_fd, &info_size, 4, 0);
+    assert(bytes_received_info == 4);
+
+    total_size += info_size;
+
+    // Create the buffer where the received image+data will be stored
+    char* buffer = (char*)malloc(total_size);
+    if (buffer == NULL) {
+      PyErr_SetString(PyExc_RuntimeError, "Could not allocate memory for info buffer");
+      return 0;
+    }
+    *buffer_ptr = buffer;
+
     int bytes_received = 0;
     int total_bytes = 0;
 
@@ -118,7 +132,7 @@ int read_large_from_socket(int socket_fd, char *buffer, int total_size) {
         }
         total_bytes += bytes_received;
     }
-    return total_bytes;
+    return total_size;
 }
 
 static PyObject* python_dict_from_msgpack_map(msgpack_object_map map);
@@ -247,15 +261,7 @@ static PyObject* server_recv(PyObject* self, PyObject* args) {
     return NULL;
   }
 
-  // Create the buffer where the received image+data will be stored
-  buff = (char*)malloc(n_bytes);
-  if (buff == NULL) {
-    PyErr_SetString(PyExc_Exception, "Failed to allocate memory for recv buffer");
-    return NULL;
-  }
-
-  n_read = read_large_from_socket(connfd, buff, n_bytes);
-
+  n_read = read_large_from_socket(connfd, &buff, n_bytes);
   if (n_read < 0) {
     PyErr_SetString(PyExc_ConnectionError, "Failed to receive from MT, error reading from socket.");
     return NULL;
@@ -266,45 +272,25 @@ static PyObject* server_recv(PyObject* self, PyObject* args) {
   }
 
   // Retreive size of the info buffer(last 4 bytes) the termination flag (1 bute) and reward (8 bytes)
-  int n_bytes_info;
-  memcpy(&n_bytes_info, &buff[n_bytes-4], 4);
+  int n_bytes_info = n_read-n_bytes;
 
-  int termination = (int) buff[n_bytes-5];
+  int termination = (int) buff[n_bytes-1];
   PyObject* py_termination = PyBool_FromLong(termination);
 
-  memcpy(&reward, &buff[n_bytes-13], sizeof(reward));
+  memcpy(&reward, &buff[n_bytes-9], sizeof(reward));
   PyObject* py_reward = PyFloat_FromDouble(reward);
 
   PyObject* py_info = 0;
 
   if (n_bytes_info > 0){
 
-    // Info will be sent 
-    // Create the buffer where the received info will be stored
-
-    unsigned char *info_buff = (unsigned char*)malloc(n_bytes_info);
-    if (info_buff == NULL) {
-      PyErr_SetString(PyExc_Exception, "Failed to allocate memory for recv information buffer");
-      return NULL;
-    }
-
-    // Receive the info buffer
-    n_read = read_large_from_socket(connfd, info_buff, n_bytes_info);
-
-    if (n_read < 0) {
-      PyErr_SetString(PyExc_ConnectionError, "Failed to receive info from MT, error reading from socket.");
-      return NULL;
-    } else if (n_read == 0) {
-      close(connfd);
-      PyErr_SetString(PyExc_ConnectionError, "Failed to receive info from MT. Connection closed by peer: is MT down?");
-      return NULL;
-    }
+    // Info can be found at end of buffer
 
     // deserialize the information buffer and crate a python dictionary
     msgpack_unpacked info;
     msgpack_unpacked_init(&info);
 
-    if (msgpack_unpack_next(&info, info_buff, n_bytes_info, NULL)) {
+    if (msgpack_unpack_next(&info, buff+n_bytes, n_bytes_info, NULL)) {
       msgpack_object obj = info.data;
 
       if (obj.type == MSGPACK_OBJECT_MAP) {
@@ -318,19 +304,17 @@ static PyObject* server_recv(PyObject* self, PyObject* args) {
       } else {
         PyErr_SetString(PyExc_RuntimeError, "Expected a map but got a different type");
         msgpack_unpacked_destroy(&info);
-        free(info_buff);
+        free(buff);
         return NULL;
       }
     } else {
       PyErr_SetString(PyExc_RuntimeError, "Failed to unpack data");
       msgpack_unpacked_destroy(&info);
-      free(info_buff);
+      free(buff);
       return NULL;
     }
 
     msgpack_unpacked_destroy(&info);
-    free(info_buff);
-
 
 
   } else {

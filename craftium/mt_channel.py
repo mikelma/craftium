@@ -24,9 +24,9 @@ class MtChannel():
         self.connfd = None
 
         # pre-compute the number of bytes that we should receive from MT.
-        # the RGB image + 8 bytes of the reward + 1 of the soft-reset flag + 4 that indicates the length of the upcoming MessagePack payload for info
+        # the RGB image + 8 bytes of the reward + 1 of the soft-reset flag
         self.n_chan = 3 if rgb_imgs else 1
-        self.rec_bytes = img_width*img_height*self.n_chan + 8 + 1 + 4
+        self.rec_bytes = img_width*img_height*self.n_chan + 8 + 1
 
     def receive(self):
         img, reward, termination, info = mt_server.server_recv(

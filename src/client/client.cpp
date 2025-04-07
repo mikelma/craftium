@@ -308,14 +308,28 @@ void Client::pyConnStep() {
     W = dims.Width;
     H = dims.Height;
 
+
+	// msgpack buffer for info
+	msgpack::sbuffer info_buffer;
+	
+	/* Encode the info_buffer's size into obs_rwd_buffer*/
+	int infoSize;
+	if (g_info.size() == 0){
+		infoSize = 0;
+	}else{
+		/* Serialize the info unordered_map using msgpack*/ 
+		msgpack::pack(info_buffer, g_info);
+		infoSize = info_buffer.size();
+	}
+
+
     /*
-      W*H*3 for the WxH RGB image, +8 for the reward value (a double),
-      +1 for the episode termination flag and + 4 for the size of the information buffer (integer)
+      W*H*3 for the WxH RGB image, +8 for the reward value (a double), +1 for the episode termination flag and + 4 for the size of the information buffer (integer) + size of infobufer
     */
     if (g_settings->getBool("rgb_frames")) {
-        obs_rwd_buffer_size = W*H*3 + 8 + 1 + 4; // full RGB images
+        obs_rwd_buffer_size = W*H*3 + 8 + 1 + 4 + infoSize; // full RGB images
     } else {
-        obs_rwd_buffer_size = W*H + 8 + 1 + 4 ; // grayscale images
+        obs_rwd_buffer_size = W*H + 8 + 1 + 4 + infoSize; // grayscale images
     }
 
     /* If obs_rwd_buffer is not initialized, allocate memory for it now */
@@ -328,6 +342,13 @@ void Client::pyConnStep() {
 
     /* Copy RGB image into a flat u8 array (obs_rwd_buffer) */
     int i = 0;
+
+	unsigned char *infoSizeBytes = (unsigned char*)&infoSize;
+	for (int j=0; j<4; j++) {
+        obs_rwd_buffer[i] = infoSizeBytes[j];
+        i++;
+    }
+
     if (g_settings->getBool("rgb_frames")) {
         for (int h=0; h<H; h++) {
             for (int w=0; w<W; w++) {
@@ -369,36 +390,15 @@ void Client::pyConnStep() {
         obs_rwd_buffer[i] = 0;
     }
 	i++;
-	
-	// msgpack buffer for info
-	msgpack::sbuffer info_buffer;
-	
-	/* Encode the info_buffer's size into obs_rwd_buffer*/
-	int infoSize;
-	if (g_info.size() == 0){
-		infoSize = 0;
-	}else{
-		/* Serialize the info unordered_map using msgpack*/ 
-		msgpack::pack(info_buffer, g_info);
-		infoSize = info_buffer.size();
-	}
 
-	unsigned char *infoSizeBytes = (unsigned char*)&infoSize;
-	for (int j=0; j<4; j++) {
-        obs_rwd_buffer[i] = infoSizeBytes[j];
+	char *info_data = info_buffer.data();
+	for (int j=0; j<infoSize; j++) {
+        obs_rwd_buffer[i] = info_data[j];
         i++;
     }
 	
     /* Send the obs_rwd_buffer over TCP to Python */
     n_send = send(py_sockfd, obs_rwd_buffer, obs_rwd_buffer_size, 0);
-
-	/* If the map is empty, instead of sending an empty dictionary, no buffer will be sent */
-	if (g_info.size() > 0){
-		/* Send the info_buffer over TCP to Python */
-		n_send = send(py_sockfd, info_buffer.data(), info_buffer.size(), 0);
-	}
-
-
 	
     /* Receive a buffer of bytes with the actions to take */
     n_recv = recv(py_sockfd, &actions, sizeof(actions), 0);
