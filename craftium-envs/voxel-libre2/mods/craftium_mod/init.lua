@@ -2,7 +2,7 @@
 init_tools = { "mcl_tools:axe_stone", "mcl_torches:torch 256" }
 
 timeofday_step = 1 / (10000 * minetest.settings:get("frameskip")) -- day/night cycle lasts 10K steps
-timeofday = 0 -- start episode at midday
+timeofday = 0.5 -- start episode at midday
 
 -- executed when the player joins the game
 minetest.register_on_joinplayer(function(player, _last_login)
