@@ -333,9 +333,12 @@ void Client::pyConnStep() {
     }
 
     /* If obs_rwd_buffer is not initialized, allocate memory for it now */
-    if (!obs_rwd_buffer) {
-        obs_rwd_buffer = (unsigned char*) malloc(obs_rwd_buffer_size);
-    }
+
+	if (!obs_rwd_buffer || last_obs_rwd_buffer_size != obs_rwd_buffer_size){
+		free(obs_rwd_buffer);
+		obs_rwd_buffer = (unsigned char*) malloc(obs_rwd_buffer_size);
+		last_obs_rwd_buffer_size = obs_rwd_buffer_size;
+	}
 
     if (!raw_image)
         return;
@@ -391,11 +394,13 @@ void Client::pyConnStep() {
     }
 	i++;
 
-	char *info_data = info_buffer.data();
-	for (int j=0; j<infoSize; j++) {
-        obs_rwd_buffer[i] = info_data[j];
-        i++;
-    }
+	if (g_info.size() != 0){
+		char *info_data = info_buffer.data();
+		for (int j=0; j<infoSize; j++) {
+			obs_rwd_buffer[i] = info_data[j];
+			i++;
+    	}
+	}
 	
     /* Send the obs_rwd_buffer over TCP to Python */
     n_send = send(py_sockfd, obs_rwd_buffer, obs_rwd_buffer_size, 0);
