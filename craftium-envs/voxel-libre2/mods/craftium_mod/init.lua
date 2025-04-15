@@ -35,6 +35,47 @@ end)
 
 -- turn on the termination flag if the agent dies
 minetest.register_on_dieplayer(function(ObjectRef, reason)
+	-- get cause of death
+    if reason then
+        if reason.type == "punch" then
+            if reason.object then
+                if reason.object:is_player() then
+                    cause_msg = "Was slain by another player"
+                else
+                    local entity = reason.object:get_luaentity()
+                    if entity and entity.name then
+                        cause_msg = "was killed by a mob or entity: " .. entity.name .. "."
+                    else
+                        cause_msg = "was killed by an unknown entity."
+                    end
+                end
+            else
+                cause_msg = "was punched to death."
+            end
+
+        elseif reason.type == "fall" then
+            cause_msg = "fell from a high place."
+
+        elseif reason.type == "drown" then
+            cause_msg = "drowned."
+
+        elseif reason.type == "node_damage" then
+            if reason.node then
+                local nodedef = minetest.registered_nodes[reason.node.name]
+                local nodename = nodedef and nodedef.description or reason.node.name
+                cause_msg = "died due to contact with " .. nodename .. "."
+            else
+                cause_msg = "was hurt by a damaging node."
+            end
+
+        elseif reason.type == "set_hp" then
+            cause_msg = "died due to a script or mod setting their HP to 0."
+
+        else
+            cause_msg = "died from an unknown cause (" .. reason.type .. ")."
+        end
+    end
+	set_info("cause_of_death", cause_msg)
 	set_termination()
 end)
 
@@ -61,8 +102,9 @@ minetest.register_globalstep(function(dtime)
 	set_info("x",player_pos.x)
 	-- get the health of the player
 	set_info("health",player:get_hp())
-	-- get stage
+	-- get stage and stage progress
 	set_info("stage",curr_stage)
+	set_info("progress",stages[curr_stage + 1].current)
 	-- get inventory
 	set_empty_dict("inventory")
 	local inv = player:get_inventory()
