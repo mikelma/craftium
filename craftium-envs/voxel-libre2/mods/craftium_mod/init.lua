@@ -30,6 +30,7 @@ minetest.register_on_joinplayer(function(player, _last_login)
 	set_info("healed_amount",0.0)
 
 	set_empty_dict("mined_nodes")
+	set_empty_dict("placed_nodes")
 	set_empty_dict("defeated_enemies")
 	set_empty_dict("hunted_animals")
 end)
@@ -109,15 +110,15 @@ minetest.register_globalstep(function(dtime)
 	set_info("stage",curr_stage)
 	set_info("progress",stages[curr_stage + 1].current)
 	
-	-- get inventory
-	set_empty_dict("inventory")
-	local inv = player:get_inventory()
-	local list = inv:get_list("main")
-	for i, itemstack in ipairs(list) do
-		if not itemstack:is_empty() then
-			add_to_dict("inventory",itemstack:get_name(),itemstack:get_count())
-		end
-	end
+	-- -- get inventory
+	-- set_empty_dict("inventory")
+	-- local inv = player:get_inventory()
+	-- local list = inv:get_list("main")
+	-- for i, itemstack in ipairs(list) do
+	-- 	if not itemstack:is_empty() then
+	-- 		add_to_dict("inventory",itemstack:get_name(),itemstack:get_count())
+	-- 	end
+	-- end
 end)
 
 --
@@ -209,6 +210,15 @@ minetest.register_on_dignode(function(pos, node)
 
 		-- Move to the next stage
 		curr_stage = curr_stage + 1
+	end
+end)
+
+minetest.register_on_placenode(function(pos, newnode, placer, oldnode, itemstack, pointed_thing)
+    -- update table of pllaced nodes of info
+	if dict_contains("placed_nodes", newnode["name"]) then
+		add_to_dict("placed_nodes",newnode["name"],get_from_dict("placed_nodes",newnode["name"])+1)
+	else
+		add_to_dict("placed_nodes",newnode["name"],1)
 	end
 end)
 
