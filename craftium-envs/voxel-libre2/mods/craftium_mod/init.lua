@@ -24,6 +24,7 @@ minetest.register_on_joinplayer(function(player, _last_login)
 	-- set player's initial position
 	player:set_pos({ x = 120, z = 92, y = 16.5 })
 
+	-- initialize values and dictionaries
 	set_info("damage_taken",0.0)
 	set_info("damage_dealt",0.0)
 	set_info("healed_amount",0.0)
@@ -100,15 +101,18 @@ minetest.register_globalstep(function(dtime)
 	set_info("y",player_pos.y)
 	set_info("z",player_pos.z)
 	set_info("x",player_pos.x)
+	
 	-- get the health of the player
 	set_info("health",player:get_hp())
+	
 	-- get stage and stage progress
 	set_info("stage",curr_stage)
 	set_info("progress",stages[curr_stage + 1].current)
+	
 	-- get inventory
 	set_empty_dict("inventory")
 	local inv = player:get_inventory()
-	local list = inv:get_list("main")  -- "main" is the default inventory list
+	local list = inv:get_list("main")
 	for i, itemstack in ipairs(list) do
 		if not itemstack:is_empty() then
 			add_to_dict("inventory",itemstack:get_name(),itemstack:get_count())
