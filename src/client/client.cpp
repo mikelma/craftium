@@ -137,7 +137,51 @@ namespace msgpack {
     }
 }
 
+void printValue(const Value& value) {
+    std::visit([](const auto& val) {
+        std::cout << val;
+    }, value);
+}
 
+void printList(const List& list) {
+    std::cout << "[";
+    for (size_t i = 0; i < list.size(); ++i) {
+        printValue(list[i]);
+        if (i + 1 < list.size())
+            std::cout << ", ";
+    }
+    std::cout << "]";
+}
+
+void printDict(const Dict& dict) {
+    std::cout << "{";
+    size_t count = 0;
+    for (const auto& [key, val] : dict) {
+        std::cout << "\"" << key << "\": ";
+        printValue(val);
+        if (++count < dict.size())
+            std::cout << ", ";
+    }
+    std::cout << "}";
+}
+
+void printInfoMap(const InfoMap& infoMap) {
+    std::cout << "{\n";
+    for (const auto& [key, val] : infoMap) {
+        std::cout << "  \"" << key << "\": ";
+        std::visit([&](const auto& v) {
+            using T = std::decay_t<decltype(v)>;
+            if constexpr (std::is_same_v<T, List>)
+                printList(v);
+            else if constexpr (std::is_same_v<T, Dict>)
+                printDict(v);
+            else
+                std::cout << v;
+        }, val);
+        std::cout << "\n";
+    }
+    std::cout << "}\n";
+}
 
 /*
 	Utility classes
