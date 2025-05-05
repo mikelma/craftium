@@ -390,47 +390,43 @@ inline static int lua_set_empty_dict(lua_State *L){
 
 inline static int lua_add_to_dict(lua_State *L){
     const char *key = lua_tostring(L, 1);
-    if (!key){
-        return 0;
-    }
-
     const char *key2 = lua_tostring(L, 2);
-    if (!key2){
+    if (!key || !key2) {
         return 0;
     }
-    
-    Value val;
 
-    if (lua_type(L,3) == LUA_TBOOLEAN){
-        val = (bool)lua_toboolean(L, 3);
-    } else if (lua_type(L, 3) == LUA_TNUMBER) {
-        lua_Number num = lua_tonumber(L, 3); 
-        if (static_cast<lua_Integer>(num) == num) {
-            val = static_cast<int>(num);
-        } else if (static_cast<float>(num) == num) {
-            val = static_cast<float>(num);
-        } else {
-            val = static_cast<double>(num);
+    Value val;
+    switch (lua_type(L, 3)) {
+        case LUA_TBOOLEAN:
+            val = static_cast<bool>(lua_toboolean(L, 3));
+            break;
+        case LUA_TNUMBER: {
+            lua_Number num = lua_tonumber(L, 3);
+            if (static_cast<lua_Integer>(num) == num) {
+                val = static_cast<int>(num);
+            } else {
+                val = static_cast<double>(num);
+            }
+            break;
         }
-    } else if (lua_type(L, 3) == LUA_TSTRING) {
-        val = lua_tostring(L, 3);
-    } else {
-        return 0;
+        case LUA_TSTRING:
+            val = std::string(lua_tostring(L, 3));
+            break;
+        default:
+            return 0;
     }
 
     auto iter = g_info.find(key);
-    if (iter == g_info.end()){
+    if (iter == g_info.end()) {
         g_info[key] = Dict{{key2, val}};
-        return 0;
-    } else if (!std::holds_alternative<Dict>(iter->second)){
-        return 0;
+    } else if (std::holds_alternative<Dict>(iter->second)) {
+        std::get<Dict>(iter->second)[key2] = val;
     }
 
-    std::get<Dict>(iter->second)[key2]=val;
-
     return 0;
-
 }
+
+
 
 inline static int lua_dict_contains(lua_State *L){
     const char *key = lua_tostring(L, 1);
