@@ -28,6 +28,7 @@ minetest.register_on_joinplayer(function(player, _last_login)
 	set_info("damage_taken",0.0)
 	set_info("damage_dealt",0.0)
 	set_info("healed_amount",0.0)
+    set_info("cause_of_death","")
 
 	set_empty_dict("mined_nodes")
 	set_empty_dict("placed_nodes")

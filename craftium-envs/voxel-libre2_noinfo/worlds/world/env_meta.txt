@@ -1,0 +1,7 @@
+day_count = 1
+lbm_introduction_times = mcl_mushrooms:replace_legacy_mushroom_caps~0;mcl_beacons:update_beacon_formspecs_0_87_1~0;mcl_anvils:update_formspec_0_60_0~0;mcl_mapgen_core:fix_incorrect_seagrass~0;mcl_hoppers:update_formspec_0_60_0~0;mcl_furnaces:update_formspecs_0_60_0~0;mcl_dispensers:update_formspecs_0_60_0~0;mcl_droppers:update_formspecs_0_60_0~0;mcl_itemframes:update_legacy_item_frames~0;mcl_mapgen_core:fix_water_palette_indexes~0;mcl_mapgen_core:fix_grass_palette_indexes~0;mcl_mapgen_core:fix_foliage_palette_indexes~0;mcl_chests:replace_old_ender_form~0;mcl_chests:update_shulker_box_formspecs_0_72_0~0;mcl_ocean:kelp_init_83~0;
+lbm_introduction_times_version = 1
+last_clear_objects_time = 0
+time_of_day = 14204
+game_time = 356
+EnvArgsEnd

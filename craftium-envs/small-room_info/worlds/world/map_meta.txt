@@ -1,0 +1,47 @@
+mg_biome_np_humidity_blend = {
+	flags = defaults
+	lacunarity = 2
+	persistence = 1
+	seed = 90003
+	spread = (8,8,8)
+	scale = 1.5
+	octaves = 2
+	offset = 0
+	}
+mg_biome_np_heat_blend = {
+	flags = defaults
+	lacunarity = 2
+	persistence = 1
+	seed = 13
+	spread = (8,8,8)
+	scale = 1.5
+	octaves = 2
+	offset = 0
+	}
+mg_flags = caves, dungeons, light, decorations, biomes, ores
+chunksize = 5
+mapgen_limit = 31007
+mg_biome_np_heat = {
+	flags = defaults
+	lacunarity = 2
+	persistence = 0.5
+	seed = 5349
+	spread = (1000,1000,1000)
+	scale = 50
+	octaves = 3
+	offset = 50
+	}
+water_level = 1
+mg_biome_np_humidity = {
+	flags = defaults
+	lacunarity = 2
+	persistence = 0.5
+	seed = 842
+	spread = (1000,1000,1000)
+	scale = 50
+	octaves = 3
+	offset = 50
+	}
+seed = 1183640208658567730
+mg_name = singlenode
+[end_of_params]

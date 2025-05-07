@@ -1,0 +1,173 @@
+mgvalleys_np_dungeons = {
+	flags = defaults
+	lacunarity = 2
+	persistence = 0.800000012
+	seed = 0
+	spread = (500,500,500)
+	scale = 0.5
+	octaves = 2
+	offset = 0.899999976
+	}
+mgvalleys_np_cavern = {
+	flags = defaults
+	lacunarity = 2
+	persistence = 0.629999995
+	seed = 59033
+	spread = (768,256,768)
+	scale = 1
+	octaves = 6
+	offset = 0
+	}
+mgvalleys_np_cave2 = {
+	flags = defaults
+	lacunarity = 2
+	persistence = 0.5
+	seed = 10325
+	spread = (67,67,67)
+	scale = 12
+	octaves = 3
+	offset = 0
+	}
+mgvalleys_np_valley_profile = {
+	flags = defaults
+	lacunarity = 2
+	persistence = 1
+	seed = 777
+	spread = (512,512,512)
+	scale = 0.5
+	octaves = 1
+	offset = 0.600000024
+	}
+mgvalleys_np_rivers = {
+	flags = defaults
+	lacunarity = 2
+	persistence = 0.600000024
+	seed = -6050
+	spread = (256,256,256)
+	scale = 1
+	octaves = 5
+	offset = 0
+	}
+mgvalleys_altitude_chill = 90
+mgvalleys_spflags = altitude_chill, humid_rivers, vary_river_depth, altitude_dry
+mgvalleys_large_cave_num_min = 0
+mg_biome_np_heat_blend = {
+	flags = defaults
+	lacunarity = 2
+	persistence = 1
+	seed = 13
+	spread = (8,8,8)
+	scale = 1.5
+	octaves = 2
+	offset = 0
+	}
+mgvalleys_np_inter_valley_fill = {
+	flags = defaults
+	lacunarity = 2
+	persistence = 0.800000012
+	seed = 1993
+	spread = (256,512,256)
+	scale = 1
+	octaves = 6
+	offset = 0
+	}
+mg_flags = caves, dungeons, light, decorations, biomes, ores
+mg_name = valleys
+mgvalleys_river_depth = 4
+mgvalleys_np_valley_depth = {
+	flags = defaults
+	lacunarity = 2
+	persistence = 1
+	seed = -1914
+	spread = (512,512,512)
+	scale = 4
+	octaves = 1
+	offset = 5
+	}
+chunksize = 5
+water_level = 1
+mgvalleys_cavern_limit = -256
+mapgen_limit = 31007
+mgvalleys_np_filler_depth = {
+	flags = defaults
+	lacunarity = 2
+	persistence = 0.5
+	seed = 1605
+	spread = (256,256,256)
+	scale = 1.20000005
+	octaves = 3
+	offset = 0
+	}
+mgvalleys_np_cave1 = {
+	flags = defaults
+	lacunarity = 2
+	persistence = 0.5
+	seed = 52534
+	spread = (61,61,61)
+	scale = 12
+	octaves = 3
+	offset = 0
+	}
+mg_biome_np_heat = {
+	flags = defaults
+	lacunarity = 2
+	persistence = 0.5
+	seed = 5349
+	spread = (1000,1000,1000)
+	scale = 50
+	octaves = 3
+	offset = 50
+	}
+mgvalleys_small_cave_num_min = 0
+seed = 4416197815453939060
+mgvalleys_large_cave_num_max = 2
+mg_biome_np_humidity_blend = {
+	flags = defaults
+	lacunarity = 2
+	persistence = 1
+	seed = 90003
+	spread = (8,8,8)
+	scale = 1.5
+	octaves = 2
+	offset = 0
+	}
+mgvalleys_large_cave_flooded = 0.5
+mgvalleys_cave_width = 0.0900000036
+mg_biome_np_humidity = {
+	flags = defaults
+	lacunarity = 2
+	persistence = 0.5
+	seed = 842
+	spread = (1000,1000,1000)
+	scale = 50
+	octaves = 3
+	offset = 50
+	}
+mgvalleys_small_cave_num_max = 0
+mgvalleys_river_size = 5
+mgvalleys_cavern_taper = 192
+mgvalleys_cavern_threshold = 0.600000024
+mgvalleys_dungeon_ymin = -31000
+mgvalleys_np_terrain_height = {
+	flags = defaults
+	lacunarity = 2
+	persistence = 0.400000006
+	seed = 5202
+	spread = (1024,1024,1024)
+	scale = 50
+	octaves = 6
+	offset = -10
+	}
+mgvalleys_large_cave_depth = -33
+mgvalleys_dungeon_ymax = 63
+mgvalleys_np_inter_valley_slope = {
+	flags = defaults
+	lacunarity = 2
+	persistence = 1
+	seed = 746
+	spread = (128,128,128)
+	scale = 0.5
+	octaves = 1
+	offset = 0.5
+	}
+[end_of_params]

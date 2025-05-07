@@ -1,0 +1,1 @@
+local _={};_[1]="craftitems";_[2]="advanced";return {players_stored_data={singleplayer={revealed={basics={},nodes={},[_[1]]={},tools={},mobs={},[_[2]]={}},revealed_count={basics=25,nodes=103,[_[1]]=4,tools=7,mobs=74,[_[2]]=8},viewed_count={basics=0,nodes=0,[_[1]]=0,tools=0,mobs=0,[_[2]]=0},viewed={basics={},nodes={},[_[1]]={},tools={},mobs={},[_[2]]={}}}}}
