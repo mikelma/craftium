@@ -2,7 +2,8 @@ import time
 from craftium import CraftiumEnv
 
 
-env_dirs =["./craftium-envs/voxel-libre2_noinfo","./craftium-envs/chop-tree","./craftium-envs/small-room","./craftium-envs/voxel-libre2","./craftium-envs/chop-tree_info","./craftium-envs/small-room_info"]
+#env_dirs =["./craftium-envs/voxel-libre2_noinfo","./craftium-envs/chop-tree","./craftium-envs/small-room"]
+env_dirs =["./craftium-envs/voxel-libre2","./craftium-envs/chop-tree_info","./craftium-envs/small-room_info"]
 
 steps = 5000
 iters = 10
@@ -15,7 +16,7 @@ for env_dir in env_dirs:
         total_time = 0.0
         env = CraftiumEnv(
             env_dir=env_dir,
-            render_mode="human",
+            #render_mode="human",
             obs_width=512,
             obs_height=512,
             minetest_dir="/home/enebas/Documents/tfg/craftium_eneko/craftium",

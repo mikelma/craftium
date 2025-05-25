@@ -29,11 +29,12 @@ minetest.register_on_joinplayer(function(player, _last_login)
 	set_info("damage_dealt",0.0)
 	set_info("healed_amount",0.0)
     set_info("cause_of_death","")
-
+	set_info("equiped","None")
 	set_empty_dict("mined_nodes")
 	set_empty_dict("placed_nodes")
 	set_empty_dict("defeated_enemies")
 	set_empty_dict("hunted_animals")
+
 end)
 
 -- turn on the termination flag if the agent dies
@@ -110,6 +111,16 @@ minetest.register_globalstep(function(dtime)
 	-- get stage and stage progress
 	set_info("stage",curr_stage)
 	set_info("progress",stages[curr_stage + 1].current)
+
+	-- get the current equiped tool or item
+	local itemstack = player:get_wielded_item()
+	local item_name = itemstack:get_name()
+
+	if item_name == "" then
+		set_info("equiped","Currently you are not holding anything.")
+	else
+		set_info("equiped","Currently you are holding: \"" .. item_name .."\".")
+	end
 	
 	-- -- get inventory
 	-- set_empty_dict("inventory")
