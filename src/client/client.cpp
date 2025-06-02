@@ -816,18 +816,7 @@ void Client::step(float dtime)
 		m_out_chat_queue.pop();
 	}
 
-	/*
-		Handle environment
-	*/
 	LocalPlayer *player = m_env.getLocalPlayer();
-	auto begin = std::chrono::steady_clock::now();
-    pyConnStep(player, dtime);
-	auto end = std::chrono::steady_clock::now();
-	std::chrono::duration<float> duration = end - begin;
-    float seconds = duration.count();
-	m_craftium_lag = seconds;
-
-	// printf("dtime: %f, delta (lag): %lf\n", dtime, seconds);
 
 	// Step environment (also handles player controls)
 	m_env.step(dtime);
@@ -1085,6 +1074,18 @@ void Client::step(float dtime)
 		m_localdb->endSave();
 		m_localdb->beginSave();
 	}
+
+	/*
+		Handle environment
+	*/
+	auto begin = std::chrono::steady_clock::now();
+    pyConnStep(player, dtime);
+	auto end = std::chrono::steady_clock::now();
+	std::chrono::duration<float> duration = end - begin;
+    float seconds = duration.count();
+	m_craftium_lag = seconds;
+
+	// printf("dtime: %f, delta (lag): %lf\n", dtime, seconds);
 }
 
 bool Client::loadMedia(const std::string &data, const std::string &filename,
