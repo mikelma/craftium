@@ -1,21 +1,6 @@
-/*
-Minetest
-Copyright (C) 2013, 2017 celeron55, Perttu Ahola <celeron55@gmail.com>
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2013, 2017 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #include "mesh_generator_thread.h"
 #include "settings.h"
@@ -24,18 +9,20 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "mapblock.h"
 #include "map.h"
 #include "util/directiontables.h"
+#include "porting.h"
 
-static class BlockPlaceholder {
-public:
-	MapNode data[MAP_BLOCKSIZE * MAP_BLOCKSIZE * MAP_BLOCKSIZE];
+// Data placeholder used for copying from non-existent blocks
+static struct BlockPlaceholder {
+	MapNode data[MapBlock::nodecount];
 
 	BlockPlaceholder()
 	{
-		for (std::size_t i = 0; i < MAP_BLOCKSIZE * MAP_BLOCKSIZE * MAP_BLOCKSIZE; i++)
+		for (std::size_t i = 0; i < MapBlock::nodecount; i++)
 			data[i] = MapNode(CONTENT_IGNORE);
 	}
 
 } block_placeholder;
+
 /*
 	QueuedMeshUpdate
 */
@@ -225,11 +212,12 @@ void MeshUpdateWorkerThread::doUpdate()
 	while ((q = m_queue_in->pop())) {
 		if (m_generation_interval)
 			sleep_ms(m_generation_interval);
+
+		porting::TriggerMemoryTrim();
+
 		ScopeProfiler sp(g_profiler, "Client: Mesh making (sum)");
 
 		MapBlockMesh *mesh_new = new MapBlockMesh(m_client, q->data, *m_camera_offset);
-
-
 
 		MeshUpdateResult r;
 		r.p = q->p;

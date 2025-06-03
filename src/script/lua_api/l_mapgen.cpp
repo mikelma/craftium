@@ -1,21 +1,6 @@
-/*
-Minetest
-Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #include "lua_api/l_mapgen.h"
 #include "lua_api/l_internal.h"
@@ -1354,7 +1339,7 @@ int ModApiMapgen::l_register_ore(lua_State *L)
 	ore->flags          = 0;
 
 	//// Get noise_threshold
-	warn_if_field_exists(L, index, "noise_threshhold",
+	warn_if_field_exists(L, index, "noise_threshhold", "ore " + ore->name,
 		"Deprecated: new name is \"noise_threshold\".");
 
 	float nthresh;
@@ -1364,9 +1349,9 @@ int ModApiMapgen::l_register_ore(lua_State *L)
 	ore->nthresh = nthresh;
 
 	//// Get y_min/y_max
-	warn_if_field_exists(L, index, "height_min",
+	warn_if_field_exists(L, index, "height_min", "ore " + ore->name,
 		"Deprecated: new name is \"y_min\".");
-	warn_if_field_exists(L, index, "height_max",
+	warn_if_field_exists(L, index, "height_max", "ore " + ore->name,
 		"Deprecated: new name is \"y_max\".");
 
 	int ymin, ymax;

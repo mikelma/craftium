@@ -1,4 +1,4 @@
---Minetest
+--Luanti
 --Copyright (C) 2014 sapier
 --Copyright (C) 2018 rubenwardy <rw@rubenwardy.com>
 --
@@ -29,16 +29,11 @@ end
 local packages_raw, packages
 
 local function update_packages()
-	if not pkgmgr.global_mods then
-		pkgmgr.refresh_globals()
-	end
-	if not pkgmgr.games then
-		pkgmgr.update_gamelist()
-	end
+	pkgmgr.load_all()
 
 	packages_raw = {}
 	table.insert_all(packages_raw, pkgmgr.games)
-	table.insert_all(packages_raw, pkgmgr.get_texture_packs())
+	table.insert_all(packages_raw, pkgmgr.texture_packs)
 	table.insert_all(packages_raw, pkgmgr.global_mods:get_list())
 
 	local function get_data()
@@ -123,7 +118,7 @@ local function get_formspec(tabview, name, tabdata)
 
 		local title_and_name
 		if selected_pkg.type == "game" then
-			title_and_name = selected_pkg.name
+			title_and_name = selected_pkg.title or selected_pkg.name
 		else
 			title_and_name = (selected_pkg.title or selected_pkg.name) .. "\n" ..
 				core.colorize("#BFBFBF", selected_pkg.name)
@@ -207,6 +202,7 @@ local function handle_doubleclick(pkg)
 			core.settings:set("texture_path", pkg.path)
 		end
 		packages = nil
+		pkgmgr.reload_texture_packs()
 
 		mm_game_theme.init()
 		mm_game_theme.set_engine()
@@ -271,6 +267,7 @@ local function handle_buttons(tabview, fields, tabname, tabdata)
 
 		core.settings:set("texture_path", txp_path)
 		packages = nil
+		pkgmgr.reload_texture_packs()
 
 		mm_game_theme.init()
 		mm_game_theme.set_engine()
@@ -283,7 +280,7 @@ end
 return {
 	name = "content",
 	caption = function()
-		local update_count = update_detector.get_count()
+		local update_count = core.settings:get_bool("contentdb_enable_updates_indicator") and update_detector.get_count() or 0
 		if update_count == 0 then
 			return fgettext("Content")
 		else

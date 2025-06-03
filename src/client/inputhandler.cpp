@@ -1,29 +1,16 @@
-/*
-Minetest
-Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-Copyright (C) 2017 nerzhul, Loic Blot <loic.blot@unix-experience.fr>
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
+// Copyright (C) 2017 nerzhul, Loic Blot <loic.blot@unix-experience.fr>
 
 #include "settings.h"
 #include "util/numeric.h"
 #include "inputhandler.h"
 #include "gui/mainmenumanager.h"
-#include "gui/touchscreengui.h"
+#include "gui/touchcontrols.h"
 #include "hud.h"
+#include "log_internal.h"
+#include "client/renderingengine.h"
 
 #include "craftium.h"
 #include <cstdio>
@@ -97,7 +84,6 @@ void KeyCache::populate()
 			handler->listenForKey(k);
 		}
 		handler->listenForKey(EscapeKey);
-		handler->listenForKey(CancelKey);
 	}
 }
 
@@ -117,23 +103,43 @@ bool MyEventReceiver::OnEvent(const SEvent &event)
 		return true;
 	}
 
+	if (event.EventType == EET_APPLICATION_EVENT &&
+			event.ApplicationEvent.EventType == EAET_DPI_CHANGED) {
+		// This is a fake setting so that we can use (de)registerChangedCallback
+		// not only to listen for gui/hud_scaling changes, but also for DPI changes.
+		g_settings->setU16("dpi_change_notifier",
+				g_settings->getU16("dpi_change_notifier") + 1);
+		return true;
+	}
+
 	// This is separate from other keyboard handling so that it also works in menus.
 	if (event.EventType == EET_KEY_INPUT_EVENT) {
 		const KeyPress keyCode(event.KeyInput);
 		if (keyCode == getKeySetting("keymap_fullscreen")) {
 			if (event.KeyInput.PressedDown && !fullscreen_is_down) {
-				bool fullscreen = RenderingEngine::get_raw_device()->isFullscreen();
-				g_settings->setBool("fullscreen", !fullscreen);
+				IrrlichtDevice *device = RenderingEngine::get_raw_device();
+
+				bool new_fullscreen = !device->isFullscreen();
+				// Only update the setting if toggling succeeds - it always fails
+				// if Minetest was built without SDL.
+				if (device->setFullscreen(new_fullscreen)) {
+					g_settings->setBool("fullscreen", new_fullscreen);
+				}
 			}
 			fullscreen_is_down = event.KeyInput.PressedDown;
 			return true;
 		}
 	}
 
+	if (event.EventType == EET_MOUSE_INPUT_EVENT && !event.MouseInput.Simulated)
+		last_pointer_type = PointerType::Mouse;
+	else if (event.EventType == EET_TOUCH_INPUT_EVENT)
+		last_pointer_type = PointerType::Touch;
+
 	// Let the menu handle events, if one is active.
 	if (isMenuActive()) {
-		if (g_touchscreengui)
-			g_touchscreengui->setVisible(false);
+		if (g_touchcontrols)
+			g_touchcontrols->setVisible(false);
 		return g_menumgr.preprocessEvent(event);
 	}
 
@@ -157,9 +163,9 @@ bool MyEventReceiver::OnEvent(const SEvent &event)
 			return true;
 		}
 
-	} else if (g_touchscreengui && event.EventType == irr::EET_TOUCH_INPUT_EVENT) {
-		// In case of touchscreengui, we have to handle different events
-		g_touchscreengui->translateEvent(event);
+	} else if (g_touchcontrols && event.EventType == irr::EET_TOUCH_INPUT_EVENT) {
+		// In case of touchcontrols, we have to handle different events
+		g_touchcontrols->translateEvent(event);
 		return true;
 	} else if (event.EventType == irr::EET_JOYSTICK_INPUT_EVENT) {
 		// joystick may be nullptr if game is launched with '--random-input' parameter
@@ -210,12 +216,13 @@ bool MyEventReceiver::OnEvent(const SEvent &event)
  * RealInputHandler
  */
 
-float RealInputHandler::getMovementSpeed()
+float RealInputHandler::getJoystickSpeed()
 {
-	bool f = m_receiver->IsKeyDown(keycache.key[KeyType::FORWARD]) || virtual_key_presses[KeyType::FORWARD],
-		b = m_receiver->IsKeyDown(keycache.key[KeyType::BACKWARD]) || virtual_key_presses[KeyType::BACKWARD],
-		l = m_receiver->IsKeyDown(keycache.key[KeyType::LEFT]) || virtual_key_presses[KeyType::LEFT],
-		r = m_receiver->IsKeyDown(keycache.key[KeyType::RIGHT]) || virtual_key_presses[KeyType::RIGHT];
+	// Check if a virtual key is pressed (from Python)
+	bool f = virtual_key_presses[KeyType::FORWARD],
+		b = virtual_key_presses[KeyType::BACKWARD],
+		l = virtual_key_presses[KeyType::LEFT],
+		r = virtual_key_presses[KeyType::RIGHT];
 	if (f || b || l || r)
 	{
 		// if contradictory keys pressed, stay still
@@ -227,32 +234,59 @@ float RealInputHandler::getMovementSpeed()
 			return 0.0f;
 		return 1.0f; // If there is a keyboard event, assume maximum speed
 	}
-	if (g_touchscreengui && g_touchscreengui->getMovementSpeed())
-		return g_touchscreengui->getMovementSpeed();
+
+	if (g_touchcontrols && g_touchcontrols->getJoystickSpeed())
+		return g_touchcontrols->getJoystickSpeed();
 	return joystick.getMovementSpeed();
 }
 
-float RealInputHandler::getMovementDirection()
+float RealInputHandler::getJoystickDirection()
 {
 	float x = 0, z = 0;
 
 	/* Check keyboard for input */
-	if (m_receiver->IsKeyDown(keycache.key[KeyType::FORWARD]) || virtual_key_presses[KeyType::FORWARD])
+	if (virtual_key_presses[KeyType::FORWARD])
 		z += 1;
-	if (m_receiver->IsKeyDown(keycache.key[KeyType::BACKWARD]) || virtual_key_presses[KeyType::BACKWARD])
+	if (virtual_key_presses[KeyType::BACKWARD])
 		z -= 1;
-	if (m_receiver->IsKeyDown(keycache.key[KeyType::RIGHT]) || virtual_key_presses[KeyType::RIGHT])
+	if (virtual_key_presses[KeyType::RIGHT])
 		x += 1;
-	if (m_receiver->IsKeyDown(keycache.key[KeyType::LEFT]) || virtual_key_presses[KeyType::LEFT])
+	if (virtual_key_presses[KeyType::LEFT])
 		x -= 1;
 
 	if (x != 0 || z != 0) /* If there is a keyboard event, it takes priority */
 		return std::atan2(x, z);
-	// `getMovementDirection() == 0` means forward, so we cannot use
-	// `getMovementDirection()` as a condition.
-	else if (g_touchscreengui && g_touchscreengui->getMovementSpeed())
-		return g_touchscreengui->getMovementDirection();
+
+	// `getJoystickDirection() == 0` means forward, so we cannot use
+	// `getJoystickDirection()` as a condition.
+	if (g_touchcontrols && g_touchcontrols->getJoystickSpeed())
+		return g_touchcontrols->getJoystickDirection();
 	return joystick.getMovementDirection();
+}
+
+v2s32 RealInputHandler::getMousePos()
+{
+	auto control = RenderingEngine::get_raw_device()->getCursorControl();
+	m_mousepos.X += virtual_mouse_x;
+    m_mousepos.Y += virtual_mouse_y;
+	if (control) {
+		auto pos = control->getPosition();
+        pos.X += virtual_mouse_x;
+        pos.Y += virtual_mouse_y;
+        return pos;
+	}
+
+	return m_mousepos;
+}
+
+void RealInputHandler::setMousePos(s32 x, s32 y)
+{
+	auto control = RenderingEngine::get_raw_device()->getCursorControl();
+	if (control) {
+		control->setPosition(x, y);
+	} else {
+		m_mousepos = v2s32(x, y);
+	}
 }
 
 /*
@@ -310,25 +344,11 @@ void RandomInputHandler::step(float dtime)
 		counterMovement -= dtime;
 		if (counterMovement < 0.0) {
 			counterMovement = 0.1 * Rand(1, 40);
-			movementSpeed = Rand(0,100)*0.01;
-			movementDirection = Rand(-100, 100)*0.01 * M_PI;
+			joystickSpeed = Rand(0,100)*0.01;
+			joystickDirection = Rand(-100, 100)*0.01 * M_PI;
 		}
 	} else {
-		bool f = keydown[keycache.key[KeyType::FORWARD]],
-			l = keydown[keycache.key[KeyType::LEFT]];
-		if (f || l) {
-			movementSpeed = 1.0f;
-			if (f && !l)
-				movementDirection = 0.0;
-			else if (!f && l)
-				movementDirection = -M_PI_2;
-			else if (f && l)
-				movementDirection = -M_PI_4;
-			else
-				movementDirection = 0.0;
-		} else {
-			movementSpeed = 0.0;
-			movementDirection = 0.0;
-		}
+		joystickSpeed = 0.0f;
+		joystickDirection = 0.0f;
 	}
 }

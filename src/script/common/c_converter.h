@@ -1,21 +1,6 @@
-/*
-Minetest
-Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 
 /******************************************************************************/
@@ -120,7 +105,8 @@ void                push_aabb3f_vector  (lua_State *L, const std::vector<aabb3f>
 
 void                warn_if_field_exists(lua_State *L, int table,
                                          const char *fieldname,
-                                         const std::string &message);
+                                         std::string_view name,
+                                         std::string_view message);
 
 size_t write_array_slice_float(lua_State *L, int table_index, float *data,
 	v3u16 data_size, v3u16 slice_offset, v3u16 slice_size);

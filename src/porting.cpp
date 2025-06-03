@@ -1,21 +1,6 @@
-/*
-Minetest
-Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 /*
 	Random portability stuff
@@ -50,6 +35,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #endif
 #if defined(__ANDROID__)
 	#include "porting_android.h"
+	#include <android/api-level.h>
 #endif
 #if defined(__APPLE__)
 	#include <mach-o/dyld.h>
@@ -72,13 +58,14 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "filesys.h"
 #include "log.h"
 #include "util/string.h"
+#include "util/tracy_wrapper.h"
 #include <vector>
 #include <cstdarg>
 #include <cstdio>
 #include <signal.h>
 #include <atomic>
 
-#if !defined(SERVER) && defined(_WIN32)
+#if CHECK_CLIENT_BUILD() && defined(_WIN32)
 // On Windows export some driver-specific variables to encourage Minetest to be
 // executed on the discrete GPU in case of systems with two. Portability is fun.
 extern "C" {
@@ -205,7 +192,10 @@ bool detectMSVCBuildDir(const std::string &path)
 	return (!removeStringEnd(path, ends).empty());
 }
 
-std::string get_sysinfo()
+// Note that the system info is sent in every HTTP request, so keep it reasonably
+// privacy-conserving while ideally still being meaningful.
+
+static std::string detectSystemInfo()
 {
 #ifdef _WIN32
 	std::ostringstream oss;
@@ -251,12 +241,32 @@ std::string get_sysinfo()
 	delete[] filePath;
 
 	return oss.str();
-#else
+#elif defined(__ANDROID__)
+	std::ostringstream oss;
 	struct utsname osinfo;
 	uname(&osinfo);
-	return std::string(osinfo.sysname) + "/"
-		+ osinfo.release + " " + osinfo.machine;
+	int api = android_get_device_api_level();
+
+	oss << "Android/" << api << " " << osinfo.machine;
+	return oss.str();
+#else /* POSIX */
+	struct utsname osinfo;
+	uname(&osinfo);
+
+	std::string_view release(osinfo.release);
+	// cut off anything but the primary version number
+	release = release.substr(0, release.find_first_not_of("0123456789."));
+
+	std::string ret = osinfo.sysname;
+	ret.append("/").append(release).append(" ").append(osinfo.machine);
+	return ret;
 #endif
+}
+
+const std::string &get_sysinfo()
+{
+	static std::string ret = detectSystemInfo();
+	return ret;
 }
 
 
@@ -439,7 +449,8 @@ bool setSystemPaths()
 		// Use "C:\Users\<user>\AppData\Roaming\<PROJECT_NAME_C>"
 		len = GetEnvironmentVariable("APPDATA", buf, sizeof(buf));
 		FATAL_ERROR_IF(len == 0 || len > sizeof(buf), "Failed to get APPDATA");
-		path_user = std::string(buf) + DIR_DELIM + PROJECT_NAME_C;
+		// TODO: Luanti with migration
+		path_user = std::string(buf) + DIR_DELIM + "Minetest";
 	} else {
 		path_user = std::string(buf);
 	}
@@ -504,8 +515,9 @@ bool setSystemPaths()
 	if (minetest_user_path && minetest_user_path[0] != '\0') {
 		path_user = std::string(minetest_user_path);
 	} else {
+		// TODO: luanti with migration
 		path_user = std::string(getHomeOrFail()) + DIR_DELIM "."
-			+ PROJECT_NAME;
+			+ "minetest";
 	}
 
 	return true;
@@ -532,9 +544,10 @@ bool setSystemPaths()
 	if (minetest_user_path && minetest_user_path[0] != '\0') {
 		path_user = std::string(minetest_user_path);
 	} else {
+		// TODO: luanti with migration
 		path_user = std::string(getHomeOrFail())
 			+ "/Library/Application Support/"
-			+ PROJECT_NAME;
+			+ "minetest";
 	}
 	return true;
 }
@@ -549,8 +562,9 @@ bool setSystemPaths()
 	if (minetest_user_path && minetest_user_path[0] != '\0') {
 		path_user = std::string(minetest_user_path);
 	} else {
+		// TODO: luanti with migration
 		path_user  = std::string(getHomeOrFail()) + DIR_DELIM "."
-			+ lowercase(PROJECT_NAME);
+			+ "minetest";
 	}
 	return true;
 }
@@ -656,11 +670,13 @@ void initializePaths()
 	const char *cache_dir = getenv("XDG_CACHE_HOME");
 	const char *home_dir = getenv("HOME");
 	if (cache_dir && cache_dir[0] != '\0') {
-		path_cache = std::string(cache_dir) + DIR_DELIM + PROJECT_NAME;
+		// TODO: luanti with migration
+		path_cache = std::string(cache_dir) + DIR_DELIM + "minetest";
 	} else if (home_dir) {
 		// Then try $HOME/.cache/PROJECT_NAME
+		// TODO: luanti with migration
 		path_cache = std::string(home_dir) + DIR_DELIM + ".cache"
-			+ DIR_DELIM + PROJECT_NAME;
+			+ DIR_DELIM + "minetest";
 	} else {
 		// If neither works, use $PATH_USER/cache
 		path_cache = path_user + DIR_DELIM + "cache";
@@ -916,26 +932,35 @@ double perf_freq = get_perf_freq();
  * This appears to be a combination of unfortunate allocation order/fragmentation
  * and the fact that glibc does not call madvise(MADV_DONTNEED) on its own.
  * Some other allocators were also affected, jemalloc and musl libc were not.
- * read more: <https://forum.minetest.net/viewtopic.php?t=30509>
+ * read more: <https://forum.luanti.org/viewtopic.php?t=30509>
  *
  * As a workaround we track freed memory coarsely and call malloc_trim() once a
  * certain amount is reached.
+ *
+ * Because trimming can take more than 10ms and would cause jitter if done
+ * uncontrolled we have a separate function, which is called from background threads.
  */
 
 static std::atomic<size_t> memory_freed;
 
-constexpr size_t MEMORY_TRIM_THRESHOLD = 128 * 1024 * 1024;
+constexpr size_t MEMORY_TRIM_THRESHOLD = 256 * 1024 * 1024;
 
 void TrackFreedMemory(size_t amount)
 {
+	memory_freed.fetch_add(amount, std::memory_order_relaxed);
+}
+
+void TriggerMemoryTrim()
+{
+	ZoneScoped;
+
 	constexpr auto MO = std::memory_order_relaxed;
-	memory_freed.fetch_add(amount, MO);
 	if (memory_freed.load(MO) >= MEMORY_TRIM_THRESHOLD) {
 		// Synchronize call
 		if (memory_freed.exchange(0, MO) < MEMORY_TRIM_THRESHOLD)
 			return;
 		// Leave some headroom for future allocations
-		malloc_trim(1 * 1024 * 1024);
+		malloc_trim(8 * 1024 * 1024);
 	}
 }
 

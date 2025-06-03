@@ -1,4 +1,4 @@
---Minetest
+--Luanti
 --Copyright (C) 2018-24 rubenwardy
 --
 --This program is free software; you can redistribute it and/or modify
@@ -133,6 +133,8 @@ local function start_install(package, reason)
 					conf:set("release",    package.release)
 					conf:write()
 				end
+
+				pkgmgr.reload_by_type(package.type)
 			end
 		end
 
@@ -146,7 +148,6 @@ local function start_install(package, reason)
 
 			start_install(next.package, next.reason)
 		end
-
 		ui.update()
 	end
 
@@ -181,14 +182,43 @@ function contentdb.get_package_by_id(id)
 end
 
 
-local function get_raw_dependencies(package)
-	if package.type ~= "mod" then
-		return {}
+function contentdb.calculate_package_id(type, author, name)
+	local id = author:lower() .. "/"
+	if (type == nil or type == "game") and #name > 5 and name:sub(#name - 4) == "_game" then
+		id = id .. name:sub(1, #name - 5)
+	else
+		id = id .. name
 	end
-	if package.raw_deps then
-		return package.raw_deps
+	return id
+end
+
+
+function contentdb.get_package_by_info(author, name)
+	local id = contentdb.calculate_package_id(nil, author, name)
+	return contentdb.package_by_id[id]
+end
+
+
+-- Create a coroutine from `fn` and provide results to `callback` when complete (dead).
+-- Returns a resumer function.
+local function make_callback_coroutine(fn, callback)
+	local co = coroutine.create(fn)
+
+	local function resumer(...)
+		local ok, result = coroutine.resume(co, ...)
+
+		if not ok then
+			error(result)
+		elseif coroutine.status(co) == "dead" then
+			callback(result)
+		end
 	end
 
+	return resumer
+end
+
+
+local function get_raw_dependencies_async(package)
 	local url_fmt = "/api/packages/%s/dependencies/?only_hard=1&protocol_version=%s&engine_version=%s"
 	local version = core.get_version()
 	local base_url = core.settings:get("contentdb_url")
@@ -197,11 +227,25 @@ local function get_raw_dependencies(package)
 	local http = core.get_http_api()
 	local response = http.fetch_sync({ url = url })
 	if not response.succeeded then
-		core.log("error", "Unable to fetch dependencies for " .. package.url_part)
-		return
+		return nil
+	end
+	return core.parse_json(response.data) or {}
+end
+
+
+local function get_raw_dependencies_co(package, resumer)
+	if package.type ~= "mod" then
+		return {}
+	end
+	if package.raw_deps then
+		return package.raw_deps
 	end
 
-	local data = core.parse_json(response.data) or {}
+	core.handle_async(get_raw_dependencies_async, package, resumer)
+	local data = coroutine.yield()
+	if not data then
+		return nil
+	end
 
 	for id, raw_deps in pairs(data) do
 		local package2 = contentdb.package_by_id[id:lower()]
@@ -222,8 +266,8 @@ local function get_raw_dependencies(package)
 end
 
 
-function contentdb.has_hard_deps(package)
-	local raw_deps = get_raw_dependencies(package)
+local function has_hard_deps_co(package, resumer)
+	local raw_deps = get_raw_dependencies_co(package, resumer)
 	if not raw_deps then
 		return nil
 	end
@@ -238,8 +282,14 @@ function contentdb.has_hard_deps(package)
 end
 
 
+function contentdb.has_hard_deps(package, callback)
+	local resumer = make_callback_coroutine(has_hard_deps_co, callback)
+	resumer(package, resumer)
+end
+
+
 -- Recursively resolve dependencies, given the installed mods
-local function resolve_dependencies_2(raw_deps, installed_mods, out)
+local function resolve_dependencies_2_co(raw_deps, installed_mods, out, resumer)
 	local function resolve_dep(dep)
 		-- Check whether it's already installed
 		if installed_mods[dep.name] then
@@ -289,9 +339,9 @@ local function resolve_dependencies_2(raw_deps, installed_mods, out)
 			local result  = resolve_dep(dep)
 			out[dep.name] = result
 			if result and result.package and not result.installed then
-				local raw_deps2 = get_raw_dependencies(result.package)
+				local raw_deps2 = get_raw_dependencies_co(result.package, resumer)
 				if raw_deps2 then
-					resolve_dependencies_2(raw_deps2, installed_mods, out)
+					resolve_dependencies_2_co(raw_deps2, installed_mods, out, resumer)
 				end
 			end
 		end
@@ -301,11 +351,10 @@ local function resolve_dependencies_2(raw_deps, installed_mods, out)
 end
 
 
--- Resolve dependencies for a package, calls the recursive version.
-function contentdb.resolve_dependencies(package, game)
+local function resolve_dependencies_co(package, game, resumer)
 	assert(game)
 
-	local raw_deps = get_raw_dependencies(package)
+	local raw_deps = get_raw_dependencies_co(package, resumer)
 	local installed_mods = {}
 
 	local mods = {}
@@ -319,7 +368,7 @@ function contentdb.resolve_dependencies(package, game)
 	end
 
 	local out = {}
-	if not resolve_dependencies_2(raw_deps, installed_mods, out) then
+	if not resolve_dependencies_2_co(raw_deps, installed_mods, out, resumer) then
 		return nil
 	end
 
@@ -333,6 +382,13 @@ function contentdb.resolve_dependencies(package, game)
 	end)
 
 	return retval
+end
+
+
+-- Resolve dependencies for a package, calls the recursive version.
+function contentdb.resolve_dependencies(package, game, callback)
+	local resumer = make_callback_coroutine(resolve_dependencies_co, callback)
+	resumer(package, game, resumer)
 end
 
 
@@ -376,15 +432,7 @@ local function fetch_pkgs(params)
 	local aliases = {}
 
 	for _, package in pairs(packages) do
-		local name_len = #package.name
-		-- This must match what contentdb.update_paths() does!
-		package.id = package.author:lower() .. "/"
-		if package.type == "game" and name_len > 5 and package.name:sub(name_len - 4) == "_game" then
-			package.id = package.id .. package.name:sub(1, name_len - 5)
-		else
-			package.id = package.id .. package.name
-		end
-
+		package.id = params.calculate_package_id(package.type, package.author, package.name)
 		package.url_part = core.urlencode(package.author) .. "/" .. core.urlencode(package.name)
 
 		if package.aliases then
@@ -404,7 +452,7 @@ end
 
 function contentdb.fetch_pkgs(callback)
 	contentdb.loading = true
-	core.handle_async(fetch_pkgs, nil, function(result)
+	core.handle_async(fetch_pkgs, { calculate_package_id = contentdb.calculate_package_id  }, function(result)
 		if result then
 			contentdb.load_ok = true
 			contentdb.load_error = false
@@ -427,8 +475,9 @@ end
 
 
 function contentdb.update_paths()
+	pkgmgr.load_all()
+
 	local mod_hash = {}
-	pkgmgr.refresh_globals()
 	for _, mod in pairs(pkgmgr.global_mods:get_list()) do
 		local cdb_id = pkgmgr.get_contentdb_id(mod)
 		if cdb_id then
@@ -437,7 +486,6 @@ function contentdb.update_paths()
 	end
 
 	local game_hash = {}
-	pkgmgr.update_gamelist()
 	for _, game in pairs(pkgmgr.games) do
 		local cdb_id = pkgmgr.get_contentdb_id(game)
 		if cdb_id then
@@ -446,7 +494,7 @@ function contentdb.update_paths()
 	end
 
 	local txp_hash = {}
-	for _, txp in pairs(pkgmgr.get_texture_packs()) do
+	for _, txp in pairs(pkgmgr.texture_packs) do
 		local cdb_id = pkgmgr.get_contentdb_id(txp)
 		if cdb_id then
 			txp_hash[contentdb.aliases[cdb_id] or cdb_id] = txp
@@ -515,30 +563,107 @@ function contentdb.filter_packages(query, by_type)
 	end
 
 	local keywords = {}
-	for word in query:lower():gmatch("%S+") do
-		table.insert(keywords, word)
+	for word in query:gmatch("%S+") do
+		table.insert(keywords, word:lower())
+	end
+
+	local function contains_all_keywords(str)
+		str = str:lower()
+		for _, keyword in ipairs(keywords) do
+			if not str:find(keyword, 1, true) then
+				return false
+			end
+		end
+		return true
 	end
 
 	local function matches_keywords(package)
-		for k = 1, #keywords do
-			local keyword = keywords[k]
-
-			if string.find(package.name:lower(), keyword, 1, true) or
-					string.find(package.title:lower(), keyword, 1, true) or
-					string.find(package.author:lower(), keyword, 1, true) or
-					string.find(package.short_description:lower(), keyword, 1, true) then
-				return true
-			end
-		end
-
-		return false
+		return contains_all_keywords(package.name) or
+				contains_all_keywords(package.title) or
+				contains_all_keywords(package.author) or
+				contains_all_keywords(package.short_description)
 	end
 
 	contentdb.packages = {}
 	for _, package in pairs(contentdb.packages_full) do
 		if (query == "" or matches_keywords(package)) and
 				(by_type == nil or package.type == by_type) then
-			contentdb.packages[#contentdb.packages + 1] = package
+			table.insert(contentdb.packages, package)
 		end
 	end
+end
+
+
+function contentdb.get_full_package_info(package, callback)
+	assert(package)
+	if package.full_info then
+		callback(package.full_info)
+		return
+	end
+
+	local function fetch(params)
+		local version = core.get_version()
+		local base_url = core.settings:get("contentdb_url")
+
+		local languages
+		local current_language = core.get_language()
+		if current_language ~= "" then
+			languages = { current_language, "en;q=0.8" }
+		else
+			languages = { "en" }
+		end
+
+		local url = base_url ..
+				"/api/packages/" .. params.package.url_part .. "/for-client/?" ..
+				"protocol_version=" .. core.urlencode(core.get_max_supp_proto()) ..
+				"&engine_version=" .. core.urlencode(version.string) ..
+				"&formspec_version=" .. core.urlencode(core.get_formspec_version()) ..
+				"&include_images=false"
+		local http = core.get_http_api()
+		local response = http.fetch_sync({
+			url = url,
+			extra_headers = {
+				"Accept-Language: " .. table.concat(languages, ", ")
+			},
+		})
+		if not response.succeeded then
+			return nil
+		end
+
+		return core.parse_json(response.data)
+	end
+
+	local function my_callback(value)
+		package.full_info = value
+		callback(value)
+	end
+
+	if not core.handle_async(fetch, { package = package }, my_callback) then
+		core.log("error", "ERROR: async event failed")
+		callback(nil)
+	end
+end
+
+
+function contentdb.get_formspec_padding()
+	-- Padding is increased on Android to account for notches
+	-- TODO: use Android API to determine size of cut outs
+	return { x = PLATFORM == "Android" and 1 or 0.5, y = PLATFORM == "Android" and 0.25 or 0.5 }
+end
+
+
+function contentdb.get_formspec_size()
+	local window = core.get_window_info()
+	local size = { x = window.max_formspec_size.x, y = window.max_formspec_size.y }
+
+	-- Minimum formspec size
+	local min_x = 15.5
+	local min_y = 10
+	if size.x < min_x or size.y < min_y then
+		local scale = math.max(min_x / size.x, min_y / size.y)
+		size.x = size.x * scale
+		size.y = size.y * scale
+	end
+
+	return size
 end

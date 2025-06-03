@@ -1,21 +1,6 @@
-/*
-Minetest
-Copyright (C) 2022 sfan5 <sfan5@live.de>
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2022 sfan5 <sfan5@live.de>
 
 #include "cpp_api/s_mapgen.h"
 #include "cpp_api/s_internal.h"
@@ -45,7 +30,7 @@ void ScriptApiMapgen::on_shutdown()
 	runCallbacks(0, RUN_CALLBACKS_MODE_FIRST);
 }
 
-void ScriptApiMapgen::on_generated(BlockMakeData *bmdata)
+void ScriptApiMapgen::on_generated(BlockMakeData *bmdata, u32 seed)
 {
 	SCRIPTAPI_PRECHECKHEADER
 
@@ -66,7 +51,7 @@ void ScriptApiMapgen::on_generated(BlockMakeData *bmdata)
 	lua_pushvalue(L, vmanip);
 	push_v3s16(L, minp);
 	push_v3s16(L, maxp);
-	lua_pushnumber(L, bmdata->seed);
+	lua_pushnumber(L, seed);
 	runCallbacks(4, RUN_CALLBACKS_MODE_FIRST);
 	lua_pop(L, 1); // return val
 

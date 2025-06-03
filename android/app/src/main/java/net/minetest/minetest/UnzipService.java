@@ -73,7 +73,7 @@ public class UnzipService extends IntentService {
 	@Override
 	protected void onHandleIntent(Intent intent) {
 		Notification.Builder notificationBuilder = createNotification();
-		final File zipFile = new File(getCacheDir(), "Minetest.zip");
+		final File zipFile = new File(getCacheDir(), "assets.zip");
 		try {
 			setIsRunning(true);
 			File userDataDirectory = Utils.getUserDataDirectory(this);
@@ -186,6 +186,7 @@ public class UnzipService extends IntentService {
 
 	private void publishProgress(@Nullable Notification.Builder notificationBuilder, @StringRes int message, int progress) {
 		Intent intentUpdate = new Intent(ACTION_UPDATE);
+		intentUpdate.setPackage(getPackageName());
 		intentUpdate.putExtra(ACTION_PROGRESS, progress);
 		intentUpdate.putExtra(ACTION_PROGRESS_MESSAGE, message);
 		if (!isSuccess)
