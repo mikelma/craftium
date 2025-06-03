@@ -10,6 +10,6 @@
 [submodule "craftium-envs/common_mods/mobs_redo"]
 	path = craftium-envs/common_mods/mobs
 	url = https://github.com/minetest-mirrors/mobs_redo
-[submodule "craftium-envs/common_games/mineclone2"]
-	path = craftium-envs/common_games/mineclone2
-	url = https://github.com/VoxeLibre/VoxeLibre
+[submodule "craftium-envs/common_games/VoxeLibre"]
+	path = craftium-envs/common_games/VoxeLibre
+	url = https://git.minetest.land/VoxeLibre/VoxeLibre.git
