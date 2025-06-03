@@ -7,13 +7,11 @@ name = "craftium"
 version = "0.0.1"
 description = "A Gymnasium wrapper for the minetest game engine"
 readme = "craftium-readme.md"
-license = {file = "LICENSE.txt"}
+license = { file = "LICENSE.txt" }
 keywords = ["gymnasium", "minetest", "minecraft", "reinforcement learning"]
+requires-python = ">=3.12"
 
-dependencies = [
-    "gymnasium==0.29.1",
-    "PyYAML==6.0.1",
-]
+dependencies = ["gymnasium==0.29.1", "PyYAML==6.0.1"]
 
 [project.optional-dependencies]
 # Packages needed to run the Deep RL examples
