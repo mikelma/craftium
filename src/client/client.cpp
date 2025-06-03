@@ -220,6 +220,12 @@ void Client::pyConnStep(LocalPlayer *myplayer, float dtime){
 		}
 	}
 
+	// Wait for the minetest server to initialize before starting the TCP loop with Python
+	if (init_skip_count < 10) {
+		init_skip_count++;
+		return;
+	}
+
 	// Update and check the frameskip condition
     frameskip_count++;
     if (frameskip_count != frameskip)

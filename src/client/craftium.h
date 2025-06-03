@@ -26,6 +26,7 @@ inline char actions[27];
   ~~~~~~~~~
 
 */
+inline int init_skip_count = 0;
 inline int frameskip_count = 0;
 // The value of this variable is set in the Client::startPyConn
 // method according to the frameskip setting
