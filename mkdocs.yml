@@ -15,11 +15,12 @@ nav:
       - Extensions to the Lua API: lua_functions.md
       - Lua environment cookbook: lua_env_cookbook.md
   - Misc:
-    - troubleshooting.md
-    - API Reference: reference.md
+      - troubleshooting.md
+      - API Reference: reference.md
+      - Dev guide: dev-guide.md
   - GitHub: https://github.com/mikelma/craftium
   - Paper: https://arxiv.org/abs/2407.03969
-  - Luanti's main page: https://www.luanti.org/  
+  - Luanti's main page: https://www.luanti.org/
 
 theme:
   name: readthedocs
@@ -34,11 +35,11 @@ plugins:
             docstring_style: sphinx
 
 extra:
-    version: 0.1
-    links:
-        - https://github.com/mkdocs
-        - https://docs.readthedocs.org/en/latest/builds.html#mkdocs
-        - http://www.mkdocs.org/
+  version: 0.1
+  links:
+    - https://github.com/mkdocs
+    - https://docs.readthedocs.org/en/latest/builds.html#mkdocs
+    - http://www.mkdocs.org/
 
 markdown_extensions:
-- admonition
+  - admonition
