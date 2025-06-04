@@ -8,8 +8,17 @@ version = "0.0.1"
 description = "A Gymnasium wrapper for the minetest game engine"
 readme = "craftium-readme.md"
 license = { file = "LICENSE.txt" }
-keywords = ["gymnasium", "minetest", "minecraft", "reinforcement learning"]
-requires-python = ">=3.12"
+keywords = [
+    "gymnasium",
+    "luanti",
+    "minetest",
+    "minecraft",
+    "reinforcement learning",
+    "agent",
+    "machine learning",
+    "artificial intelligence",
+]
+requires-python = ">=3.11"
 
 dependencies = ["gymnasium==0.29.1", "PyYAML==6.0.1"]
 
