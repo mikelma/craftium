@@ -1,21 +1,6 @@
-/*
-Minetest
-Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 
 #include "lua_api/l_craft.h"
@@ -286,66 +271,52 @@ int ModApiCraft::l_clear_craft(lua_State *L)
 	luaL_checktype(L, 1, LUA_TTABLE);
 	int table = 1;
 
-	// Get the writable craft definition manager from the server
 	IWritableCraftDefManager *craftdef =
 			getServer(L)->getWritableCraftDefManager();
 
 	std::string output = getstringfield_default(L, table, "output", "");
 	std::string type = getstringfield_default(L, table, "type", "shaped");
-	CraftOutput c_output(output, 0);
+
 	if (!output.empty()) {
+		CraftOutput c_output(output, 0);
 		if (craftdef->clearCraftsByOutput(c_output, getServer(L))) {
 			lua_pushboolean(L, true);
 			return 1;
 		}
 
-		warningstream << "No craft recipe known for output" << std::endl;
+		warningstream << "No craft recipe known for output '" << output
+				<< "'" << std::endl;
 		lua_pushboolean(L, false);
 		return 1;
 	}
+
 	std::vector<std::string> recipe;
 	int width = 0;
 	CraftMethod method = CRAFT_METHOD_NORMAL;
-	/*
-		CraftDefinitionShaped
-	*/
+
 	if (type == "shaped") {
 		lua_getfield(L, table, "recipe");
 		if (lua_isnil(L, -1))
 			throw LuaError("Either output or recipe has to be defined");
 		if (!readCraftRecipeShaped(L, -1, width, recipe))
 			throw LuaError("Invalid crafting recipe");
-	}
-	/*
-		CraftDefinitionShapeless
-	*/
-	else if (type == "shapeless") {
+	} else if (type == "shapeless") {
 		lua_getfield(L, table, "recipe");
 		if (lua_isnil(L, -1))
 			throw LuaError("Either output or recipe has to be defined");
 		if (!readCraftRecipeShapeless(L, -1, recipe))
 			throw LuaError("Invalid crafting recipe");
-	}
-	/*
-		CraftDefinitionCooking
-	*/
-	else if (type == "cooking") {
+	} else if (type == "cooking") {
 		method = CRAFT_METHOD_COOKING;
 		std::string rec = getstringfield_default(L, table, "recipe", "");
 		if (rec.empty())
-			throw LuaError("Crafting definition (cooking)"
-					" is missing a recipe");
+			throw LuaError("Crafting definition (cooking) is missing a recipe");
 		recipe.push_back(rec);
-	}
-	/*
-		CraftDefinitionFuel
-	*/
-	else if (type == "fuel") {
+	} else if (type == "fuel") {
 		method = CRAFT_METHOD_FUEL;
 		std::string rec = getstringfield_default(L, table, "recipe", "");
 		if (rec.empty())
-			throw LuaError("Crafting definition (fuel)"
-					" is missing a recipe");
+			throw LuaError("Crafting definition (fuel) is missing a recipe");
 		recipe.push_back(rec);
 	} else {
 		throw LuaError("Unknown crafting definition type: \"" + type + "\"");
@@ -353,12 +324,20 @@ int ModApiCraft::l_clear_craft(lua_State *L)
 
 	std::vector<ItemStack> items;
 	items.reserve(recipe.size());
-	for (const auto &item : recipe)
+	for (const auto &item : recipe) {
 		items.emplace_back(item, 1, 0, getServer(L)->idef());
+	}
 	CraftInput input(method, width, items);
 
 	if (!craftdef->clearCraftsByInput(input, getServer(L))) {
-		warningstream << "No craft recipe matches input" << std::endl;
+		warningstream << "No craft recipe matches input (type: " << type
+				<< ", items: [";
+		for (size_t i = 0; i < items.size(); ++i) {
+			warningstream << "'" << items[i].name << "'";
+			if (i != items.size() - 1)
+				warningstream << ", ";
+		}
+		warningstream << "])" << std::endl;
 		lua_pushboolean(L, false);
 		return 1;
 	}
@@ -426,7 +405,7 @@ static void push_craft_recipe(lua_State *L, IGameDef *gdef,
 	CraftOutput output = recipe->getOutput(input, gdef);
 
 	lua_newtable(L); // items
-	std::vector<ItemStack>::const_iterator iter = input.items.begin();
+	auto iter = input.items.begin();
 	for (u16 j = 1; iter != input.items.end(); ++iter, j++) {
 		if (iter->empty())
 			continue;
@@ -472,7 +451,7 @@ static void push_craft_recipes(lua_State *L, IGameDef *gdef,
 
 	lua_createtable(L, recipes.size(), 0);
 
-	std::vector<CraftDefinition*>::const_iterator it = recipes.begin();
+	auto it = recipes.begin();
 	for (unsigned i = 0; it != recipes.end(); ++it) {
 		lua_newtable(L);
 		push_craft_recipe(L, gdef, *it, output);

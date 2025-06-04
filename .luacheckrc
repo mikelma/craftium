@@ -10,17 +10,19 @@ ignore = {
 read_globals = {
 	"ItemStack",
 	"INIT",
+	"PLATFORM",
 	"DIR_DELIM",
 	"dump", "dump2",
 	"fgettext", "fgettext_ne",
 	"vector",
 	"VoxelArea",
+	"VoxelManip",
 	"profiler",
 	"Settings",
-	"PerlinNoise", "PerlinNoiseMap",
+	"ValueNoise", "ValueNoiseMap",
 
 	string = {fields = {"split", "trim"}},
-	table  = {fields = {"copy", "getn", "indexof", "insert_all"}},
+	table  = {fields = {"copy", "copy_with_metatables", "getn", "indexof", "keyof", "insert_all"}},
 	math   = {fields = {"hypot", "round"}},
 }
 
@@ -31,10 +33,23 @@ globals = {
 	"_",
 }
 
+stds.menu_common = {
+	globals = {
+		"mt_color_grey", "mt_color_blue", "mt_color_lightblue", "mt_color_green",
+		"mt_color_dark_green", "mt_color_orange", "mt_color_red",
+	},
+}
+
 files["builtin/client/register.lua"] = {
 	globals = {
 		debug = {fields={"getinfo"}},
 	}
+}
+
+files["builtin/common/math.lua"] = {
+	globals = {
+		"math",
+	},
 }
 
 files["builtin/common/misc_helpers.lua"] = {
@@ -46,7 +61,7 @@ files["builtin/common/misc_helpers.lua"] = {
 }
 
 files["builtin/common/vector.lua"] = {
-	globals = { "vector" },
+	globals = { "vector", "math" },
 }
 
 files["builtin/game/voxelarea.lua"] = {
@@ -65,13 +80,14 @@ files["builtin/common/filterlist.lua"] = {
 }
 
 files["builtin/mainmenu"] = {
+	std = "+menu_common",
 	globals = {
 		"gamedata",
 	},
+}
 
-	read_globals = {
-		"PLATFORM",
-	},
+files["builtin/common/settings"] = {
+	std = "+menu_common",
 }
 
 files["builtin/common/tests"] = {

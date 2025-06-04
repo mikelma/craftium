@@ -1,77 +1,64 @@
-/*
-Minetest
-Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #pragma once
 
 #include "clientenvironment.h"
-#include "irrlichttypes_extrabloated.h"
+#include "irrlichttypes.h"
 #include <ostream>
 #include <map>
 #include <memory>
 #include <set>
 #include <vector>
 #include <unordered_set>
-#include "clientobject.h"
 #include "gamedef.h"
 #include "inventorymanager.h"
-#include "client/hud.h"
-#include "tileanimation.h"
 #include "network/address.h"
+#include "network/networkprotocol.h" // multiple enums
 #include "network/peerhandler.h"
 #include "gameparams.h"
-#include "clientdynamicinfo.h"
+#include "script/common/c_types.h" // LuaError
 #include "util/numeric.h"
+#include "util/string.h" // StringMap
+#include "config.h"
 
-#ifdef SERVER
+#if !IS_CLIENT_BUILD
 #error Do not include in server builds
 #endif
 
 #define CLIENT_CHAT_MESSAGE_LIMIT_PER_10S 10.0f
 
-struct ClientEvent;
-struct MeshMakeData;
-struct ChatMessage;
-class MapBlockMesh;
-class RenderingEngine;
-class IWritableTextureSource;
-class IWritableShaderSource;
-class IWritableItemDefManager;
-class ISoundManager;
-class NodeDefManager;
-//class IWritableCraftDefManager;
+class Camera;
 class ClientMediaDownloader;
-class SingleMediaDownloader;
-struct MapDrawControl;
+class ISoundManager;
+class IWritableItemDefManager;
+class IWritableShaderSource;
+class IWritableTextureSource;
+class MapBlockMesh;
+class MapDatabase;
+class MeshUpdateManager;
+class Minimap;
 class ModChannelMgr;
 class MtEventManager;
-struct PointedThing;
-struct MapNode;
-class MapDatabase;
-class Minimap;
-struct MinimapMapblock;
-class MeshUpdateManager;
-class ParticleManager;
-class Camera;
-struct PlayerControl;
 class NetworkPacket;
+class NodeDefManager;
+class ParticleManager;
+class RenderingEngine;
+class SingleMediaDownloader;
+struct ChatMessage;
+struct ClientDynamicInfo;
+struct ClientEvent;
+struct MapDrawControl;
+struct MapNode;
+struct MeshMakeData;
+struct MinimapMapblock;
+struct PlayerControl;
+struct PointedThing;
+struct ItemVisualsManager;
+
 namespace con {
-class Connection;
+class IConnection;
 }
 using sound_handle_t = int;
 
@@ -113,7 +100,6 @@ private:
 };
 
 class ClientScripting;
-class GameUI;
 
 class Client : public con::PeerHandler, public InventoryManager, public IGameDef
 {
@@ -133,7 +119,7 @@ public:
 			ISoundManager *sound,
 			MtEventManager *event,
 			RenderingEngine *rendering_engine,
-			GameUI *game_ui,
+			ItemVisualsManager *item_visuals,
 			ELoginRegister allow_login_or_register
 	);
 
@@ -156,8 +142,7 @@ public:
 
 	bool isShutdown();
 
-	void connect(const Address &address, const std::string &address_name,
-		bool is_local_server);
+	void connect(const Address &address, const std::string &address_name);
 
 	/*
 		Stuff that references the environment is valid only as
@@ -195,7 +180,7 @@ public:
 	void handleCommand_Breath(NetworkPacket* pkt);
 	void handleCommand_MovePlayer(NetworkPacket* pkt);
 	void handleCommand_MovePlayerRel(NetworkPacket* pkt);
-	void handleCommand_DeathScreen(NetworkPacket* pkt);
+	void handleCommand_DeathScreenLegacy(NetworkPacket* pkt);
 	void handleCommand_AnnounceMedia(NetworkPacket* pkt);
 	void handleCommand_Media(NetworkPacket* pkt);
 	void handleCommand_NodeDef(NetworkPacket* pkt);
@@ -233,6 +218,7 @@ public:
 	void handleCommand_MediaPush(NetworkPacket *pkt);
 	void handleCommand_MinimapModes(NetworkPacket *pkt);
 	void handleCommand_SetLighting(NetworkPacket *pkt);
+	void handleCommand_Camera(NetworkPacket* pkt);
 
 	void ProcessData(NetworkPacket *pkt);
 
@@ -250,7 +236,7 @@ public:
 	void sendChangePassword(const std::string &oldpassword,
 		const std::string &newpassword);
 	void sendDamage(u16 damage);
-	void sendRespawn();
+	void sendRespawnLegacy();
 	void sendReady();
 	void sendHaveMedia(const std::vector<u32> &tokens);
 	void sendUpdateClientInfo(const ClientDynamicInfo &info);
@@ -292,7 +278,10 @@ public:
 		return m_env.getPlayerNames();
 	}
 
-	float getAnimationTime();
+	float getAnimationTime() const
+	{
+		return m_animation_time;
+	}
 
 	int getCrackLevel();
 	v3s16 getCrackPos();
@@ -309,14 +298,12 @@ public:
 	bool getChatMessage(std::wstring &message);
 	void typeChatMessage(const std::wstring& message);
 
-	u64 getMapSeed(){ return m_map_seed; }
+	u64 getMapSeed() const { return m_map_seed; }
 
 	void addUpdateMeshTask(v3s16 blockpos, bool ack_to_server=false, bool urgent=false);
 	// Including blocks at appropriate edges
 	void addUpdateMeshTaskWithEdge(v3s16 blockpos, bool ack_to_server=false, bool urgent=false);
 	void addUpdateMeshTaskForNode(v3s16 nodepos, bool ack_to_server=false, bool urgent=false);
-
-	void updateCameraOffset(v3s16 camera_offset);
 
 	bool hasClientEvents() const { return !m_client_event_queue.empty(); }
 	// Get event from queue. If queue is empty, it triggers an assertion failure.
@@ -352,7 +339,16 @@ public:
 	u16 getProtoVersion() const
 	{ return m_proto_ver; }
 
+	// Whether the server is in "simple singleplayer mode".
+	// This implies "m_internal_server = true".
 	bool m_simple_singleplayer_mode;
+
+	// Whether the server is hosted by the same Luanti instance and singletons
+	// like g_settings are shared between client and server.
+	//
+	// This is intentionally *not* true if we're just connecting to a localhost
+	// server hosted by a different Luanti instance.
+	bool m_internal_server;
 
 	float mediaReceiveProgress();
 
@@ -388,6 +384,8 @@ public:
 	virtual scene::IAnimatedMesh* getMesh(const std::string &filename, bool cache = false);
 	const std::string* getModFile(std::string filename);
 	ModStorageDatabase *getModStorageDatabase() override { return m_mod_storage_database; }
+
+	ItemVisualsManager *getItemVisualsManager() { return m_item_visuals_manager; }
 
 	// Migrates away old files-based mod storage if necessary
 	void migrateModStorage();
@@ -452,12 +450,10 @@ private:
 	void loadMods();
 
 	// Virtual methods from con::PeerHandler
-	void peerAdded(con::Peer *peer) override;
-	void deletingPeer(con::Peer *peer, bool timeout) override;
+	void peerAdded(con::IPeer *peer) override;
+	void deletingPeer(con::IPeer *peer, bool timeout) override;
 
-	void initLocalMapSaving(const Address &address,
-			const std::string &hostname,
-			bool is_local_server);
+	void initLocalMapSaving(const Address &address, const std::string &hostname);
 
 	void ReceiveAll();
 
@@ -488,6 +484,7 @@ private:
 	ISoundManager *m_sound;
 	MtEventManager *m_event;
 	RenderingEngine *m_rendering_engine;
+	ItemVisualsManager *m_item_visuals_manager;
 
         /* Craftium's communication channel related */
         int py_port = 0;
@@ -500,7 +497,7 @@ private:
 	std::unique_ptr<MeshUpdateManager> m_mesh_update_manager;
 	ClientEnvironment m_env;
 	std::unique_ptr<ParticleManager> m_particle_manager;
-	std::unique_ptr<con::Connection> m_con;
+	std::unique_ptr<con::IConnection> m_con;
 	std::string m_address_name;
 	ELoginRegister m_allow_login_or_register = ELoginRegister::Any;
 	Camera *m_camera = nullptr;
@@ -510,23 +507,18 @@ private:
 	u8 m_server_ser_ver;
 
 	// Used version of the protocol with server
-	// Values smaller than 25 only mean they are smaller than 25,
-	// and aren't accurate. We simply just don't know, because
-	// the server didn't send the version back then.
 	// If 0, server init hasn't been received yet.
 	u16 m_proto_ver = 0;
 
 	bool m_update_wielded_item = false;
 	Inventory *m_inventory_from_server = nullptr;
 	float m_inventory_from_server_age = 0.0f;
+	s32 m_mapblock_limit_logged = 0;
 	PacketCounter m_packetcounter;
 	// Block mesh animation parameters
 	float m_animation_time = 0.0f;
 	int m_crack_level = -1;
 	v3s16 m_crack_pos;
-	// 0 <= m_daynight_i < DAYNIGHT_CACHE_COUNT
-	//s32 m_daynight_i;
-	//u32 m_daynight_ratio;
 	std::queue<std::wstring> m_out_chat_queue;
 	u32 m_last_chat_message_sent;
 	float m_chat_message_allowance = 5.0f;
@@ -562,11 +554,6 @@ private:
 	// Pending downloads of dynamic media (key: token)
 	std::vector<std::pair<u32, std::shared_ptr<SingleMediaDownloader>>> m_pending_media_downloads;
 
-	// time_of_day speed approximation for old protocol
-	bool m_time_of_day_set = false;
-	float m_last_time_of_day_f = -1.0f;
-	float m_time_of_day_update_timer = 0.0f;
-
 	// An interval for generally sending object positions and stuff
 	float m_recommended_send_interval = 0.1f;
 
@@ -592,8 +579,6 @@ private:
 
 	// own state
 	LocalClientState m_state;
-
-	GameUI *m_game_ui;
 
 	// Used for saving server map to disk client-side
 	MapDatabase *m_localdb = nullptr;

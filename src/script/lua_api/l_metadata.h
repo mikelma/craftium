@@ -1,22 +1,7 @@
-/*
-Minetest
-Copyright (C) 2013-8 celeron55, Perttu Ahola <celeron55@gmail.com>
-Copyright (C) 2017-8 rubenwardy <rw@rubenwardy.com>
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2013-8 celeron55, Perttu Ahola <celeron55@gmail.com>
+// Copyright (C) 2017-8 rubenwardy <rw@rubenwardy.com>
 
 #pragma once
 
@@ -44,7 +29,22 @@ protected:
 	virtual void handleToTable(lua_State *L, IMetadata *meta);
 	virtual bool handleFromTable(lua_State *L, int table, IMetadata *meta);
 
-	static void registerMetadataClass(lua_State *L, const char *name, const luaL_Reg *methods);
+	template<class T>
+	static void registerMetadataClass(lua_State *L, const luaL_Reg *methods)
+	{
+		const luaL_Reg metamethods[] = {
+			{"__eq", l_equals},
+			{"__gc", gc_object},
+			{0, 0}
+		};
+		registerClass<T>(L, methods, metamethods);
+
+		// Set metadata_class in the metatable for MetaDataRef::checkAnyMetadata.
+		luaL_getmetatable(L, T::className);
+		lua_pushstring(L, T::className);
+		lua_setfield(L, -2, "metadata_class");
+		lua_pop(L, 1);
+	}
 
 	// Exported functions
 

@@ -1,21 +1,6 @@
-/*
-Minetest
-Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #pragma once
 
@@ -62,6 +47,9 @@ struct MapEditEvent
 	MapNode n = CONTENT_AIR;
 	std::vector<v3s16> modified_blocks; // Represents a set
 	bool is_private_change = false;
+	// Setting low_priority to true allows the server
+	// to send this change to clients with some delay.
+	bool low_priority = false;
 
 	MapEditEvent() = default;
 
@@ -94,7 +82,7 @@ struct MapEditEvent
 			VoxelArea a;
 			for (v3s16 p : modified_blocks) {
 				v3s16 np1 = p*MAP_BLOCKSIZE;
-				v3s16 np2 = np1 + v3s16(1,1,1)*MAP_BLOCKSIZE - v3s16(1,1,1);
+				v3s16 np2 = np1 + v3s16(MAP_BLOCKSIZE-1);
 				a.addPoint(np1);
 				a.addPoint(np2);
 			}
@@ -206,7 +194,7 @@ public:
 	// Deletes sectors and their blocks from memory
 	// Takes cache into account
 	// If deleted sector is in sector cache, clears cache
-	void deleteSectors(std::vector<v2s16> &list);
+	void deleteSectors(const std::vector<v2s16> &list);
 
 	// For debug printing. Prints "Map: ", "ServerMap: " or "ClientMap: "
 	virtual void PrintInfo(std::ostream &out);
@@ -313,9 +301,6 @@ protected:
 		u32 needed_count);
 };
 
-#define VMANIP_BLOCK_DATA_INEXIST     1
-#define VMANIP_BLOCK_CONTAINS_CIGNORE 2
-
 class MMVManip : public VoxelManipulator
 {
 public:
@@ -333,7 +318,7 @@ public:
 
 	// This is much faster with big chunks of generated data
 	void blitBackAll(std::map<v3s16, MapBlock*> * modified_blocks,
-		bool overwrite_generated = true);
+		bool overwrite_generated = true) const;
 
 	/*
 		Creates a copy of this VManip including contents, the copy will not be
@@ -359,4 +344,8 @@ protected:
 		value = flags describing the block
 	*/
 	std::map<v3s16, u8> m_loaded_blocks;
+
+	enum : u8 {
+		VMANIP_BLOCK_DATA_INEXIST = 1 << 0,
+	};
 };

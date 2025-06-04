@@ -1,21 +1,6 @@
-/*
-Minetest
-Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #include "lua_api/l_base.h"
 #include "lua_api/l_internal.h"
@@ -51,7 +36,7 @@ ServerInventoryManager *ModApiBase::getServerInventoryMgr(lua_State *L)
 	return getScriptApiBase(L)->getServer()->getInventoryMgr();
 }
 
-#ifndef SERVER
+#if CHECK_CLIENT_BUILD()
 Client *ModApiBase::getClient(lua_State *L)
 {
 	return getScriptApiBase(L)->getClient();
@@ -68,7 +53,7 @@ Environment *ModApiBase::getEnv(lua_State *L)
 	return getScriptApiBase(L)->getEnv();
 }
 
-#ifndef SERVER
+#if CHECK_CLIENT_BUILD()
 GUIEngine *ModApiBase::getGuiEngine(lua_State *L)
 {
 	return getScriptApiBase(L)->getGuiEngine();
@@ -105,29 +90,6 @@ bool ModApiBase::registerFunction(lua_State *L, const char *name,
 	return true;
 }
 
-void ModApiBase::registerClass(lua_State *L, const char *name,
-		const luaL_Reg *methods,
-		const luaL_Reg *metamethods)
-{
-	luaL_newmetatable(L, name);
-	luaL_register(L, NULL, metamethods);
-	int metatable = lua_gettop(L);
-
-	lua_newtable(L);
-	luaL_register(L, NULL, methods);
-	int methodtable = lua_gettop(L);
-
-	lua_pushvalue(L, methodtable);
-	lua_setfield(L, metatable, "__index");
-
-	// Protect the real metatable.
-	lua_pushvalue(L, methodtable);
-	lua_setfield(L, metatable, "__metatable");
-
-	// Pop methodtable and metatable.
-	lua_pop(L, 2);
-}
-
 int ModApiBase::l_deprecated_function(lua_State *L, const char *good, const char *bad, lua_CFunction func)
 {
 	thread_local std::vector<u64> deprecated_logged;
@@ -138,14 +100,18 @@ int ModApiBase::l_deprecated_function(lua_State *L, const char *good, const char
 
 	u64 start_time = porting::getTimeUs();
 	lua_Debug ar;
+	std::string backtrace;
 
 	// Get caller name with line and script backtrace
-	FATAL_ERROR_IF(!lua_getstack(L, 1, &ar), "lua_getstack() failed");
-	FATAL_ERROR_IF(!lua_getinfo(L, "Sl", &ar), "lua_getinfo() failed");
+	if (lua_getstack(L, 1, &ar) && lua_getinfo(L, "Sl", &ar)) {
+		// Get backtrace and hash it to reduce the warning flood
+		backtrace = ar.short_src;
+		backtrace.append(":").append(std::to_string(ar.currentline));
+	} else {
+		backtrace = "<tail call optimized coroutine> ";
+		backtrace.append(script_get_backtrace(L));
+	}
 
-	// Get backtrace and hash it to reduce the warning flood
-	std::string backtrace = ar.short_src;
-	backtrace.append(":").append(std::to_string(ar.currentline));
 	u64 hash = murmur_hash_64_ua(backtrace.data(), backtrace.length(), 0xBADBABE);
 
 	if (std::find(deprecated_logged.begin(), deprecated_logged.end(), hash)

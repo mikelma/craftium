@@ -1,43 +1,14 @@
-/*
-Minetest
-Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #pragma once
 
 #include "irrlichttypes.h"
-#include "debug.h" // For assert()
+#include "util/basic_macros.h"
+#include <cassert>
 #include <cstring>
-#include <memory> // std::shared_ptr
 #include <string_view>
-
-
-template<typename T> class ConstSharedPtr {
-public:
-	ConstSharedPtr(T *ptr) : ptr(ptr) {}
-	ConstSharedPtr(const std::shared_ptr<T> &ptr) : ptr(ptr) {}
-
-	const T* get() const noexcept { return ptr.get(); }
-	const T& operator*() const noexcept { return *ptr.get(); }
-	const T* operator->() const noexcept { return ptr.get(); }
-
-private:
-	std::shared_ptr<T> ptr;
-};
 
 template <typename T>
 class Buffer
@@ -48,13 +19,14 @@ public:
 		m_size = 0;
 		data = nullptr;
 	}
-	Buffer(unsigned int size)
+	Buffer(size_t size)
 	{
 		m_size = size;
-		if(size != 0)
+		if (size != 0) {
 			data = new T[size];
-		else
+		} else {
 			data = nullptr;
+		}
 	}
 
 	// Disable class copy
@@ -64,26 +36,24 @@ public:
 	Buffer(Buffer &&buffer)
 	{
 		m_size = buffer.m_size;
-		if(m_size != 0)
-		{
+		if (m_size != 0) {
 			data = buffer.data;
 			buffer.data = nullptr;
 			buffer.m_size = 0;
-		}
-		else
+		} else {
 			data = nullptr;
+		}
 	}
 	// Copies whole buffer
-	Buffer(const T *t, unsigned int size)
+	Buffer(const T *t, size_t size)
 	{
 		m_size = size;
-		if(size != 0)
-		{
+		if (size != 0) {
 			data = new T[size];
-			memcpy(data, t, size);
-		}
-		else
+			memcpy(data, t, sizeof(T) * size);
+		} else {
 			data = nullptr;
+		}
 	}
 
 	~Buffer()
@@ -93,18 +63,17 @@ public:
 
 	Buffer& operator=(Buffer &&buffer)
 	{
-		if(this == &buffer)
+		if (this == &buffer)
 			return *this;
 		drop();
 		m_size = buffer.m_size;
-		if(m_size != 0)
-		{
+		if (m_size != 0) {
 			data = buffer.data;
 			buffer.data = nullptr;
 			buffer.m_size = 0;
-		}
-		else
+		} else {
 			data = nullptr;
+		}
 		return *this;
 	}
 
@@ -114,13 +83,13 @@ public:
 		buffer.m_size = m_size;
 		if (m_size != 0) {
 			buffer.data = new T[m_size];
-			memcpy(buffer.data, data, m_size);
+			memcpy(buffer.data, data, sizeof(T) * m_size);
 		} else {
 			buffer.data = nullptr;
 		}
 	}
 
-	T & operator[](unsigned int i) const
+	T & operator[](size_t i) const
 	{
 		return data[i];
 	}
@@ -129,15 +98,16 @@ public:
 		return data;
 	}
 
-	unsigned int getSize() const
+	size_t getSize() const
 	{
 		return m_size;
 	}
 
 	operator std::string_view() const
 	{
-		if (!data)
+		if (!data) {
 			return std::string_view();
+		}
 		return std::string_view(reinterpret_cast<char*>(data), m_size);
 	}
 
@@ -147,7 +117,7 @@ private:
 		delete[] data;
 	}
 	T *data;
-	unsigned int m_size;
+	size_t m_size;
 };
 
 /************************************************
@@ -164,21 +134,25 @@ public:
 	SharedBuffer()
 	{
 		m_size = 0;
-		data = NULL;
-		refcount = new unsigned int;
+		data = nullptr;
+		refcount = new u32;
 		(*refcount) = 1;
 	}
-	SharedBuffer(unsigned int size)
+
+	SharedBuffer(size_t size)
 	{
 		m_size = size;
-		if(m_size != 0)
+		if (m_size != 0) {
 			data = new T[m_size];
-		else
+		} else {
 			data = nullptr;
-		refcount = new unsigned int;
-		memset(data,0,sizeof(T)*m_size);
+		}
+
+		refcount = new u32;
+		memset(data, 0, sizeof(T) * m_size);
 		(*refcount) = 1;
 	}
+
 	SharedBuffer(const SharedBuffer &buffer)
 	{
 		m_size = buffer.m_size;
@@ -186,9 +160,10 @@ public:
 		refcount = buffer.refcount;
 		(*refcount)++;
 	}
-	SharedBuffer & operator=(const SharedBuffer & buffer)
+
+	SharedBuffer & operator=(const SharedBuffer &buffer)
 	{
-		if(this == &buffer)
+		if (this == &buffer)
 			return *this;
 		drop();
 		m_size = buffer.m_size;
@@ -197,72 +172,66 @@ public:
 		(*refcount)++;
 		return *this;
 	}
-	/*
-		Copies whole buffer
-	*/
-	SharedBuffer(const T *t, unsigned int size)
+
+	//! Copies whole buffer
+	SharedBuffer(const T *t, size_t size)
 	{
 		m_size = size;
-		if(m_size != 0)
-		{
-			data = new T[m_size];
-			memcpy(data, t, m_size);
-		}
-		else
-			data = nullptr;
-		refcount = new unsigned int;
-		(*refcount) = 1;
-	}
-	/*
-		Copies whole buffer
-	*/
-	SharedBuffer(const Buffer<T> &buffer)
-	{
-		m_size = buffer.getSize();
 		if (m_size != 0) {
-				data = new T[m_size];
-				memcpy(data, *buffer, buffer.getSize());
-		}
-		else
+			data = new T[m_size];
+			memcpy(data, t, sizeof(T) * m_size);
+		} else {
 			data = nullptr;
-		refcount = new unsigned int;
+		}
+		refcount = new u32;
 		(*refcount) = 1;
 	}
+
+	//! Copies whole buffer
+	SharedBuffer(const Buffer<T> &buffer) : SharedBuffer(*buffer, buffer.getSize())
+	{
+	}
+
 	~SharedBuffer()
 	{
 		drop();
 	}
-	T & operator[](unsigned int i) const
+
+	T & operator[](size_t i) const
 	{
 		assert(i < m_size);
 		return data[i];
 	}
+
 	T * operator*() const
 	{
 		return data;
 	}
-	unsigned int getSize() const
+
+	size_t getSize() const
 	{
 		return m_size;
 	}
+
 	operator Buffer<T>() const
 	{
 		return Buffer<T>(data, m_size);
 	}
+
 private:
 	void drop()
 	{
 		assert((*refcount) > 0);
 		(*refcount)--;
-		if(*refcount == 0)
-		{
+		if (*refcount == 0) {
 			delete[] data;
 			delete refcount;
 		}
 	}
+
 	T *data;
-	unsigned int m_size;
-	unsigned int *refcount;
+	size_t m_size;
+	u32 *refcount;
 };
 
 // This class is not thread-safe!
@@ -273,9 +242,7 @@ public:
 	void grab() noexcept { ++m_refcount; }
 	void drop() noexcept { if (--m_refcount == 0) delete this; }
 
-	// Preserve own reference count.
-	IntrusiveReferenceCounted(const IntrusiveReferenceCounted &) {}
-	IntrusiveReferenceCounted &operator=(const IntrusiveReferenceCounted &) { return *this; }
+	DISABLE_CLASS_COPY(IntrusiveReferenceCounted)
 private:
 	u32 m_refcount = 1;
 };

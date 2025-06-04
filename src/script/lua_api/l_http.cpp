@@ -1,27 +1,13 @@
-/*
-Minetest
-Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #include "lua_api/l_internal.h"
 #include "common/c_converter.h"
 #include "common/c_content.h"
 #include "lua_api/l_http.h"
 #include "cpp_api/s_security.h"
+#include "util/enum_string.h"
 #include "httpfetch.h"
 #include "settings.h"
 #include "debug.h"
@@ -33,6 +19,16 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 	lua_pushstring(L, #name); \
 	lua_pushcfunction(L, l_http_##name); \
 	lua_settable(L, -3);
+
+const static EnumString es_HttpMethod[] = {
+	{HTTP_GET, "GET"},
+	{HTTP_HEAD, "HEAD"},
+	{HTTP_POST, "POST"},
+	{HTTP_PUT, "PUT"},
+	{HTTP_PATCH, "PATCH"},
+	{HTTP_DELETE, "DELETE"},
+	{0, nullptr}
+};
 
 #if USE_CURL
 void ModApiHttp::read_http_fetch_request(lua_State *L, HTTPFetchRequest &req)
@@ -47,17 +43,8 @@ void ModApiHttp::read_http_fetch_request(lua_State *L, HTTPFetchRequest &req)
 		req.timeout *= 1000;
 
 	lua_getfield(L, 1, "method");
-	if (lua_isstring(L, -1)) {
-		std::string mth = getstringfield_default(L, 1, "method", "");
-		if (mth == "GET")
-			req.method = HTTP_GET;
-		else if (mth == "POST")
-			req.method = HTTP_POST;
-		else if (mth == "PUT")
-			req.method = HTTP_PUT;
-		else if (mth == "DELETE")
-			req.method = HTTP_DELETE;
-	}
+	if (lua_isstring(L, -1))
+		string_to_enum(es_HttpMethod, req.method, lua_tostring(L, -1));
 	lua_pop(L, 1);
 
 	// post_data: if table, post form data, otherwise raw data DEPRECATED use data and method instead
@@ -65,8 +52,7 @@ void ModApiHttp::read_http_fetch_request(lua_State *L, HTTPFetchRequest &req)
 	if (lua_isnil(L, 2)) {
 		lua_pop(L, 1);
 		lua_getfield(L, 1, "data");
-	}
-	else {
+	} else {
 		req.method = HTTP_POST;
 	}
 
@@ -222,7 +208,7 @@ void ModApiHttp::Initialize(lua_State *L, int top)
 #if USE_CURL
 
 	bool isMainmenu = false;
-#ifndef SERVER
+#if CHECK_CLIENT_BUILD()
 	isMainmenu = ModApiBase::getGuiEngine(L) != nullptr;
 #endif
 

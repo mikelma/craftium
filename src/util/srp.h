@@ -55,6 +55,8 @@
 
 #pragma once
 
+#include <cstddef>
+
 struct SRPVerifier;
 struct SRPUser;
 
@@ -79,15 +81,6 @@ typedef enum {
 	SRP_OK,
 } SRP_Result;
 
-/* Sets the memory functions used by srp.
- * Note: this doesn't set the memory functions used by gmp,
- * but it is supported to have different functions for srp and gmp.
- * Don't call this after you have already allocated srp structures.
- */
-void srp_set_memory_functions(
-	void *(*new_srp_alloc) (size_t),
-	void *(*new_srp_realloc) (void *, size_t),
-	void (*new_srp_free) (void *));
 
 /* Out: bytes_v, len_v
  *

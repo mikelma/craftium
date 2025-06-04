@@ -1,39 +1,25 @@
-/*
-Minetest
-Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #include "gui/mainmenumanager.h"
 #include "clouds.h"
-#include "gui/touchscreengui.h"
-#include "server.h"
+#include "gui/touchcontrols.h"
 #include "filesys.h"
 #include "gui/guiMainMenu.h"
 #include "game.h"
 #include "player.h"
 #include "chat.h"
 #include "gettext.h"
+#include "inputhandler.h"
 #include "profiler.h"
 #include "gui/guiEngine.h"
 #include "fontengine.h"
 #include "clientlauncher.h"
 #include "version.h"
 #include "renderingengine.h"
-#include "network/networkexceptions.h"
+#include "settings.h"
+#include "util/tracy_wrapper.h"
 #include <IGUISpriteBank.h>
 #include <ICameraSceneNode.h>
 #include <unordered_map>
@@ -69,7 +55,8 @@ static void dump_start_data(const GameStartData &data)
 ClientLauncher::~ClientLauncher()
 {
 	delete input;
-	g_settings->deregisterChangedCallback("gui_scaling", setting_changed_callback, this);
+
+	g_settings->deregisterAllChangedCallbacks(this);
 
 	delete g_fontengine;
 	g_fontengine = nullptr;
@@ -103,8 +90,7 @@ bool ClientLauncher::run(GameStartData &start_data, const Settings &cmd_args)
 	init_args(start_data, cmd_args);
 
 #if USE_SOUND
-	if (g_settings->getBool("enable_sound"))
-		g_sound_manager_singleton = createSoundManagerSingleton();
+	g_sound_manager_singleton = createSoundManagerSingleton();
 #endif
 
 	if (!init_engine())
@@ -124,11 +110,10 @@ bool ClientLauncher::run(GameStartData &start_data, const Settings &cmd_args)
 
 	init_input();
 
-	m_rendering_engine->get_scene_manager()->getParameters()->
-		setAttribute(scene::ALLOW_ZWRITE_ON_TRANSPARENT, true);
-
 	guienv = m_rendering_engine->get_gui_env();
 	config_guienv();
+	g_settings->registerChangedCallback("dpi_change_notifier", setting_changed_callback, this);
+	g_settings->registerChangedCallback("display_density_factor", setting_changed_callback, this);
 	g_settings->registerChangedCallback("gui_scaling", setting_changed_callback, this);
 
 	g_fontengine = new FontEngine(guienv);
@@ -136,8 +121,10 @@ bool ClientLauncher::run(GameStartData &start_data, const Settings &cmd_args)
 	// Create the menu clouds
 	// This is only global so it can be used by RenderingEngine::draw_load_screen().
 	assert(!g_menucloudsmgr && !g_menuclouds);
+	std::unique_ptr<IWritableShaderSource> ssrc(createShaderSource());
+	ssrc->addShaderUniformSetterFactory(new FogShaderUniformSetterFactory());
 	g_menucloudsmgr = m_rendering_engine->get_scene_manager()->createNewSceneManager();
-	g_menuclouds = new Clouds(g_menucloudsmgr, nullptr, -1, rand());
+	g_menuclouds = new Clouds(g_menucloudsmgr, ssrc.get(), -1, rand());
 	g_menuclouds->setHeight(100.0f);
 	g_menuclouds->update(v3f(0, 0, 0), video::SColor(255, 240, 240, 255));
 	scene::ICameraSceneNode* camera;
@@ -228,9 +215,9 @@ bool ClientLauncher::run(GameStartData &start_data, const Settings &cmd_args)
 
 		m_rendering_engine->get_scene_manager()->clear();
 
-		if (g_touchscreengui) {
-			delete g_touchscreengui;
-			g_touchscreengui = NULL;
+		if (g_touchcontrols) {
+			delete g_touchcontrols;
+			g_touchcontrols = NULL;
 		}
 
 		/* Save the settings when leaving the game.
@@ -309,24 +296,29 @@ void ClientLauncher::init_input()
 	else
 		input = new RealInputHandler(receiver);
 
-	if (g_settings->getBool("enable_joysticks")) {
-		irr::core::array<irr::SJoystickInfo> infos;
-		std::vector<irr::SJoystickInfo> joystick_infos;
+	if (g_settings->getBool("enable_joysticks"))
+		init_joysticks();
+}
 
-		// Make sure this is called maximum once per
-		// irrlicht device, otherwise it will give you
-		// multiple events for the same joystick.
-		if (m_rendering_engine->get_raw_device()->activateJoysticks(infos)) {
-			infostream << "Joystick support enabled" << std::endl;
-			joystick_infos.reserve(infos.size());
-			for (u32 i = 0; i < infos.size(); i++) {
-				joystick_infos.push_back(infos[i]);
-			}
-			input->joystick.onJoystickConnect(joystick_infos);
-		} else {
-			errorstream << "Could not activate joystick support." << std::endl;
-		}
+void ClientLauncher::init_joysticks()
+{
+	irr::core::array<irr::SJoystickInfo> infos;
+	std::vector<irr::SJoystickInfo> joystick_infos;
+
+	// Make sure this is called maximum once per
+	// irrlicht device, otherwise it will give you
+	// multiple events for the same joystick.
+	if (!m_rendering_engine->get_raw_device()->activateJoysticks(infos)) {
+		errorstream << "Could not activate joystick support." << std::endl;
+		return;
 	}
+
+	infostream << "Joystick support enabled" << std::endl;
+	joystick_infos.reserve(infos.size());
+	for (u32 i = 0; i < infos.size(); i++) {
+		joystick_infos.push_back(infos[i]);
+	}
+	input->joystick.onJoystickConnect(joystick_infos);
 }
 
 void ClientLauncher::setting_changed_callback(const std::string &name, void *data)
@@ -350,6 +342,7 @@ void ClientLauncher::config_guienv()
 
 	float density = rangelim(g_settings->getFloat("gui_scaling"), 0.5f, 20) *
 		RenderingEngine::getDisplayDensity();
+	skin->setScale(density);
 	skin->setSize(gui::EGDS_CHECK_BOX_WIDTH, (s32)(17.0f * density));
 	skin->setSize(gui::EGDS_SCROLLBAR_SIZE, (s32)(21.0f * density));
 	skin->setSize(gui::EGDS_WINDOW_BUTTON_WIDTH, (s32)(15.0f * density));
@@ -541,20 +534,34 @@ void ClientLauncher::main_menu(MainMenuData *menudata)
 {
 	bool *kill = porting::signal_handler_killstatus();
 	video::IVideoDriver *driver = m_rendering_engine->get_video_driver();
+	auto *device = m_rendering_engine->get_raw_device();
+
+	// Wait until app is in foreground because of #15883
+	infostream << "Waiting for app to be in foreground" << std::endl;
+	while (m_rendering_engine->run() && !*kill) {
+		if (device->isWindowVisible())
+			break;
+		sleep_ms(25);
+	}
+	infostream << "Waited for app to be in foreground" << std::endl;
 
 	infostream << "Waiting for other menus" << std::endl;
+	auto framemarker = FrameMarker("ClientLauncher::main_menu()-wait-frame").started();
 	while (m_rendering_engine->run() && !*kill) {
 		if (!isMenuActive())
 			break;
 		driver->beginScene(true, true, video::SColor(255, 128, 128, 128));
 		m_rendering_engine->get_gui_env()->drawAll();
 		driver->endScene();
+		framemarker.end();
 		// On some computers framerate doesn't seem to be automatically limited
 		sleep_ms(25);
+		framemarker.start();
 	}
+	framemarker.end();
 	infostream << "Waited for other menus" << std::endl;
 
-	auto *cur_control = m_rendering_engine->get_raw_device()->getCursorControl();
+	auto *cur_control = device->getCursorControl();
 	if (cur_control) {
 		// Cursor can be non-visible when coming from the game
 		cur_control->setVisible(true);

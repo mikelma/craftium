@@ -1,21 +1,6 @@
-/*
-Minetest
-Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 /*
 	Random portability stuff
@@ -47,11 +32,15 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 	#define sleep_ms(x) Sleep(x)
 	#define sleep_us(x) Sleep((x)/1000)
 
+	#define SLEEP_ACCURACY_US 2000
+
 	#define setenv(n,v,o) _putenv_s(n,v)
 	#define unsetenv(n) _putenv_s(n,"")
 #else
 	#include <unistd.h>
 	#include <cstdlib> // setenv
+
+	#define SLEEP_ACCURACY_US 200
 
 	#define sleep_ms(x) usleep((x)*1000)
 	#define sleep_us(x) usleep(x)
@@ -66,11 +55,6 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 	#define strncasecmp(x, y, n) strnicmp(x, y, n)
 #endif
 
-#ifdef __MINGW32__
-	// was broken in 2013, unclear if still needed
-	#define strtok_r(x, y, z) mystrtok_r(x, y, z)
-#endif
-
 #if !HAVE_STRLCPY
 	#define strlcpy(d, s, n) mystrlcpy(d, s, n)
 #endif
@@ -78,9 +62,9 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #ifndef _WIN32 // POSIX
 	#include <sys/time.h>
 	#include <ctime>
-    #if defined(__MACH__) && defined(__APPLE__)
-        #include <TargetConditionals.h>
-    #endif
+	#if defined(__MACH__) && defined(__APPLE__)
+		#include <TargetConditionals.h>
+	#endif
 #endif
 
 namespace porting
@@ -93,7 +77,7 @@ namespace porting
 void signal_handler_init();
 // Returns a pointer to a bool.
 // When the bool is true, program should quit.
-bool * signal_handler_killstatus();
+[[nodiscard]] bool *signal_handler_killstatus();
 
 /*
 	Path of static data directory.
@@ -121,12 +105,13 @@ extern std::string path_cache;
 /*
 	Gets the path of our executable.
 */
+[[nodiscard]]
 bool getCurrentExecPath(char *buf, size_t len);
 
 /*
-	Get full path of stuff in data directory.
-	Example: "stone.png" -> "../data/stone.png"
+	Concatenate subpath to path_share.
 */
+[[nodiscard]]
 std::string getDataPath(const char *subpath);
 
 /*
@@ -138,7 +123,7 @@ void initializePaths();
 	Return system information
 	e.g. "Linux/3.12.7 x86_64"
 */
-std::string get_sysinfo();
+const std::string &get_sysinfo();
 
 
 // Monotonic timer
@@ -236,6 +221,21 @@ inline u64 getDeltaMs(u64 old_time_ms, u64 new_time_ms)
 	return (old_time_ms - new_time_ms);
 }
 
+inline void preciseSleepUs(u64 sleep_time)
+{
+	if (sleep_time > 0)
+	{
+		u64 target_time = porting::getTimeUs() + sleep_time;
+		if (sleep_time > SLEEP_ACCURACY_US)
+			sleep_us(sleep_time - SLEEP_ACCURACY_US);
+
+		// Busy-wait the remaining time to adjust for sleep inaccuracies
+		// The target - now > 0 construct will handle overflow gracefully (even though it should
+		// never happen)
+		while ((s64)(target_time - porting::getTimeUs()) > 0) {}
+	}
+}
+
 inline const char *getPlatformName()
 {
 	return
@@ -282,7 +282,8 @@ inline const char *getPlatformName()
 	;
 }
 
-bool secure_rand_fill_buf(void *buf, size_t len);
+// Securely fills buffer with bytes from system's random source
+[[nodiscard]] bool secure_rand_fill_buf(void *buf, size_t len);
 
 // Call once near beginning of main function.
 void osSpecificInit();
@@ -290,23 +291,30 @@ void osSpecificInit();
 // This attaches to the parents process console, or creates a new one if it doesnt exist.
 void attachOrCreateConsole();
 
+#if HAVE_MALLOC_TRIM
 /**
  * Call this after freeing bigger blocks of memory. Used on some platforms to
  * properly give memory back to the OS.
  * @param amount Number of bytes freed
 */
-#if HAVE_MALLOC_TRIM
 void TrackFreedMemory(size_t amount);
+
+/**
+ * Call this regularly from background threads. This performs the actual trimming
+ * and is potentially slow.
+ */
+void TriggerMemoryTrim();
 #else
-inline void TrackFreedMemory(size_t amount) { (void)amount; }
+static inline void TrackFreedMemory(size_t amount) { (void)amount; }
+static inline void TriggerMemoryTrim() { (void)0; }
 #endif
 
 #ifdef _WIN32
 // Quotes an argument for use in a CreateProcess() commandline (not cmd.exe!!)
-std::string QuoteArgv(const std::string &arg);
+[[nodiscard]] std::string QuoteArgv(const std::string &arg);
 
 // Convert an error code (e.g. from GetLastError()) into a string.
-std::string ConvertError(DWORD error_code);
+[[nodiscard]] std::string ConvertError(DWORD error_code);
 #endif
 
 // snprintf wrapper

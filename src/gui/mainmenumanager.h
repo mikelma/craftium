@@ -1,21 +1,6 @@
-/*
-Minetest
-Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #pragma once
 
@@ -26,16 +11,22 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <cassert>
 #include <list>
 
+#include "IGUIEnvironment.h"
+
+namespace irr::gui {
+	class IGUIStaticText;
+}
+
 class IGameCallback
 {
 public:
 	virtual void exitToOS() = 0;
-	virtual void keyConfig() = 0;
+	virtual void openSettings() = 0;
 	virtual void disconnect() = 0;
 	virtual void changePassword() = 0;
 	virtual void changeVolume() = 0;
 	virtual void showOpenURLDialog(const std::string &url) = 0;
-	virtual void signalKeyConfigChange() = 0;
+	virtual void touchscreenLayout() = 0;
 };
 
 extern gui::IGUIEnvironment *guienv;
@@ -68,6 +59,8 @@ public:
 		if(!m_stack.empty()) {
 			m_stack.back()->setVisible(true);
 			guienv->setFocus(m_stack.back());
+		} else {
+			guienv->removeFocus(menu);
 		}
 	}
 
@@ -85,6 +78,19 @@ public:
 		return m_stack.size();
 	}
 
+	GUIModalMenu *tryGetTopMenu() const
+	{
+		if (m_stack.empty())
+			return nullptr;
+		return dynamic_cast<GUIModalMenu *>(m_stack.back());
+	}
+
+	void deleteFront()
+	{
+		m_stack.front()->setVisible(false);
+		deletingMenu(m_stack.front());
+	}
+
 	bool pausesGame()
 	{
 		for (gui::IGUIElement *i : m_stack) {
@@ -95,7 +101,8 @@ public:
 		return false;
 	}
 
-	// FIXME: why isn't this private?
+// `m_stack` is left public for its usage in `Client::pyConnStep` in `client.cpp`
+// private:
 	std::list<gui::IGUIElement*> m_stack;
 };
 
@@ -117,6 +124,11 @@ public:
 		shutdown_requested = true;
 	}
 
+	void openSettings() override
+	{
+		settings_requested = true;
+	}
+
 	void disconnect() override
 	{
 		disconnect_requested = true;
@@ -132,14 +144,9 @@ public:
 		changevolume_requested = true;
 	}
 
-	void keyConfig() override
+	void touchscreenLayout() override
 	{
-		keyconfig_requested = true;
-	}
-
-	void signalKeyConfigChange() override
-	{
-		keyconfig_changed = true;
+		touchscreenlayout_requested = true;
 	}
 
 	void showOpenURLDialog(const std::string &url) override
@@ -148,11 +155,11 @@ public:
 	}
 
 	bool disconnect_requested = false;
+	bool settings_requested = false;
 	bool changepassword_requested = false;
 	bool changevolume_requested = false;
-	bool keyconfig_requested = false;
+	bool touchscreenlayout_requested = false;
 	bool shutdown_requested = false;
-	bool keyconfig_changed = false;
 	std::string show_open_url_dialog = "";
 };
 

@@ -1,21 +1,6 @@
-/*
-Minetest
-Copyright (C) 2013 sapier, <sapier AT gmx DOT net>
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2013 sapier, <sapier AT gmx DOT net>
 
 #pragma once
 
@@ -65,10 +50,13 @@ class AsyncWorkerThread : public Thread,
 public:
 	virtual ~AsyncWorkerThread();
 
-	void *run();
+	void *run() override;
 
 protected:
 	AsyncWorkerThread(AsyncEngine* jobDispatcher, const std::string &name);
+
+	bool checkPathInternal(const std::string &abs_path, bool write_required,
+		bool *write_allowed) override;
 
 private:
 	AsyncEngine *jobDispatcher = nullptr;
@@ -151,6 +139,11 @@ protected:
 	void stepAutoscale();
 
 	/**
+	 * Print warning message if too many jobs are stuck
+	 */
+	void stepStuckWarning();
+
+	/**
 	 * Initialize environment with current registred functions
 	 *  this function adds all functions registred by registerFunction to the
 	 *  passed lua stack
@@ -161,6 +154,21 @@ protected:
 	bool prepareEnvironment(lua_State* L, int top);
 
 private:
+	template <typename T>
+	inline void snapshotJobs(T &to)
+	{
+		for (const auto &it : jobQueue)
+			to.emplace(it.id);
+	}
+	template <typename T>
+	inline size_t compareJobs(const T &from)
+	{
+		size_t overlap = 0;
+		for (const auto &it : jobQueue)
+			overlap += from.count(it.id);
+		return overlap;
+	}
+
 	// Variable locking the engine against further modification
 	bool initDone = false;
 
@@ -169,6 +177,9 @@ private:
 	unsigned int autoscaleMaxWorkers = 0;
 	u64 autoscaleTimer = 0;
 	std::unordered_set<u32> autoscaleSeenJobs;
+
+	u64 stuckTimer = 0;
+	std::unordered_set<u32> stuckSeenJobs;
 
 	// Only set for the server async environment (duh)
 	Server *server = nullptr;

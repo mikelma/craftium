@@ -1,24 +1,10 @@
-/*
-Minetest
-Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #pragma once
 
+#include "config.h"
 #include <set>
 #include <string>
 #include <string_view>
@@ -50,28 +36,28 @@ struct DirListNode
 	bool dir;
 };
 
+[[nodiscard]]
 std::vector<DirListNode> GetDirListing(const std::string &path);
 
 // Returns true if already exists
 bool CreateDir(const std::string &path);
 
-bool PathExists(const std::string &path);
+[[nodiscard]] bool PathExists(const std::string &path);
 
-bool IsPathAbsolute(const std::string &path);
+[[nodiscard]] bool IsPathAbsolute(const std::string &path);
 
-bool IsDir(const std::string &path);
+[[nodiscard]] bool IsDir(const std::string &path);
 
-bool IsExecutable(const std::string &path);
+[[nodiscard]] bool IsExecutable(const std::string &path);
 
-inline bool IsFile(const std::string &path)
+[[nodiscard]] bool IsFile(const std::string &path);
+
+[[nodiscard]] inline bool IsDirDelimiter(char c)
 {
-	return PathExists(path) && !IsDir(path);
+	return c == '/' || c == DIR_DELIM_CHAR;
 }
 
-bool IsDirDelimiter(char c);
-
-// Only pass full paths to this one. True on success.
-// NOTE: The WIN32 version returns always true.
+// Only pass full paths to this one. returns true on success.
 bool RecursiveDelete(const std::string &path);
 
 bool DeleteSingleFileOrEmptyDirectory(const std::string &path);
@@ -79,20 +65,21 @@ bool DeleteSingleFileOrEmptyDirectory(const std::string &path);
 /// Returns path to temp directory.
 /// You probably don't want to use this directly, see `CreateTempFile` or `CreateTempDir`.
 /// @return path or "" on error
-std::string TempPath();
+[[nodiscard]] std::string TempPath();
 
 /// Returns path to securely-created temporary file (will already exist when this function returns).
 /// @return path or "" on error
-std::string CreateTempFile();
+[[nodiscard]] std::string CreateTempFile();
 
 /// Returns path to securely-created temporary directory (will already exist when this function returns).
 /// @return path or "" on error
-std::string CreateTempDir();
+[[nodiscard]] std::string CreateTempDir();
 
 /* Returns a list of subdirectories, including the path itself, but excluding
        hidden directories (whose names start with . or _)
 */
 void GetRecursiveDirs(std::vector<std::string> &dirs, const std::string &dir);
+[[nodiscard]]
 std::vector<std::string> GetRecursiveDirs(const std::string &dir);
 
 /* Multiplatform */
@@ -143,10 +130,19 @@ std::string RemoveRelativePathComponents(std::string path);
 
 // Returns the absolute path for the passed path, with "." and ".." path
 // components and symlinks removed.  Returns "" on error.
+[[nodiscard]]
 std::string AbsolutePath(const std::string &path);
+
+// This is a combination of RemoveRelativePathComponents() and AbsolutePath()
+// It will resolve symlinks for the leading path components that exist and
+// still remove "." and ".." in the rest of the path.
+// Returns "" on error.
+[[nodiscard]]
+std::string AbsolutePathPartial(const std::string &path);
 
 // Returns the filename from a path or the entire path if no directory
 // delimiter is found.
+[[nodiscard]]
 const char *GetFilenameFromPath(const char *path);
 
 // Replace the content of a file on disk in a way that is safe from
@@ -154,7 +150,7 @@ const char *GetFilenameFromPath(const char *path);
 // logs and returns false on error
 bool safeWriteToFile(const std::string &path, std::string_view content);
 
-#ifndef SERVER
+#if IS_CLIENT_BUILD
 bool extractZipFile(irr::io::IFileSystem *fs, const char *filename, const std::string &destination);
 #endif
 
@@ -189,6 +185,7 @@ bool OpenStream(std::filebuf &stream, const char *filename,
  * @param mode additional mode bits (e.g. std::ios::app)
  * @return file stream, will be !good in case of error
 */
+[[nodiscard]]
 inline std::ofstream open_ofstream(const char *name, bool log,
 	std::ios::openmode mode = std::ios::openmode())
 {
@@ -211,6 +208,7 @@ inline std::ofstream open_ofstream(const char *name, bool log,
  * @param mode additional mode bits (e.g. std::ios::ate)
  * @return file stream, will be !good in case of error
 */
+[[nodiscard]]
 inline std::ifstream open_ifstream(const char *name, bool log,
 	std::ios::openmode mode = std::ios::openmode())
 {

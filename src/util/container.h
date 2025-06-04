@@ -1,21 +1,6 @@
-/*
-Minetest
-Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #pragma once
 
@@ -68,9 +53,14 @@ public:
 		return m_queue.front();
 	}
 
-	u32 size() const
+	size_t size() const
 	{
 		return m_queue.size();
+	}
+
+	bool empty() const
+	{
+		return m_queue.empty();
 	}
 
 private:
@@ -372,11 +362,10 @@ public:
 		// This conditional block was converted from a ternary to ensure no
 		// temporary values are created in evaluating the return expression,
 		// which could cause a dangling reference.
-		if (it != m_values.end()) {
+		if (it != m_values.end())
 			return it->second;
-		} else {
+		else
 			return null_value;
-		}
 	}
 
 	void put(const K &key, const V &value) {
@@ -440,7 +429,7 @@ public:
 		return !!take(key);
 	}
 
-	// Warning: not constant-time!
+	/// @warning not constant-time!
 	size_t size() const {
 		if (m_iterating) {
 			// This is by no means impossible to determine, it's just annoying
@@ -456,7 +445,7 @@ public:
 		return n;
 	}
 
-	// Warning: not constant-time!
+	/// @warning not constant-time!
 	bool empty() const {
 		if (m_iterating)
 			return false; // maybe

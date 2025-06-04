@@ -1,23 +1,8 @@
-/*
-Minetest
-Copyright (C) 2010-2018 celeron55, Perttu Ahola <celeron55@gmail.com>
-Copyright (C) 2013-2018 kwolekr, Ryan Kwolek <kwolekr@minetest.net>
-Copyright (C) 2014-2018 paramat
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2010-2018 celeron55, Perttu Ahola <celeron55@gmail.com>
+// Copyright (C) 2013-2018 kwolekr, Ryan Kwolek <kwolekr@minetest.net>
+// Copyright (C) 2014-2018 paramat
 
 
 #include <cmath>
@@ -40,7 +25,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "mapgen_v6.h"
 
 
-FlagDesc flagdesc_mapgen_v6[] = {
+const FlagDesc flagdesc_mapgen_v6[] = {
 	{"jungles",    MGV6_JUNGLES},
 	{"biomeblend", MGV6_BIOMEBLEND},
 	{"mudflow",    MGV6_MUDFLOW},
@@ -237,7 +222,7 @@ void MapgenV6Params::setDefaultSettings(Settings *settings)
 // Returns Y one under area minimum if not found
 s16 MapgenV6::find_stone_level(v2s16 p2d)
 {
-	const v3s16 &em = vm->m_area.getExtent();
+	const v3s32 &em = vm->m_area.getExtent();
 	s16 y_nodes_max = vm->m_area.MaxEdge.Y;
 	s16 y_nodes_min = vm->m_area.MinEdge.Y;
 	u32 i = vm->m_area.index(p2d.X, y_nodes_max, p2d.Y);
@@ -304,13 +289,13 @@ float MapgenV6::baseTerrainLevelFromNoise(v2s16 p)
 	if (spflags & MGV6_FLAT)
 		return water_level;
 
-	float terrain_base   = NoisePerlin2D_PO(&noise_terrain_base->np,
+	float terrain_base   = NoiseFractal2D_PO(&noise_terrain_base->np,
 							p.X, 0.5, p.Y, 0.5, seed);
-	float terrain_higher = NoisePerlin2D_PO(&noise_terrain_higher->np,
+	float terrain_higher = NoiseFractal2D_PO(&noise_terrain_higher->np,
 							p.X, 0.5, p.Y, 0.5, seed);
-	float steepness      = NoisePerlin2D_PO(&noise_steepness->np,
+	float steepness      = NoiseFractal2D_PO(&noise_steepness->np,
 							p.X, 0.5, p.Y, 0.5, seed);
-	float height_select  = NoisePerlin2D_PO(&noise_height_select->np,
+	float height_select  = NoiseFractal2D_PO(&noise_height_select->np,
 							p.X, 0.5, p.Y, 0.5, seed);
 
 	return baseTerrainLevel(terrain_base, terrain_higher,
@@ -370,7 +355,7 @@ BiomeV6Type MapgenV6::getBiome(v2s16 p)
 
 float MapgenV6::getHumidity(v2s16 p)
 {
-	/*double noise = noise2d_perlin(
+	/*double noise = noise2d_fractal(
 		0.5+(float)p.X/500, 0.5+(float)p.Y/500,
 		seed+72384, 4, 0.66);
 	noise = (noise + 1.0)/2.0;*/
@@ -389,11 +374,11 @@ float MapgenV6::getHumidity(v2s16 p)
 
 float MapgenV6::getTreeAmount(v2s16 p)
 {
-	/*double noise = noise2d_perlin(
+	/*double noise = noise2d_fractal(
 			0.5+(float)p.X/125, 0.5+(float)p.Y/125,
 			seed+2, 4, 0.66);*/
 
-	float noise = NoisePerlin2D(np_trees, p.X, p.Y, seed);
+	float noise = NoiseFractal2D(np_trees, p.X, p.Y, seed);
 	float zeroval = -0.39;
 	if (noise < zeroval)
 		return 0;
@@ -404,11 +389,11 @@ float MapgenV6::getTreeAmount(v2s16 p)
 
 bool MapgenV6::getHaveAppleTree(v2s16 p)
 {
-	/*is_apple_tree = noise2d_perlin(
+	/*is_apple_tree = noise2d_fractal(
 		0.5+(float)p.X/100, 0.5+(float)p.Z/100,
 		data->seed+342902, 3, 0.45) > 0.2;*/
 
-	float noise = NoisePerlin2D(np_apple_trees, p.X, p.Y, seed);
+	float noise = NoiseFractal2D(np_apple_trees, p.X, p.Y, seed);
 
 	return noise > 0.2;
 }
@@ -419,7 +404,7 @@ float MapgenV6::getMudAmount(int index)
 	if (spflags & MGV6_FLAT)
 		return MGV6_AVERAGE_MUD_AMOUNT;
 
-	/*return ((float)AVERAGE_MUD_AMOUNT + 2.0 * noise2d_perlin(
+	/*return ((float)AVERAGE_MUD_AMOUNT + 2.0 * noise2d_fractal(
 			0.5+(float)p.X/200, 0.5+(float)p.Y/200,
 			seed+91013, 3, 0.55));*/
 
@@ -430,7 +415,7 @@ float MapgenV6::getMudAmount(int index)
 bool MapgenV6::getHaveBeach(int index)
 {
 	// Determine whether to have sand here
-	/*double sandnoise = noise2d_perlin(
+	/*double sandnoise = noise2d_fractal(
 			0.2+(float)p2d.X/250, 0.7+(float)p2d.Y/250,
 			seed+59420, 3, 0.50);*/
 
@@ -442,7 +427,7 @@ bool MapgenV6::getHaveBeach(int index)
 BiomeV6Type MapgenV6::getBiome(int index, v2s16 p)
 {
 	// Just do something very simple as for now
-	/*double d = noise2d_perlin(
+	/*double d = noise2d_fractal(
 			0.6+(float)p2d.X/250, 0.2+(float)p2d.Y/250,
 			seed+9130, 3, 0.50);*/
 
@@ -562,7 +547,7 @@ void MapgenV6::makeChunk(BlockMakeData *data)
 	if ((flags & MG_DUNGEONS) && stone_surface_max_y >= node_min.Y &&
 			full_node_min.Y >= dungeon_ymin && full_node_max.Y <= dungeon_ymax) {
 		u16 num_dungeons = std::fmax(std::floor(
-			NoisePerlin3D(&np_dungeons, node_min.X, node_min.Y, node_min.Z, seed)), 0.0f);
+			NoiseFractal3D(&np_dungeons, node_min.X, node_min.Y, node_min.Z, seed)), 0.0f);
 
 		if (num_dungeons >= 1) {
 			PseudoRandom ps(blockseed + 4713);
@@ -648,17 +633,17 @@ void MapgenV6::calculateNoise()
 	int fz = full_node_min.Z;
 
 	if (!(spflags & MGV6_FLAT)) {
-		noise_terrain_base->perlinMap2D_PO(x, 0.5, z, 0.5);
-		noise_terrain_higher->perlinMap2D_PO(x, 0.5, z, 0.5);
-		noise_steepness->perlinMap2D_PO(x, 0.5, z, 0.5);
-		noise_height_select->perlinMap2D_PO(x, 0.5, z, 0.5);
-		noise_mud->perlinMap2D_PO(x, 0.5, z, 0.5);
+		noise_terrain_base->noiseMap2D_PO(x, 0.5, z, 0.5);
+		noise_terrain_higher->noiseMap2D_PO(x, 0.5, z, 0.5);
+		noise_steepness->noiseMap2D_PO(x, 0.5, z, 0.5);
+		noise_height_select->noiseMap2D_PO(x, 0.5, z, 0.5);
+		noise_mud->noiseMap2D_PO(x, 0.5, z, 0.5);
 	}
 
-	noise_beach->perlinMap2D_PO(x, 0.2, z, 0.7);
+	noise_beach->noiseMap2D_PO(x, 0.2, z, 0.7);
 
-	noise_biome->perlinMap2D_PO(fx, 0.6, fz, 0.2);
-	noise_humidity->perlinMap2D_PO(fx, 0.0, fz, 0.0);
+	noise_biome->noiseMap2D_PO(fx, 0.6, fz, 0.2);
+	noise_humidity->noiseMap2D_PO(fx, 0.0, fz, 0.0);
 	// Humidity map does not need range limiting 0 to 1,
 	// only humidity at point does
 }
@@ -685,7 +670,7 @@ int MapgenV6::generateGround()
 		BiomeV6Type bt = getBiome(v2s16(x, z));
 
 		// Fill ground with stone
-		const v3s16 &em = vm->m_area.getExtent();
+		const v3s32 &em = vm->m_area.getExtent();
 		u32 i = vm->m_area.index(x, node_min.Y, z);
 		for (s16 y = node_min.Y; y <= node_max.Y; y++) {
 			if (vm->m_data[i].getContent() == CONTENT_IGNORE) {
@@ -754,7 +739,7 @@ void MapgenV6::addMud()
 
 		// Add mud on ground
 		s16 mudcount = 0;
-		const v3s16 &em = vm->m_area.getExtent();
+		const v3s32 &em = vm->m_area.getExtent();
 		s16 y_start = surface_y + 1;
 		u32 i = vm->m_area.index(x, y_start, z);
 		for (s16 y = y_start; y <= node_max.Y; y++) {
@@ -772,7 +757,7 @@ void MapgenV6::addMud()
 
 void MapgenV6::flowMud(s16 &mudflow_minpos, s16 &mudflow_maxpos)
 {
-	const v3s16 &em = vm->m_area.getExtent();
+	const v3s32 &em = vm->m_area.getExtent();
 	static const v3s16 dirs4[4] = {
 		v3s16(0, 0, 1), // Back
 		v3s16(1, 0, 0), // Right
@@ -885,7 +870,7 @@ void MapgenV6::flowMud(s16 &mudflow_minpos, s16 &mudflow_maxpos)
 
 
 void MapgenV6::moveMud(u32 remove_index, u32 place_index,
-	u32 above_remove_index, v2s16 pos, v3s16 em)
+	u32 above_remove_index, v2s16 pos, v3s32 em)
 {
 	MapNode n_air(CONTENT_AIR);
 	// Copy mud from old place to new place
@@ -935,7 +920,7 @@ void MapgenV6::placeTreesAndJungleGrass()
 	if (c_junglegrass == CONTENT_IGNORE)
 		c_junglegrass = CONTENT_AIR;
 	MapNode n_junglegrass(c_junglegrass);
-	const v3s16 &em = vm->m_area.getExtent();
+	const v3s32 &em = vm->m_area.getExtent();
 
 	// Divide area into parts
 	s16 div = 8;
@@ -1042,7 +1027,7 @@ void MapgenV6::growGrass() // Add surface nodes
 	MapNode n_dirt_with_grass(c_dirt_with_grass);
 	MapNode n_dirt_with_snow(c_dirt_with_snow);
 	MapNode n_snowblock(c_snowblock);
-	const v3s16 &em = vm->m_area.getExtent();
+	const v3s32 &em = vm->m_area.getExtent();
 
 	u32 index = 0;
 	for (s16 z = full_node_min.Z; z <= full_node_max.Z; z++)
@@ -1090,7 +1075,7 @@ void MapgenV6::growGrass() // Add surface nodes
 
 void MapgenV6::generateCaves(int max_stone_y)
 {
-	float cave_amount = NoisePerlin2D(np_cave, node_min.X, node_min.Y, seed);
+	float cave_amount = NoiseFractal2D(np_cave, node_min.X, node_min.Y, seed);
 	int volume_nodes = (node_max.X - node_min.X + 1) *
 					   (node_max.Y - node_min.Y + 1) * MAP_BLOCKSIZE;
 	cave_amount = MYMAX(0.0, cave_amount);

@@ -1,21 +1,6 @@
-/*
-Minetest
-Copyright (C) 2010-2018 nerzhul, Loic BLOT <loic.blot@unix-experience.fr>
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2010-2018 nerzhul, Loic BLOT <loic.blot@unix-experience.fr>
 
 #include <log.h>
 #include "mapblock.h"
@@ -41,7 +26,7 @@ void ActiveObjectMgr::clearIf(const std::function<bool(ServerActiveObject *, u16
 			continue;
 		if (cb(it.second.get(), it.first)) {
 			// Remove reference from m_active_objects
-			m_active_objects.remove(it.first);
+			removeObject(it.first);
 		}
 	}
 }
@@ -83,16 +68,17 @@ bool ActiveObjectMgr::registerObject(std::unique_ptr<ServerActiveObject> obj)
 		return false;
 	}
 
-	if (objectpos_over_limit(obj->getBasePosition())) {
-		v3f p = obj->getBasePosition();
+	const v3f pos = obj->getBasePosition();
+	if (objectpos_over_limit(pos)) {
 		warningstream << "Server::ActiveObjectMgr::addActiveObjectRaw(): "
-				<< "object position (" << p.X << "," << p.Y << "," << p.Z
+				<< "object position (" << pos.X << "," << pos.Y << "," << pos.Z
 				<< ") outside maximum range" << std::endl;
 		return false;
 	}
 
-	auto obj_id = obj->getId(); 
+	auto obj_id = obj->getId();
 	m_active_objects.put(obj_id, std::move(obj));
+	m_spatial_index.insert(pos.toArray(), obj_id);
 
 	auto new_size = m_active_objects.size();
 	verbosestream << "Server::ActiveObjectMgr::addActiveObjectRaw(): "
@@ -115,53 +101,72 @@ void ActiveObjectMgr::removeObject(u16 id)
 	if (!ok) {
 		infostream << "Server::ActiveObjectMgr::removeObject(): "
 				<< "id=" << id << " not found" << std::endl;
+	} else {
+		m_spatial_index.remove(id);
 	}
 }
 
-void ActiveObjectMgr::getObjectsInsideRadius(const v3f &pos, float radius,
+void ActiveObjectMgr::invalidateActiveObjectObserverCaches()
+{
+	for (auto &active_object : m_active_objects.iter()) {
+		ServerActiveObject *obj = active_object.second.get();
+		if (!obj)
+			continue;
+		obj->invalidateEffectiveObservers();
+	}
+}
+
+void ActiveObjectMgr::updateObjectPos(u16 id, v3f pos)
+{
+	// HACK defensively only update if we already know the object,
+	// otherwise we're still waiting to be inserted into the index
+	// (or have already been removed).
+	if (m_active_objects.get(id))
+		m_spatial_index.update(pos.toArray(), id);
+}
+
+void ActiveObjectMgr::getObjectsInsideRadius(v3f pos, float radius,
 		std::vector<ServerActiveObject *> &result,
 		std::function<bool(ServerActiveObject *obj)> include_obj_cb)
 {
-	float r2 = radius * radius;
-	for (auto &activeObject : m_active_objects.iter()) {
-		ServerActiveObject *obj = activeObject.second.get();
-		if (!obj)
-			continue;
-		const v3f &objectpos = obj->getBasePosition();
-		if (objectpos.getDistanceFromSQ(pos) > r2)
-			continue;
+	float r_squared = radius * radius;
+	m_spatial_index.rangeQuery((pos - v3f(radius)).toArray(), (pos + v3f(radius)).toArray(), [&](auto objPos, u16 id) {
+		if (v3f(objPos).getDistanceFromSQ(pos) > r_squared)
+			return;
 
+		auto obj = m_active_objects.get(id).get();
+		if (!obj)
+			return;
 		if (!include_obj_cb || include_obj_cb(obj))
 			result.push_back(obj);
-	}
+	});
 }
 
 void ActiveObjectMgr::getObjectsInArea(const aabb3f &box,
 		std::vector<ServerActiveObject *> &result,
 		std::function<bool(ServerActiveObject *obj)> include_obj_cb)
 {
-	for (auto &activeObject : m_active_objects.iter()) {
-		ServerActiveObject *obj = activeObject.second.get();
+	m_spatial_index.rangeQuery(box.MinEdge.toArray(), box.MaxEdge.toArray(), [&](auto _, u16 id) {
+		auto obj = m_active_objects.get(id).get();
 		if (!obj)
-			continue;
-		const v3f &objectpos = obj->getBasePosition();
-		if (!box.isPointInside(objectpos))
-			continue;
-
+			return;
 		if (!include_obj_cb || include_obj_cb(obj))
 			result.push_back(obj);
-	}
+	});
 }
 
-void ActiveObjectMgr::getAddedActiveObjectsAroundPos(v3f player_pos, f32 radius,
-		f32 player_radius, const std::set<u16> &current_objects,
+void ActiveObjectMgr::getAddedActiveObjectsAroundPos(
+		v3f player_pos, const std::string &player_name,
+		f32 radius, f32 player_radius,
+		const std::set<u16> &current_objects,
 		std::vector<u16> &added_objects)
 {
 	/*
 		Go through the object list,
 		- discard removed/deactivated objects,
 		- discard objects that are too far away,
-		- discard objects that are found in current_objects.
+		- discard objects that are found in current_objects,
+		- discard objects that are not observed by the player.
 		- add remaining objects to added_objects
 	*/
 	for (auto &ao_it : m_active_objects.iter()) {
@@ -181,6 +186,9 @@ void ActiveObjectMgr::getAddedActiveObjectsAroundPos(v3f player_pos, f32 radius,
 			if (distance_f > player_radius && player_radius != 0)
 				continue;
 		} else if (distance_f > radius)
+			continue;
+
+		if (!object->isEffectivelyObservedBy(player_name))
 			continue;
 
 		// Discard if already on current_objects

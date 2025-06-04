@@ -9,7 +9,6 @@
 #include "SMeshBuffer.h"
 #include "SAnimatedMesh.h"
 #include "IReadFile.h"
-#include "IAttributes.h"
 #include "fast_atof.h"
 #include "coreutil.h"
 #include "os.h"
@@ -26,11 +25,7 @@ namespace scene
 //! Constructor
 COBJMeshFileLoader::COBJMeshFileLoader(scene::ISceneManager *smgr) :
 		SceneManager(smgr)
-{
-#ifdef _DEBUG
-	setDebugName("COBJMeshFileLoader");
-#endif
-}
+{}
 
 //! destructor
 COBJMeshFileLoader::~COBJMeshFileLoader()
@@ -78,8 +73,6 @@ IAnimatedMesh *COBJMeshFileLoader::createMesh(io::IReadFile *file)
 	const c8 *bufPtr = buf;
 	core::stringc grpName, mtlName;
 	bool mtlChanged = false;
-	bool useGroups = !SceneManager->getParameters()->getAttributeAsBool(OBJ_LOADER_IGNORE_GROUPS);
-	bool useMaterials = !SceneManager->getParameters()->getAttributeAsBool(OBJ_LOADER_IGNORE_MATERIAL_FILES);
 	[[maybe_unused]] irr::u32 lineNr = 1; // only counts non-empty lines, still useful in debugging to locate errors
 	core::array<int> faceCorners;
 	faceCorners.reallocate(32); // should be large enough
@@ -89,15 +82,7 @@ IAnimatedMesh *COBJMeshFileLoader::createMesh(io::IReadFile *file)
 	while (bufPtr != bufEnd) {
 		switch (bufPtr[0]) {
 		case 'm': // mtllib (material)
-		{
-			if (useMaterials) {
-				c8 name[WORD_BUFFER_LENGTH];
-				bufPtr = goAndCopyNextWord(name, bufPtr, WORD_BUFFER_LENGTH, bufEnd);
-#ifdef _IRR_DEBUG_OBJ_LOADER_
-				os::Printer::log("Ignoring material file", name);
-#endif
-			}
-		} break;
+			break; // not supported
 
 		case 'v': // v, vn, vt
 			switch (bufPtr[1]) {
@@ -131,12 +116,7 @@ IAnimatedMesh *COBJMeshFileLoader::createMesh(io::IReadFile *file)
 #ifdef _IRR_DEBUG_OBJ_LOADER_
 			os::Printer::log("Loaded group start", grp, ELL_DEBUG);
 #endif
-			if (useGroups) {
-				if (0 != grp[0])
-					grpName = grp;
-				else
-					grpName = "default";
-			}
+			grpName = ('\0' != grp[0]) ? grp : "default";
 			mtlChanged = true;
 		} break;
 
@@ -182,7 +162,7 @@ IAnimatedMesh *COBJMeshFileLoader::createMesh(io::IReadFile *file)
 				mtlChanged = false;
 			}
 			if (currMtl)
-				v.Color = currMtl->Meshbuffer->Material.DiffuseColor;
+				v.Color = video::SColorf(0.8f, 0.8f, 0.8f, 1.0f).toSColor();
 
 			// get all vertices data in this face (current line of obj file)
 			const core::stringc wordBuffer = copyLine(bufPtr, bufEnd);
@@ -192,6 +172,7 @@ IAnimatedMesh *COBJMeshFileLoader::createMesh(io::IReadFile *file)
 			faceCorners.set_used(0); // fast clear
 
 			// read in all vertices
+			auto &Vertices = currMtl->Meshbuffer->Vertices->Data;
 			linePtr = goNextWord(linePtr, endPtr);
 			while (0 != linePtr[0]) {
 				// Array to communicate with retrieveVertexIndices()
@@ -228,8 +209,8 @@ IAnimatedMesh *COBJMeshFileLoader::createMesh(io::IReadFile *file)
 				if (n != currMtl->VertMap.end()) {
 					vertLocation = n->second;
 				} else {
-					currMtl->Meshbuffer->Vertices.push_back(v);
-					vertLocation = currMtl->Meshbuffer->Vertices.size() - 1;
+					Vertices.push_back(v);
+					vertLocation = Vertices.size() - 1;
 					currMtl->VertMap.emplace(v, vertLocation);
 				}
 
@@ -247,15 +228,16 @@ IAnimatedMesh *COBJMeshFileLoader::createMesh(io::IReadFile *file)
 			}
 
 			// triangulate the face
+			auto &Indices = currMtl->Meshbuffer->Indices->Data;
 			const int c = faceCorners[0];
 			for (u32 i = 1; i < faceCorners.size() - 1; ++i) {
 				// Add a triangle
 				const int a = faceCorners[i + 1];
 				const int b = faceCorners[i];
 				if (a != b && a != c && b != c) { // ignore degenerated faces. We can get them when we merge vertices above in the VertMap.
-					currMtl->Meshbuffer->Indices.push_back(a);
-					currMtl->Meshbuffer->Indices.push_back(b);
-					currMtl->Meshbuffer->Indices.push_back(c);
+					Indices.push_back(a);
+					Indices.push_back(b);
+					Indices.push_back(c);
 				} else {
 					++degeneratedFaces;
 				}

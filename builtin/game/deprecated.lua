@@ -1,5 +1,3 @@
--- Minetest: builtin/deprecated.lua
-
 --
 -- EnvRef
 --
@@ -35,9 +33,9 @@ local settings = core.settings
 
 local function setting_proxy(name)
 	return function(...)
-		core.log("deprecated", "WARNING: minetest.setting_* "..
+		core.log("deprecated", "WARNING: core.setting_* "..
 			"functions are deprecated.  "..
-			"Use methods on the minetest.settings object.")
+			"Use methods on the core.settings object.")
 		return settings[name](settings, ...)
 	end
 end
@@ -63,3 +61,10 @@ function core.register_on_auth_fail(func)
 		end
 	end)
 end
+
+-- deprecated as of 5.12, as it was not Perlin noise
+-- but with no warnings (yet) for compatibility
+core.get_perlin = core.get_value_noise
+core.get_perlin_map = core.get_value_noise_map
+PerlinNoise = ValueNoise
+PerlinNoiseMap = ValueNoiseMap

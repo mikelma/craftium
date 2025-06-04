@@ -1,31 +1,17 @@
-/*
-Minetest
-Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #pragma once
 
 #include "irrlichttypes_bloated.h"
 #include <string>
 #include <iostream>
+#include <memory> // shared_ptr
 #include <map>
 #include "mapnode.h"
 #include "nameidmapping.h"
-#ifndef SERVER
+#if CHECK_CLIENT_BUILD()
 #include "client/tile.h"
 #include <IMeshManipulator.h>
 class Client;
@@ -130,9 +116,9 @@ struct NodeBox
 	// NODEBOX_FIXED
 	std::vector<aabb3f> fixed;
 	// NODEBOX_WALLMOUNTED
-	aabb3f wall_top;
-	aabb3f wall_bottom;
-	aabb3f wall_side; // being at the -X side
+	aabb3f wall_top = dummybox;
+	aabb3f wall_bottom = dummybox;
+	aabb3f wall_side = dummybox; // being at the -X side
 	// NODEBOX_CONNECTED
 	// (kept externally to not bloat the structure)
 	std::shared_ptr<NodeBoxConnected> connected;
@@ -154,6 +140,10 @@ struct NodeBox
 	void reset();
 	void serialize(std::ostream &os, u16 protocol_version) const;
 	void deSerialize(std::istream &is);
+
+private:
+	/// @note the actual defaults are in reset(), see nodedef.cpp
+	static constexpr aabb3f dummybox = aabb3f({0, 0, 0});
 };
 
 struct MapNode;
@@ -186,7 +176,6 @@ public:
 	int node_texture_size;
 	bool translucent_liquids;
 	bool connected_glass;
-	bool enable_mesh_cache;
 	bool enable_minimap;
 
 	TextureSettings() = default;
@@ -238,6 +227,7 @@ enum NodeDrawType : u8
 	NDT_MESH,
 	// Combined plantlike-on-solid
 	NDT_PLANTLIKE_ROOTED,
+
 	// Dummy for validity check
 	NodeDrawType_END
 };
@@ -315,7 +305,7 @@ struct ContentFeatures
 	/*
 		Cached stuff
 	 */
-#ifndef SERVER
+#if CHECK_CLIENT_BUILD()
 	// 0     1     2     3     4     5
 	// up    down  right left  back  front
 	TileSpec tiles[6];
@@ -351,8 +341,8 @@ struct ContentFeatures
 
 	enum NodeDrawType drawtype;
 	std::string mesh;
-#ifndef SERVER
-	scene::IMesh *mesh_ptr[24];
+#if CHECK_CLIENT_BUILD()
+	scene::SMesh *mesh_ptr; // mesh in case of mesh node
 	video::SColor minimap_color;
 #endif
 	float visual_scale; // Misc. scale parameter
@@ -485,21 +475,6 @@ struct ContentFeatures
 		}
 	}
 
-	bool needsBackfaceCulling() const
-	{
-		switch (drawtype) {
-		case NDT_TORCHLIKE:
-		case NDT_SIGNLIKE:
-		case NDT_FIRELIKE:
-		case NDT_RAILLIKE:
-		case NDT_PLANTLIKE:
-		case NDT_PLANTLIKE_ROOTED:
-		case NDT_MESH:
-			return false;
-		default:
-			return true;
-		}
-	}
 
 	bool isLiquid() const{
 		return (liquid_type != LIQUID_NONE);
@@ -530,7 +505,7 @@ struct ContentFeatures
 		return itemgroup_get(groups, group);
 	}
 
-#ifndef SERVER
+#if CHECK_CLIENT_BUILD()
 	void updateTextures(ITextureSource *tsrc, IShaderSource *shdsrc,
 		scene::IMeshManipulator *meshmanip, Client *client, const TextureSettings &tsettings);
 #endif
@@ -825,14 +800,14 @@ private:
 	 * The union of all nodes' selection boxes.
 	 * Might be larger if big nodes are removed from the manager.
 	 */
-	aabb3f m_selection_box_union;
+	aabb3f m_selection_box_union{{0.0f, 0.0f, 0.0f}};
 
 	/*!
 	 * The smallest box in integer node coordinates that
 	 * contains all nodes' selection boxes.
 	 * Might be larger if big nodes are removed from the manager.
 	 */
-	core::aabbox3d<s16> m_selection_box_int_union;
+	core::aabbox3d<s16> m_selection_box_int_union{{0, 0, 0}};
 
 	/*!
 	 * NodeResolver instances to notify once node registration has finished.

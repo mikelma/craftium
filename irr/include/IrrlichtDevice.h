@@ -6,14 +6,17 @@
 
 #include "IReferenceCounted.h"
 #include "dimension2d.h"
-#include "IVideoDriver.h"
 #include "EDriverTypes.h"
 #include "EDeviceTypes.h"
 #include "IEventReceiver.h"
 #include "ICursorControl.h"
 #include "ITimer.h"
 #include "IOSOperator.h"
-#include "IrrCompileConfig.h"
+#include "irrArray.h"
+#include "position2d.h"
+#include "SColor.h" // video::ECOLOR_FORMAT
+#include <string>
+#include <variant>
 
 namespace irr
 {
@@ -38,7 +41,10 @@ class ISceneManager;
 namespace video
 {
 class IContextManager;
-extern "C" IRRLICHT_API bool IRRCALLCONV isDriverSupported(E_DRIVER_TYPE driver);
+class IImage;
+class ITexture;
+class IVideoDriver;
+extern "C" bool isDriverSupported(E_DRIVER_TYPE driver);
 } // end namespace video
 
 //! The Irrlicht device. You can create it with createDevice() or createDeviceEx().
@@ -188,6 +194,11 @@ public:
 	/** If this returns false, you should not do any rendering. */
 	virtual bool isWindowVisible() const { return true; };
 
+	//! Checks if the Irrlicht device supports touch events.
+	/** Intentionally doesn't check whether a touch input device is available
+	or similar. */
+	virtual bool supportsTouchEvents() const { return false; }
+
 	//! Get the current color format of the window
 	/** \return Color format of the window. */
 	virtual video::ECOLOR_FORMAT getColorFormat() const = 0;
@@ -321,6 +332,12 @@ public:
 	used. */
 	virtual E_DEVICE_TYPE getType() const = 0;
 
+	//! Get the version string of the underlying system (e.g. SDL)
+	virtual std::string getVersionString() const
+	{
+		return "";
+	}
+
 	//! Get the display density in dots per inch.
 	//! Returns 0.0f on failure.
 	virtual float getDisplayDensity() const = 0;
@@ -331,6 +348,27 @@ public:
 	static bool isDriverSupported(video::E_DRIVER_TYPE driver)
 	{
 		return video::isDriverSupported(driver);
+	}
+
+	//! Get the corresponding scancode for the keycode.
+	/**
+	\param key The keycode to convert.
+	\return The implementation-dependent scancode for the key (represented by the u32 component) or, if a scancode is not
+	available, the corresponding Irrlicht keycode (represented by the EKEY_CODE component).
+	*/
+	virtual std::variant<u32, EKEY_CODE> getScancodeFromKey(const Keycode &key) const {
+		if (auto pv = std::get_if<EKEY_CODE>(&key))
+			return *pv;
+		return (u32)std::get<wchar_t>(key);
+	}
+
+	//! Get the corresponding keycode for the scancode.
+	/**
+	\param scancode The implementation-dependent scancode for the key.
+	\return The corresponding keycode.
+	*/
+	virtual Keycode getKeyFromScancode(const u32 scancode) const {
+		return Keycode(KEY_UNKNOWN, (wchar_t)scancode);
 	}
 };
 

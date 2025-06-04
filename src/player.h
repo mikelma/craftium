@@ -1,38 +1,24 @@
-/*
-Minetest
-Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #pragma once
 
 #include "irrlichttypes_bloated.h"
 #include "inventory.h"
 #include "constants.h"
-#include "network/networkprotocol.h"
 #include "util/basic_macros.h"
-#include <list>
+#include "util/string.h"
 #include <mutex>
 #include <functional>
-#include <tuple>
+#include <string>
 
 #define PLAYERNAME_SIZE 20
 
 #define PLAYERNAME_ALLOWED_CHARS "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_"
 #define PLAYERNAME_ALLOWED_CHARS_USER_EXPL "'a' to 'z', 'A' to 'Z', '0' to '9', '-', '_'"
+
+bool is_valid_player_name(std::string_view name);
 
 struct PlayerFovSpec
 {
@@ -85,14 +71,18 @@ struct PlayerControl
 		movement_direction = a_movement_direction;
 	}
 
-#ifndef SERVER
+	// Sets movement_speed and movement_direction according to direction_keys
+	// if direction_keys != 0, otherwise leaves them unchanged to preserve
+	// joystick input.
+	void setMovementFromKeys();
+
 	// For client use
 	u32 getKeysPressed() const;
 	inline bool isMoving() const { return movement_speed > 0.001f; }
-#endif
 
 	// For server use
 	void unpackKeysPressed(u32 keypress_bits);
+	v2f getMovement() const;
 
 	u8 direction_keys = 0;
 	bool jump = false;
@@ -101,7 +91,7 @@ struct PlayerControl
 	bool zoom = false;
 	bool dig = false;
 	bool place = false;
-	// Note: These four are NOT available on the server
+	// Note: These two are NOT available on the server
 	float pitch = 0.0f;
 	float yaw = 0.0f;
 	float movement_speed = 0.0f;
@@ -130,27 +120,24 @@ struct PlayerPhysicsOverride
 	float acceleration_fast = 1.f;
 	float speed_walk = 1.f;
 
-private:
-	auto tie() const {
-		// Make sure to add new members to this list!
-		return std::tie(
-		speed, jump, gravity, sneak, sneak_glitch, new_move, speed_climb, speed_crouch,
-		liquid_fluidity, liquid_fluidity_smooth, liquid_sink, acceleration_default,
-		acceleration_air, speed_fast, acceleration_fast, speed_walk
-		);
-	}
-
-public:
-	bool operator==(const PlayerPhysicsOverride &other) const {
-		return tie() == other.tie();
-	};
+	bool operator==(const PlayerPhysicsOverride &other) const;
 	bool operator!=(const PlayerPhysicsOverride &other) const {
-		return tie() != other.tie();
-	};
+		return !(*this == other);
+	}
 };
 
+/// @note numeric values are part of network protocol
+enum CameraMode {
+	// not a mode. indicates that any may be used.
+	CAMERA_MODE_ANY = 0,
+	CAMERA_MODE_FIRST,
+	CAMERA_MODE_THIRD,
+	CAMERA_MODE_THIRD_FRONT
+};
+
+extern const struct EnumString es_CameraMode[];
+
 class Map;
-struct CollisionInfo;
 struct HudElement;
 class Environment;
 
@@ -158,16 +145,10 @@ class Player
 {
 public:
 
-	Player(const char *name, IItemDefManager *idef);
+	Player(const std::string &name, IItemDefManager *idef);
 	virtual ~Player() = 0;
 
 	DISABLE_CLASS_COPY(Player);
-
-	virtual void move(f32 dtime, Environment *env, f32 pos_max_d)
-	{}
-	virtual void move(f32 dtime, Environment *env, f32 pos_max_d,
-			std::vector<CollisionInfo> *collision_info)
-	{}
 
 	// in BS-space
 	inline void setSpeed(v3f speed)
@@ -178,7 +159,7 @@ public:
 	// in BS-space
 	v3f getSpeed() const { return m_speed; }
 
-	const char *getName() const { return m_name; }
+	const std::string& getName() const { return m_name; }
 
 	u32 getFreeHudID()
 	{
@@ -189,6 +170,8 @@ public:
 		}
 		return size;
 	}
+
+	CameraMode allowed_camera_mode = CAMERA_MODE_ANY;
 
 	v3f eye_offset_first;
 	v3f eye_offset_third;
@@ -209,7 +192,7 @@ public:
 	f32 movement_liquid_sink;
 	f32 movement_gravity;
 
-	v2s32 local_animations[4];
+	v2f local_animations[4];
 	float local_animation_speed;
 
 	std::string inventory_formspec;
@@ -223,7 +206,7 @@ public:
 	// Returns non-empty `selected` ItemStack. `hand` is a fallback, if specified
 	ItemStack &getWieldedItem(ItemStack *selected, ItemStack *hand) const;
 	void setWieldIndex(u16 index);
-	u16 getWieldIndex() const { return m_wield_index; }
+	u16 getWieldIndex();
 
 	bool setFov(const PlayerFovSpec &spec)
 	{
@@ -247,8 +230,11 @@ public:
 	u32 hud_flags;
 	s32 hud_hotbar_itemcount;
 
+	// Get actual usable number of hotbar items (clamped to size of "main" list)
+	u16 getMaxHotbarItemcount();
+
 protected:
-	char m_name[PLAYERNAME_SIZE];
+	std::string m_name;
 	v3f m_speed; // velocity; in BS-space
 	u16 m_wield_index = 0;
 	PlayerFovSpec m_fov_override_spec = { 0.0f, false, 0.0f };

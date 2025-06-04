@@ -6,29 +6,33 @@
 
 #include "rect.h"
 #include "SColor.h"
+#include "IImage.h"
 #include "ITexture.h"
 #include "irrArray.h"
 #include "matrix4.h"
-#include "plane3d.h"
 #include "dimension2d.h"
 #include "position2d.h"
-#include "IMeshBuffer.h"
 #include "EDriverTypes.h"
 #include "EDriverFeatures.h"
+#include "EPrimitiveTypes.h"
+#include "EVideoTypes.h"
 #include "SExposedVideoData.h"
 #include "SOverrideMaterial.h"
+#include "S3DVertex.h" // E_VERTEX_TYPE
+#include "SVertexIndex.h" // E_INDEX_TYPE
 
 namespace irr
 {
 namespace io
 {
-class IAttributes;
 class IReadFile;
 class IWriteFile;
 } // end namespace io
 namespace scene
 {
 class IMeshBuffer;
+class IVertexBuffer;
+class IIndexBuffer;
 class IMesh;
 class IMeshManipulator;
 class ISceneNode;
@@ -36,76 +40,11 @@ class ISceneNode;
 
 namespace video
 {
-struct S3DVertex;
-struct S3DVertex2TCoords;
-struct S3DVertexTangents;
 class IImageLoader;
 class IImageWriter;
 class IMaterialRenderer;
 class IGPUProgrammingServices;
 class IRenderTarget;
-
-//! enumeration for geometry transformation states
-enum E_TRANSFORMATION_STATE
-{
-	//! View transformation
-	ETS_VIEW = 0,
-	//! World transformation
-	ETS_WORLD,
-	//! Projection transformation
-	ETS_PROJECTION,
-	//! Texture 0 transformation
-	//! Use E_TRANSFORMATION_STATE(ETS_TEXTURE_0 + texture_number) to access other texture transformations
-	ETS_TEXTURE_0,
-	//! Only used internally
-	ETS_COUNT = ETS_TEXTURE_0 + MATERIAL_MAX_TEXTURES
-};
-
-//! Special render targets, which usually map to dedicated hardware
-/** These render targets (besides 0 and 1) need not be supported by gfx cards */
-enum E_RENDER_TARGET
-{
-	//! Render target is the main color frame buffer
-	ERT_FRAME_BUFFER = 0,
-	//! Render target is a render texture
-	ERT_RENDER_TEXTURE,
-	//! Multi-Render target textures
-	ERT_MULTI_RENDER_TEXTURES,
-	//! Render target is the main color frame buffer
-	ERT_STEREO_LEFT_BUFFER,
-	//! Render target is the right color buffer (left is the main buffer)
-	ERT_STEREO_RIGHT_BUFFER,
-	//! Render to both stereo buffers at once
-	ERT_STEREO_BOTH_BUFFERS,
-	//! Auxiliary buffer 0
-	ERT_AUX_BUFFER0,
-	//! Auxiliary buffer 1
-	ERT_AUX_BUFFER1,
-	//! Auxiliary buffer 2
-	ERT_AUX_BUFFER2,
-	//! Auxiliary buffer 3
-	ERT_AUX_BUFFER3,
-	//! Auxiliary buffer 4
-	ERT_AUX_BUFFER4
-};
-
-//! Enum for the flags of clear buffer
-enum E_CLEAR_BUFFER_FLAG
-{
-	ECBF_NONE = 0,
-	ECBF_COLOR = 1,
-	ECBF_DEPTH = 2,
-	ECBF_STENCIL = 4,
-	ECBF_ALL = ECBF_COLOR | ECBF_DEPTH | ECBF_STENCIL
-};
-
-//! Enum for the types of fog distributions to choose from
-enum E_FOG_TYPE
-{
-	EFT_FOG_EXP = 0,
-	EFT_FOG_LINEAR,
-	EFT_FOG_EXP2
-};
 
 const c8 *const FogTypeNames[] = {
 		"FogExp",
@@ -113,6 +52,17 @@ const c8 *const FogTypeNames[] = {
 		"FogExp2",
 		0,
 	};
+
+struct SFrameStats {
+	//! Number of draw calls
+	u32 Drawcalls = 0;
+	//! Count of primitives drawn
+	u32 PrimitivesDrawn = 0;
+	//! Number of hardware buffers uploaded (new or updated)
+	u32 HWBuffersUploaded = 0;
+	//! Number of active hardware buffers
+	u32 HWBuffersActive = 0;
+};
 
 //! Interface to driver which is able to perform 2d and 3d graphics functions.
 /** This interface is one of the most important interfaces of
@@ -175,31 +125,6 @@ public:
 	\param feature Feature to disable.
 	\param flag When true the feature is disabled, otherwise it is enabled. */
 	virtual void disableFeature(E_VIDEO_DRIVER_FEATURE feature, bool flag = true) = 0;
-
-	//! Get attributes of the actual video driver
-	/** The following names can be queried for the given types:
-	MaxTextures (int) The maximum number of simultaneous textures supported by the driver. This can be less than the supported number of textures of the driver. Use _IRR_MATERIAL_MAX_TEXTURES_ to adapt the number.
-	MaxSupportedTextures (int) The maximum number of simultaneous textures supported by the fixed function pipeline of the (hw) driver. The actual supported number of textures supported by the engine can be lower.
-	MaxLights (int) Number of hardware lights supported in the fixed function pipeline of the driver, typically 6-8. Use light manager or deferred shading for more.
-	MaxAnisotropy (int) Number of anisotropy levels supported for filtering. At least 1, max is typically at 16 or 32.
-	MaxUserClipPlanes (int) Number of additional clip planes, which can be set by the user via dedicated driver methods.
-	MaxAuxBuffers (int) Special render buffers, which are currently not really usable inside Irrlicht. Only supported by OpenGL
-	MaxMultipleRenderTargets (int) Number of render targets which can be bound simultaneously. Rendering to MRTs is done via shaders.
-	MaxIndices (int) Number of indices which can be used in one render call (i.e. one mesh buffer).
-	MaxTextureSize (int) Dimension that a texture may have, both in width and height.
-	MaxGeometryVerticesOut (int) Number of vertices the geometry shader can output in one pass. Only OpenGL so far.
-	MaxTextureLODBias (float) Maximum value for LOD bias. Is usually at around 16, but can be lower on some systems.
-	Version (int) Version of the driver. Should be Major*100+Minor
-	ShaderLanguageVersion (int) Version of the high level shader language. Should be Major*100+Minor.
-	AntiAlias (int) Number of Samples the driver uses for each pixel. 0 and 1 means anti aliasing is off, typical values are 2,4,8,16,32
-	*/
-	virtual const io::IAttributes &getDriverAttributes() const = 0;
-
-	//! Check if the driver was recently reset.
-	/** For d3d devices you will need to recreate the RTTs if the
-	driver was reset. Should be queried right after beginScene().
-	*/
-	virtual bool checkDriverReset() = 0;
 
 	//! Sets transformation matrices.
 	/** \param state Transformation type to be set, e.g. view,
@@ -289,6 +214,15 @@ public:
 	information. */
 	virtual ITexture *addTexture(const io::path &name, IImage *image) = 0;
 
+	/**
+	 * Creates an array texture from IImages.
+	 * @param name A name for the texture.
+	 * @param images Pointer to array of images
+	 * @param count Number of images (must be at least 1)
+	 * @return Pointer to the newly created texture
+	 */
+	virtual ITexture *addArrayTexture(const io::path &name, IImage **images, u32 count) = 0;
+
 	//! Creates a cubemap texture from loaded IImages.
 	/** \param name A name for the texture. Later calls of getTexture() with this name will return this texture.
 	The name can _not_ be empty.
@@ -329,6 +263,14 @@ public:
 	virtual ITexture *addRenderTargetTexture(const core::dimension2d<u32> &size,
 			const io::path &name = "rt", const ECOLOR_FORMAT format = ECF_UNKNOWN) = 0;
 
+	//! Adds a multisampled render target texture to the texture cache.
+	/** \param msaa The number of samples to use, values that make sense are > 1.
+	Only works if the driver supports the EVDF_TEXTURE_MULTISAMPLE feature,
+	check via queryFeature.
+	\see addRenderTargetTexture */
+	virtual ITexture *addRenderTargetTextureMs(const core::dimension2d<u32> &size, u8 msaa,
+			const io::path &name = "rt", const ECOLOR_FORMAT format = ECF_UNKNOWN) = 0;
+
 	//! Adds a new render target texture with 6 sides for a cubemap map to the texture cache.
 	/** \param sideLen Length of one cubemap side.
 	\param name A name for the texture. Later calls of getTexture() with this name will return this texture.
@@ -359,8 +301,23 @@ public:
 	0 or another texture first. */
 	virtual void removeAllTextures() = 0;
 
+	//! Eagerly upload buffer to hardware
+	/** This can be a good idea if you have a newly created or modified buffer,
+	which you know you will draw in the near future (e.g. end of same frame,
+	or next frame), because it gives the GPU driver to copy the contents. */
+	virtual void updateHardwareBuffer(const scene::IVertexBuffer *vb) = 0;
+
+	//! Eagerly upload buffer to hardware
+	/** This can be a good idea if you have a newly created or modified buffer,
+	which you know you will draw in the near future (e.g. end of same frame,
+	or next frame), because it gives the GPU driver to copy the contents. */
+	virtual void updateHardwareBuffer(const scene::IIndexBuffer *ib) = 0;
+
 	//! Remove hardware buffer
-	virtual void removeHardwareBuffer(const scene::IMeshBuffer *mb) = 0;
+	virtual void removeHardwareBuffer(const scene::IVertexBuffer *vb) = 0;
+
+	//! Remove hardware buffer
+	virtual void removeHardwareBuffer(const scene::IIndexBuffer *ib) = 0;
 
 	//! Remove all hardware buffers
 	virtual void removeAllHardwareBuffers() = 0;
@@ -410,6 +367,10 @@ public:
 
 	//! Remove all render targets.
 	virtual void removeAllRenderTargets() = 0;
+
+	//! Blit contents of one render target to another one.
+	/** This is glBlitFramebuffer in OpenGL. */
+	virtual void blitRenderTarget(IRenderTarget *from, IRenderTarget *to) = 0;
 
 	//! Sets a boolean alpha channel on the texture based on a color key.
 	/** This makes the texture fully transparent at the texels where
@@ -799,6 +760,17 @@ public:
 	/** \param mb Buffer to draw */
 	virtual void drawMeshBuffer(const scene::IMeshBuffer *mb) = 0;
 
+	/**
+	 * Draws a mesh from individual vertex and index buffers.
+	 * @param vb vertices to use
+	 * @param ib indices to use
+	 * @param primCount amount of primitives
+	 * @param pType primitive type
+	 */
+	virtual void drawBuffers(const scene::IVertexBuffer *vb,
+		const scene::IIndexBuffer *ib, u32 primCount,
+		scene::E_PRIMITIVE_TYPE pType = scene::EPT_TRIANGLES) = 0;
+
 	//! Draws normals of a mesh buffer
 	/** \param mb Buffer to draw the normals of
 	\param length length scale factor of the normals
@@ -856,12 +828,8 @@ public:
 	\return Approximate amount of frames per second drawn. */
 	virtual s32 getFPS() const = 0;
 
-	//! Returns amount of primitives (mostly triangles) which were drawn in the last frame.
-	/** Together with getFPS() very useful method for statistics.
-	\param mode Defines if the primitives drawn are accumulated or
-	counted per frame.
-	\return Amount of primitives drawn in the last frame. */
-	virtual u32 getPrimitiveCountDrawn(u32 mode = 0) const = 0;
+	//! Return some statistics about the last frame
+	virtual SFrameStats getFrameStats() const = 0;
 
 	//! Gets name of this video driver.
 	/** \return Returns the name of the video driver, e.g. in case
@@ -1109,26 +1077,6 @@ public:
 	\return Pointer to loaded texture, or 0 if not found. */
 	virtual video::ITexture *findTexture(const io::path &filename) = 0;
 
-	//! Set or unset a clipping plane.
-	/** There are at least 6 clipping planes available for the user
-	to set at will.
-	\param index The plane index. Must be between 0 and
-	MaxUserClipPlanes.
-	\param plane The plane itself.
-	\param enable If true, enable the clipping plane else disable
-	it.
-	\return True if the clipping plane is usable. */
-	virtual bool setClipPlane(u32 index, const core::plane3df &plane, bool enable = false) = 0;
-
-	//! Enable or disable a clipping plane.
-	/** There are at least 6 clipping planes available for the user
-	to set at will.
-	\param index The plane index. Must be between 0 and
-	MaxUserClipPlanes.
-	\param enable If true, enable the clipping plane else disable
-	it. */
-	virtual void enableClipPlane(u32 index, bool enable) = 0;
-
 	//! Set the minimum number of vertices for which a hw buffer will be created
 	/** \param count Number of vertices to set as minimum. */
 	virtual void setMinHardwareBufferVertexCount(u32 count) = 0;
@@ -1165,35 +1113,12 @@ public:
 	virtual core::stringc getVendorInfo() = 0;
 
 	//! Only used by the engine internally.
-	/** The ambient color is set in the scene manager, see
-	scene::ISceneManager::setAmbientLight().
-	\param color New color of the ambient light. */
-	virtual void setAmbientLight(const SColorf &color) = 0;
-
-	//! Get the global ambient light currently used by the driver
-	virtual const SColorf &getAmbientLight() const = 0;
-
-	//! Only used by the engine internally.
 	/** Passes the global material flag AllowZWriteOnTransparent.
-	Use the SceneManager attribute to set this value from your app.
 	\param flag Default behavior is to disable ZWrite, i.e. false. */
 	virtual void setAllowZWriteOnTransparent(bool flag) = 0;
 
 	//! Get the maximum texture size supported.
 	virtual core::dimension2du getMaxTextureSize() const = 0;
-
-	//! Color conversion convenience function
-	/** Convert an image (as array of pixels) from source to destination
-	array, thereby converting the color format. The pixel size is
-	determined by the color formats.
-	\param sP Pointer to source
-	\param sF Color format of source
-	\param sN Number of pixels to convert, both array must be large enough
-	\param dP Pointer to destination
-	\param dF Color format of destination
-	*/
-	virtual void convertColor(const void *sP, ECOLOR_FORMAT sF, s32 sN,
-			void *dP, ECOLOR_FORMAT dF) const = 0;
 
 	//! Check if the driver supports creating textures with the given color format
 	/**	\return True if the format is available, false if not. */

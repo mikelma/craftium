@@ -18,6 +18,7 @@
 | JsonCPP    | 1.0.0+  | Bundled JsonCPP is used if not present |
 | Curl       | 7.56.0+ | Optional   |
 | gettext    | -       | Optional   |
+| OpenSSL    | 3.0+    | Optional (only libcrypto used) |
 
 For Debian/Ubuntu users:
 
@@ -33,7 +34,7 @@ For openSUSE users:
 
 For Arch users:
 
-    sudo pacman -S --needed base-devel libcurl-gnutls cmake libpng sqlite libogg libvorbis openal freetype2 jsoncpp gmp luajit leveldb ncurses zstd gettext sdl2
+    sudo pacman -S --needed base-devel libcurl-gnutls cmake libpng libjpeg-turbo sqlite libogg libvorbis openal freetype2 jsoncpp gmp luajit leveldb ncurses zstd gettext sdl2
 
 For Alpine users:
 
@@ -41,7 +42,7 @@ For Alpine users:
 
 For Void users:
 
-    sudo xbps-install cmake libpng-devel jpeg-devel mesa sqlite-devel libogg-devel libvorbis-devel libopenal-devel libcurl-devel freetype-devel zlib-devel gmp-devel jsoncpp-devel LuaJIT-devel libzstd-devel gettext SDL2-devel
+    sudo xbps-install cmake libpng-devel jpeg-devel mesa sqlite-devel libogg-devel libvorbis-devel libopenal-devel libcurl-devel freetype-devel zlib-devel gmp-devel jsoncpp-devel LuaJIT-devel zstd libzstd-devel gettext SDL2-devel
 
 ## Download
 
@@ -69,14 +70,14 @@ For Void users:
 
 Download source (this is the URL to the latest of source repository, which might not work at all times) using Git:
 
-    git clone --depth 1 https://github.com/minetest/minetest.git
-    cd minetest
+    git clone --depth 1 https://github.com/luanti-org/luanti
+    cd luanti
 
 Download source, without using Git:
 
-    wget https://github.com/minetest/minetest/archive/master.tar.gz
+    wget https://github.com/luanti-org/luanti/archive/master.tar.gz
     tar xf master.tar.gz
-    cd minetest-master
+    cd luanti-master
 
 ## Build
 
@@ -87,7 +88,11 @@ Build a version that runs directly from the source directory:
 
 Run it:
 
-    ./bin/minetest
+    ./bin/luanti
+
+Run unit tests:
+
+    ./bin/luanti --run-unittests
 
 - Use `cmake . -LH` to see all CMake options and their current state.
 - If you want to install it system-wide (or are making a distribution package),

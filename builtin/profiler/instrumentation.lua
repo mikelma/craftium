@@ -1,19 +1,6 @@
---Minetest
---Copyright (C) 2016 T4im
---
---This program is free software; you can redistribute it and/or modify
---it under the terms of the GNU Lesser General Public License as published by
---the Free Software Foundation; either version 2.1 of the License, or
---(at your option) any later version.
---
---This program is distributed in the hope that it will be useful,
---but WITHOUT ANY WARRANTY; without even the implied warranty of
---MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
---GNU Lesser General Public License for more details.
---
---You should have received a copy of the GNU Lesser General Public License along
---with this program; if not, write to the Free Software Foundation, Inc.,
---51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+-- Luanti
+-- Copyright (C) 2016 T4im
+-- SPDX-License-Identifier: LGPL-2.1-or-later
 
 local format, pairs, type = string.format, pairs, type
 local core, get_current_modname = core, core.get_current_modname
@@ -217,8 +204,9 @@ local function init()
 		-- Wrap register_lbm() to automatically instrument lbms.
 		local orig_register_lbm = core.register_lbm
 		core.register_lbm = function(spec)
-			spec.action = instrument {
-				func = spec.action,
+			local k = spec.bulk_action ~= nil and "bulk_action" or "action"
+			spec[k] = instrument {
+				func = spec[k],
 				class = "LBM",
 				label = spec.label or spec.name,
 			}

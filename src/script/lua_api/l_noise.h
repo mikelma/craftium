@@ -1,21 +1,6 @@
-/*
-Minetest
-Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #pragma once
 
@@ -24,9 +9,9 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "noise.h"
 
 /*
-	LuaPerlinNoise
+	LuaValueNoise
 */
-class LuaPerlinNoise : public ModApiBase
+class LuaValueNoise : public ModApiBase
 {
 private:
 	NoiseParams np;
@@ -42,11 +27,11 @@ private:
 	static int l_get_3d(lua_State *L);
 
 public:
-	LuaPerlinNoise(const NoiseParams *params);
-	~LuaPerlinNoise() = default;
+	LuaValueNoise(const NoiseParams *params);
+	~LuaValueNoise() = default;
 
-	// LuaPerlinNoise(seed, octaves, persistence, scale)
-	// Creates an LuaPerlinNoise and leaves it on top of stack
+	// LuaValueNoise(seed, octaves, persistence, scale)
+	// Creates an LuaValueNoise and leaves it on top of stack
 	static int create_object(lua_State *L);
 
 	static void *packIn(lua_State *L, int idx);
@@ -58,9 +43,9 @@ public:
 };
 
 /*
-	LuaPerlinNoiseMap
+	LuaValueNoiseMap
 */
-class LuaPerlinNoiseMap : public ModApiBase
+class LuaValueNoiseMap : public ModApiBase
 {
 	Noise *noise;
 
@@ -81,13 +66,13 @@ class LuaPerlinNoiseMap : public ModApiBase
 	static int l_get_map_slice(lua_State *L);
 
 public:
-	LuaPerlinNoiseMap(const NoiseParams *np, s32 seed, v3s16 size);
-	~LuaPerlinNoiseMap();
+	LuaValueNoiseMap(const NoiseParams *np, s32 seed, v3s16 size);
+	~LuaValueNoiseMap();
 
 	inline bool is3D() const { return noise->sz > 1; }
 
-	// LuaPerlinNoiseMap(np, size)
-	// Creates an LuaPerlinNoiseMap and leaves it on top of stack
+	// LuaValueNoiseMap(np, size)
+	// Creates an LuaValueNoiseMap and leaves it on top of stack
 	static int create_object(lua_State *L);
 
 	static void *packIn(lua_State *L, int idx);

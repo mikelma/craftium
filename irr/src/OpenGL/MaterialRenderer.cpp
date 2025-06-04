@@ -24,16 +24,13 @@ COpenGL3MaterialRenderer::COpenGL3MaterialRenderer(COpenGL3DriverBase *driver,
 		s32 &outMaterialTypeNr,
 		const c8 *vertexShaderProgram,
 		const c8 *pixelShaderProgram,
+		const c8 *debugName,
 		IShaderConstantSetCallBack *callback,
 		E_MATERIAL_TYPE baseMaterial,
 		s32 userData) :
 		Driver(driver),
 		CallBack(callback), Alpha(false), Blending(false), Program(0), UserData(userData)
 {
-#ifdef _DEBUG
-	setDebugName("MaterialRenderer");
-#endif
-
 	switch (baseMaterial) {
 	case EMT_TRANSPARENT_VERTEX_ALPHA:
 	case EMT_TRANSPARENT_ALPHA_CHANNEL:
@@ -49,7 +46,7 @@ COpenGL3MaterialRenderer::COpenGL3MaterialRenderer(COpenGL3DriverBase *driver,
 	if (CallBack)
 		CallBack->grab();
 
-	init(outMaterialTypeNr, vertexShaderProgram, pixelShaderProgram);
+	init(outMaterialTypeNr, vertexShaderProgram, pixelShaderProgram, debugName);
 }
 
 COpenGL3MaterialRenderer::COpenGL3MaterialRenderer(COpenGL3DriverBase *driver,
@@ -102,6 +99,7 @@ GLuint COpenGL3MaterialRenderer::getProgram() const
 void COpenGL3MaterialRenderer::init(s32 &outMaterialTypeNr,
 		const c8 *vertexShaderProgram,
 		const c8 *pixelShaderProgram,
+		const c8 *debugName,
 		bool addMaterial)
 {
 	outMaterialTypeNr = -1;
@@ -124,6 +122,9 @@ void COpenGL3MaterialRenderer::init(s32 &outMaterialTypeNr,
 
 	if (!linkProgram())
 		return;
+
+	if (debugName)
+		Driver->irrGlObjectLabel(GL_PROGRAM, Program, debugName);
 
 	if (addMaterial)
 		outMaterialTypeNr = Driver->addMaterialRenderer(this);
@@ -262,35 +263,30 @@ bool COpenGL3MaterialRenderer::linkProgram()
 
 		// seems that some implementations use an extra null terminator.
 		++maxlen;
-		c8 *buf = new c8[maxlen];
+		std::vector<c8> buf(maxlen);
 
 		UniformInfo.clear();
-		UniformInfo.reallocate(num);
+		UniformInfo.reserve(num);
 
 		for (GLint i = 0; i < num; ++i) {
 			SUniformInfo ui;
-			memset(buf, 0, maxlen);
+			memset(buf.data(), 0, buf.size());
 
 			GLint size;
-			GL.GetActiveUniform(Program, i, maxlen, 0, &size, &ui.type, reinterpret_cast<GLchar *>(buf));
-
-			core::stringc name = "";
+			GL.GetActiveUniform(Program, i, maxlen, 0, &size, &ui.type, reinterpret_cast<GLchar *>(buf.data()));
 
 			// array support, workaround for some bugged drivers.
 			for (s32 i = 0; i < maxlen; ++i) {
 				if (buf[i] == '[' || buf[i] == '\0')
 					break;
 
-				name += buf[i];
+				ui.name += buf[i];
 			}
 
-			ui.name = name;
-			ui.location = GL.GetUniformLocation(Program, buf);
+			ui.location = GL.GetUniformLocation(Program, buf.data());
 
-			UniformInfo.push_back(ui);
+			UniformInfo.push_back(std::move(ui));
 		}
-
-		delete[] buf;
 	}
 
 	return true;
@@ -416,7 +412,7 @@ bool COpenGL3MaterialRenderer::setPixelShaderConstant(s32 index, const s32 *ints
 
 bool COpenGL3MaterialRenderer::setPixelShaderConstant(s32 index, const u32 *ints, int count)
 {
-	os::Printer::log("Unsigned int support needs at least GLES 3.0", ELL_WARNING);
+	os::Printer::log("Unsigned int support is unimplemented", ELL_WARNING);
 	return false;
 }
 

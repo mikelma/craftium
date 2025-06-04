@@ -20,6 +20,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 package net.minetest.minetest;
 
+import android.annotation.SuppressLint;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.content.BroadcastReceiver;
@@ -42,6 +43,8 @@ import static net.minetest.minetest.UnzipService.*;
 
 public class MainActivity extends AppCompatActivity {
 	public static final String NOTIFICATION_CHANNEL_ID = "Minetest channel";
+	public static final int NOTIFICATION_ID_UNZIP = 1;
+	public static final int NOTIFICATION_ID_GAME = 2;
 
 	private final static int versionCode = BuildConfig.VERSION_CODE;
 	private static final String SETTINGS = "MinetestSettings";
@@ -83,13 +86,18 @@ public class MainActivity extends AppCompatActivity {
 		}
 	};
 
+	@SuppressLint("UnspecifiedRegisterReceiverFlag")
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
 
 		IntentFilter filter = new IntentFilter(ACTION_UPDATE);
-		registerReceiver(myReceiver, filter);
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+			registerReceiver(myReceiver, filter, RECEIVER_NOT_EXPORTED);
+		} else {
+			registerReceiver(myReceiver, filter);
+		}
 
 		mProgressBar = findViewById(R.id.progressBar);
 		mTextView = findViewById(R.id.textView);

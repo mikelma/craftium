@@ -8,6 +8,8 @@
 #include "dimension2d.h"
 
 #include <functional>
+#include <array>
+#include <cassert>
 
 namespace irr
 {
@@ -33,6 +35,15 @@ public:
 
 	constexpr vector2d(const dimension2d<T> &other) :
 			X(other.Width), Y(other.Height) {}
+
+	explicit constexpr vector2d(const std::array<T, 2> &arr) :
+			X(arr[0]), Y(arr[1]) {}
+
+	template <class U>
+	constexpr static vector2d<T> from(const vector2d<U> &other)
+	{
+		return {static_cast<T>(other.X), static_cast<T>(other.Y)};
+	}
 
 	// operators
 
@@ -121,16 +132,20 @@ public:
 
 	T &operator[](u32 index)
 	{
-		_IRR_DEBUG_BREAK_IF(index > 1) // access violation
-
-		return *(&X + index);
+		switch (index) {
+			case 0: return X;
+			case 1: return Y;
+			default: IRR_CODE_UNREACHABLE();
+		}
 	}
 
 	const T &operator[](u32 index) const
 	{
-		_IRR_DEBUG_BREAK_IF(index > 1) // access violation
-
-		return *(&X + index);
+		switch (index) {
+			case 0: return X;
+			case 1: return Y;
+			default: IRR_CODE_UNREACHABLE();
+		}
 	}
 
 	//! sort in order X, Y.

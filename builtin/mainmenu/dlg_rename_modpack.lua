@@ -1,19 +1,6 @@
---Minetest
---Copyright (C) 2014 sapier
---
---This program is free software; you can redistribute it and/or modify
---it under the terms of the GNU Lesser General Public License as published by
---the Free Software Foundation; either version 2.1 of the License, or
---(at your option) any later version.
---
---This program is distributed in the hope that it will be useful,
---but WITHOUT ANY WARRANTY; without even the implied warranty of
---MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
---GNU Lesser General Public License for more details.
---
---You should have received a copy of the GNU Lesser General Public License along
---with this program; if not, write to the Free Software Foundation, Inc.,
---51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+-- Luanti
+-- Copyright (C) 2014 sapier
+-- SPDX-License-Identifier: LGPL-2.1-or-later
 
 --------------------------------------------------------------------------------
 
@@ -45,7 +32,7 @@ local function rename_modpack_buttonhandler(this, fields)
 		local oldpath = this.data.mod.path
 		local targetpath = this.data.mod.parent_dir .. DIR_DELIM .. fields["te_modpack_name"]
 		os.rename(oldpath, targetpath)
-		pkgmgr.refresh_globals()
+		pkgmgr.reload_global_mods()
 		pkgmgr.selected_mod = pkgmgr.global_mods:get_current_index(
 			pkgmgr.global_mods:raw_index_by_uid(fields["te_modpack_name"]))
 

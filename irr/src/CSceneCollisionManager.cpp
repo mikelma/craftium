@@ -6,7 +6,6 @@
 #include "ICameraSceneNode.h"
 #include "SViewFrustum.h"
 
-#include "os.h"
 #include "irrMath.h"
 
 namespace irr
@@ -18,10 +17,6 @@ namespace scene
 CSceneCollisionManager::CSceneCollisionManager(ISceneManager *smanager, video::IVideoDriver *driver) :
 		SceneManager(smanager), Driver(driver)
 {
-#ifdef _DEBUG
-	setDebugName("CSceneCollisionManager");
-#endif
-
 	if (Driver)
 		Driver->grab();
 }

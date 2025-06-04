@@ -1,45 +1,30 @@
-/*
-Minetest
-Copyright (C) 2010-2014 celeron55, Perttu Ahola <celeron55@gmail.com>
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2010-2014 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #pragma once
 
 #include "irr_v3d.h"                   // for irrlicht datatypes
 
-#include "constants.h"
-#include "serialization.h"             // for SER_FMT_VER_INVALID
-#include "network/networkpacket.h"
-#include "network/networkprotocol.h"
 #include "network/address.h"
+#include "network/networkprotocol.h" // session_t
 #include "porting.h"
 #include "threading/mutex_auto_lock.h"
 #include "clientdynamicinfo.h"
 
 #include <list>
-#include <vector>
-#include <set>
-#include <unordered_set>
 #include <memory>
 #include <mutex>
+#include <set>
+#include <string>
+#include <unordered_map>
+#include <unordered_set>
+#include <vector>
 
-class MapBlock;
-class ServerEnvironment;
 class EmergeManager;
+class MapBlock;
+class NetworkPacket;
+class ServerEnvironment;
 
 /*
  * State Transitions
@@ -126,7 +111,7 @@ class EmergeManager;
 | TOCLIENT_INVENTORY          |                |                 |                     |
 | TOCLIENT_HP (opt)           |                \-----------------/                     |
 | TOCLIENT_BREATH             |                                                        |
-| TOCLIENT_DEATHSCREEN        |                                                        |
+| TOCLIENT_DEATHSCREEN_LEGACY |                                                        |
 +-----------------------------+                                                        |
               |                                                                        |
               v                                                                        |
@@ -168,7 +153,7 @@ class EmergeManager;
 
 */
 namespace con {
-	class Connection;
+	class IConnection;
 }
 
 
@@ -233,7 +218,7 @@ public:
 	//       Also, the client must be moved to some other container.
 	session_t peer_id = PEER_ID_INEXISTENT;
 	// The serialization version to use with the client
-	u8 serialization_version = SER_FMT_VER_INVALID;
+	u8 serialization_version;
 	//
 	u16 net_proto_version = 0;
 
@@ -266,8 +251,8 @@ public:
 
 	void SentBlock(v3s16 p);
 
-	void SetBlockNotSent(v3s16 p);
-	void SetBlocksNotSent(const std::vector<v3s16> &blocks);
+	void SetBlockNotSent(v3s16 p, bool low_priority = false);
+	void SetBlocksNotSent(const std::vector<v3s16> &blocks, bool low_priority = false);
 
 	/**
 	 * tell client about this block being modified right now.
@@ -321,9 +306,6 @@ public:
 	void setPendingSerializationVersion(u8 version)
 		{ m_pending_serialization_version = version; }
 
-	void setDeployedCompressionMode(u16 byteFlag)
-		{ m_deployed_compression = byteFlag; }
-
 	void confirmSerializationVersion()
 		{ serialization_version = m_pending_serialization_version; }
 
@@ -350,7 +332,7 @@ public:
 
 private:
 	// Version is stored in here after INIT before INIT2
-	u8 m_pending_serialization_version = SER_FMT_VER_INVALID;
+	u8 m_pending_serialization_version;
 
 	/* current state of client */
 	ClientState m_state = CS_Created;
@@ -406,19 +388,8 @@ private:
 		- The size of this list is limited to some value
 		Block is added when it is sent with BLOCKDATA.
 		Block is removed when GOTBLOCKS is received.
-		Value is time from sending. (not used at the moment)
 	*/
-	std::unordered_map<v3s16, float> m_blocks_sending;
-
-	/*
-		Blocks that have been modified since blocks were
-		sent to the client last (getNextBlocks()).
-		This is used to reset the unsent distance, so that
-		modified blocks are resent to the client.
-
-		List of block positions.
-	*/
-	std::unordered_set<v3s16> m_blocks_modified;
+	std::unordered_set<v3s16> m_blocks_sending;
 
 	/*
 		Count of excess GotBlocks().
@@ -449,8 +420,6 @@ private:
 
 	std::string m_full_version = "unknown";
 
-	u16 m_deployed_compression = 0;
-
 	/*
 		time this client was created
 	 */
@@ -464,7 +433,7 @@ public:
 
 	friend class Server;
 
-	ClientInterface(const std::shared_ptr<con::Connection> &con);
+	ClientInterface(const std::shared_ptr<con::IConnection> &con);
 	~ClientInterface();
 
 	/* run sync step */
@@ -474,7 +443,7 @@ public:
 	std::vector<session_t> getClientIDs(ClientState min_state=CS_Active);
 
 	/* mark blocks as not sent on all active clients */
-	void markBlocksNotSent(const std::vector<v3s16> &positions);
+	void markBlocksNotSent(const std::vector<v3s16> &positions, bool low_priority = false);
 
 	/* verify is server user limit was reached */
 	bool isUserLimitReached();
@@ -543,7 +512,7 @@ private:
 	void UpdatePlayerList();
 
 	// Connection
-	std::shared_ptr<con::Connection> m_con;
+	std::shared_ptr<con::IConnection> m_con;
 	std::recursive_mutex m_clients_mutex;
 	// Connected clients (behind the con mutex)
 	RemoteClientMap m_clients;

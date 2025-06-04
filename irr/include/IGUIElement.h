@@ -10,10 +10,7 @@
 #include "IEventReceiver.h"
 #include "EGUIElementTypes.h"
 #include "EGUIAlignment.h"
-#include "IAttributes.h"
-#include "IGUIEnvironment.h"
 #include <cassert>
-#include <algorithm>
 #include <list>
 #include <vector>
 
@@ -21,6 +18,8 @@ namespace irr
 {
 namespace gui
 {
+class IGUIEnvironment;
+
 //! Base class of all GUI elements.
 class IGUIElement : virtual public IReferenceCounted, public IEventReceiver
 {
@@ -36,10 +35,6 @@ public:
 			AlignLeft(EGUIA_UPPERLEFT), AlignRight(EGUIA_UPPERLEFT), AlignTop(EGUIA_UPPERLEFT), AlignBottom(EGUIA_UPPERLEFT),
 			Environment(environment), Type(type)
 	{
-#ifdef _DEBUG
-		setDebugName("IGUIElement");
-#endif
-
 		// if we were given a parent to attach to
 		if (parent) {
 			parent->addChildToEnd(this);
@@ -665,13 +660,6 @@ public:
 	virtual bool hasType(EGUI_ELEMENT_TYPE type) const
 	{
 		return type == Type;
-	}
-
-	//! Returns the type name of the gui element.
-	/** This is needed serializing elements. */
-	virtual const c8 *getTypeName() const
-	{
-		return GUIElementTypeNames[Type];
 	}
 
 	//! Returns the name of the element.

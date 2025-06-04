@@ -1,22 +1,7 @@
-/*
-Minetest
-Copyright (C) 2014-2018 kwolekr, Ryan Kwolek <kwolekr@minetest.net>
-Copyright (C) 2014-2018 paramat
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2014-2018 kwolekr, Ryan Kwolek <kwolekr@minetest.net>
+// Copyright (C) 2014-2018 paramat
 
 #include "mg_biome.h"
 #include "mg_decoration.h"
@@ -40,20 +25,7 @@ BiomeManager::BiomeManager(Server *server) :
 
 	// Create default biome to be used in case none exist
 	Biome *b = new Biome;
-
 	b->name            = "default";
-	b->flags           = 0;
-	b->depth_top       = 0;
-	b->depth_filler    = -MAX_MAP_GENERATION_LIMIT;
-	b->depth_water_top = 0;
-	b->depth_riverbed  = 0;
-	b->min_pos         = v3s16(-MAX_MAP_GENERATION_LIMIT,
-			-MAX_MAP_GENERATION_LIMIT, -MAX_MAP_GENERATION_LIMIT);
-	b->max_pos         = v3s16(MAX_MAP_GENERATION_LIMIT,
-			MAX_MAP_GENERATION_LIMIT, MAX_MAP_GENERATION_LIMIT);
-	b->heat_point      = 0.0;
-	b->humidity_point  = 0.0;
-	b->vertical_blend  = 0;
 
 	b->m_nodenames.emplace_back("mapgen_stone");
 	b->m_nodenames.emplace_back("mapgen_stone");
@@ -78,11 +50,13 @@ void BiomeManager::clear()
 {
 	EmergeManager *emerge = m_server->getEmergeManager();
 
-	// Remove all dangling references in Decorations
-	DecorationManager *decomgr = emerge->getWritableDecorationManager();
-	for (size_t i = 0; i != decomgr->getNumObjects(); i++) {
-		Decoration *deco = (Decoration *)decomgr->getRaw(i);
-		deco->biomes.clear();
+	if (emerge) {
+		// Remove all dangling references in Decorations
+		DecorationManager *decomgr = emerge->getWritableDecorationManager();
+		for (size_t i = 0; i != decomgr->getNumObjects(); i++) {
+			Decoration *deco = (Decoration *)decomgr->getRaw(i);
+			deco->biomes.clear();
+		}
 	}
 
 	// Don't delete the first biome
@@ -149,47 +123,39 @@ BiomeGenOriginal::BiomeGenOriginal(BiomeManager *biomemgr,
 	// is disabled.
 	memset(biomemap, 0, sizeof(biome_t) * m_csize.X * m_csize.Z);
 
-	// Calculating the bounding position of each biome so we know when we might switch
-	// First gathering all heights where we might switch
-	std::vector<s16> temp_transition_heights;
-	temp_transition_heights.reserve(m_bmgr->getNumObjects() * 2);
+	// Calculate cache of Y transition points
+	std::vector<s16> values;
+	values.reserve(m_bmgr->getNumObjects() * 2);
 	for (size_t i = 0; i < m_bmgr->getNumObjects(); i++) {
 		Biome *b = (Biome *)m_bmgr->getRaw(i);
-		temp_transition_heights.push_back(b->max_pos.Y);
-		temp_transition_heights.push_back(b->min_pos.Y);
+		values.push_back(b->max_pos.Y);
+		// We scan for biomes from high Y to low Y (top to bottom). Hence,
+		// biomes effectively transition at (min_pos.Y - 1).
+		if (b->min_pos.Y > -MAX_MAP_GENERATION_LIMIT)
+			values.push_back(b->min_pos.Y - 1);
 	}
 
-	// Sorting the biome transition points
-	std::sort(temp_transition_heights.begin(), temp_transition_heights.end(), std::greater<int>());
+	std::sort(values.begin(), values.end(), std::greater<>());
+	values.erase(std::unique(values.begin(), values.end()), values.end());
 
-	// Getting rid of duplicate biome transition points
-	s16 last = temp_transition_heights[0];
-	size_t out_pos = 1;
-	for (size_t i = 1; i < temp_transition_heights.size(); i++){
-		if (temp_transition_heights[i] != last) {
-			last = temp_transition_heights[i];
-			temp_transition_heights[out_pos++] = last;
-		}
-	}
-
-	biome_transitions = new s16[out_pos];
-	memcpy(biome_transitions, temp_transition_heights.data(), sizeof(s16) * out_pos);
+	m_transitions_y = std::move(values);
 }
 
 BiomeGenOriginal::~BiomeGenOriginal()
 {
 	delete []biomemap;
 
-	delete []biome_transitions;
 	delete noise_heat;
 	delete noise_humidity;
 	delete noise_heat_blend;
 	delete noise_humidity_blend;
 }
 
-s16* BiomeGenOriginal::getBiomeTransitions() const
+s16 BiomeGenOriginal::getNextTransitionY(s16 y) const
 {
-	return biome_transitions;
+	// Find first value that is less than y using binary search
+	auto it = std::lower_bound(m_transitions_y.begin(), m_transitions_y.end(), y, std::greater_equal<>());
+	return (it == m_transitions_y.end()) ? S16_MIN : *it;
 }
 
 BiomeGen *BiomeGenOriginal::clone(BiomeManager *biomemgr) const
@@ -199,14 +165,14 @@ BiomeGen *BiomeGenOriginal::clone(BiomeManager *biomemgr) const
 
 float BiomeGenOriginal::calcHeatAtPoint(v3s16 pos) const
 {
-	return NoisePerlin2D(&m_params->np_heat, pos.X, pos.Z, m_params->seed) +
-		NoisePerlin2D(&m_params->np_heat_blend, pos.X, pos.Z, m_params->seed);
+	return NoiseFractal2D(&m_params->np_heat, pos.X, pos.Z, m_params->seed) +
+		NoiseFractal2D(&m_params->np_heat_blend, pos.X, pos.Z, m_params->seed);
 }
 
 float BiomeGenOriginal::calcHumidityAtPoint(v3s16 pos) const
 {
-	return NoisePerlin2D(&m_params->np_humidity, pos.X, pos.Z, m_params->seed) +
-		NoisePerlin2D(&m_params->np_humidity_blend, pos.X, pos.Z, m_params->seed);
+	return NoiseFractal2D(&m_params->np_humidity, pos.X, pos.Z, m_params->seed) +
+		NoiseFractal2D(&m_params->np_humidity_blend, pos.X, pos.Z, m_params->seed);
 }
 
 Biome *BiomeGenOriginal::calcBiomeAtPoint(v3s16 pos) const
@@ -219,10 +185,10 @@ void BiomeGenOriginal::calcBiomeNoise(v3s16 pmin)
 {
 	m_pmin = pmin;
 
-	noise_heat->perlinMap2D(pmin.X, pmin.Z);
-	noise_humidity->perlinMap2D(pmin.X, pmin.Z);
-	noise_heat_blend->perlinMap2D(pmin.X, pmin.Z);
-	noise_humidity_blend->perlinMap2D(pmin.X, pmin.Z);
+	noise_heat->noiseMap2D(pmin.X, pmin.Z);
+	noise_humidity->noiseMap2D(pmin.X, pmin.Z);
+	noise_heat_blend->noiseMap2D(pmin.X, pmin.Z);
+	noise_humidity_blend->noiseMap2D(pmin.X, pmin.Z);
 
 	for (s32 i = 0; i < m_csize.X * m_csize.Z; i++) {
 		noise_heat->result[i]     += noise_heat_blend->result[i];
@@ -282,7 +248,9 @@ Biome *BiomeGenOriginal::calcBiomeFromNoise(float heat, float humidity, v3s16 po
 
 		float d_heat = heat - b->heat_point;
 		float d_humidity = humidity - b->humidity_point;
-		float dist = (d_heat * d_heat) + (d_humidity * d_humidity);
+		float dist = ((d_heat * d_heat) + (d_humidity * d_humidity));
+		if (b->weight > 0.f)
+		       dist /= b->weight;
 
 		if (pos.Y <= b->max_pos.Y) { // Within y limits of biome b
 			if (dist < dist_min) {
@@ -322,8 +290,6 @@ ObjDef *Biome::clone() const
 	ObjDef::cloneTo(obj);
 	NodeResolver::cloneTo(obj);
 
-	obj->flags = flags;
-
 	obj->c_top = c_top;
 	obj->c_filler = c_filler;
 	obj->c_stone = c_stone;
@@ -347,6 +313,7 @@ ObjDef *Biome::clone() const
 	obj->heat_point = heat_point;
 	obj->humidity_point = humidity_point;
 	obj->vertical_blend = vertical_blend;
+	obj->weight = weight;
 
 	return obj;
 }

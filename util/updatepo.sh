@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Update/create minetest po files
+# Update/create luanti po files
 
 # an auxiliary function to abort processing with an optional error
 # message
@@ -47,9 +47,9 @@ cd ..
 # First thing first, update the .pot template. We place it in the po/
 # directory at the top level. You a recent enough xgettext that supports
 # --package-name
-potfile=po/minetest.pot
+potfile=po/luanti.pot
 echo "updating pot"
-xgettext --package-name=minetest \
+xgettext --package-name=luanti \
 	--add-comments='~' \
 	--sort-by-file \
 	--add-location=file \
@@ -58,6 +58,7 @@ xgettext --package-name=minetest \
 	--keyword=fwgettext \
 	--keyword=fgettext \
 	--keyword=fgettext_ne \
+	--keyword=hgettext \
 	--keyword=strgettext \
 	--keyword=wstrgettext \
 	--keyword=core.gettext \
@@ -68,14 +69,17 @@ xgettext --package-name=minetest \
 	`find src/ -name '*.cpp' -o -name '*.h'` \
 	`find builtin/ -name '*.lua'`
 
-# Gettext collects a bunch of bogus comments for the "Available commands: " string
-# I couldn't figure out how to avoid that so get rid of them afterwards
-sed '/^#\. ~<number>.*relative_to/,/^#: /{ /^#: /!d; }' -i $potfile
+# Gettext collects a huge amount of bogus comments for the string
+# "Available commands: ", and this not once but twice!
+# I couldn't figure out how to avoid that so get rid of them afterwards:
+for i in 1 2; do
+	sed '/^#\. ~= 0\.3$/,/^#: /{ /^#: /!d; }' -i $potfile
+done
 
 # Now iterate on all languages and create the po file if missing, or update it
 # if it exists already
 for lang in $langs ; do # note the missing quotes around $langs
-	pofile=po/$lang/minetest.po
+	pofile=po/$lang/luanti.po
 	if test -e $pofile; then
 		echo "[$lang]: updating strings"
 		msgmerge --update --sort-by-file $pofile $potfile

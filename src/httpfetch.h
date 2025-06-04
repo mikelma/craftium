@@ -1,21 +1,6 @@
-/*
-Minetest
-Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #pragma once
 
@@ -46,8 +31,10 @@ namespace {
 enum HttpMethod : u8
 {
 	HTTP_GET,
+	HTTP_HEAD,
 	HTTP_POST,
 	HTTP_PUT,
+	HTTP_PATCH,
 	HTTP_DELETE,
 };
 
@@ -70,23 +57,22 @@ struct HTTPFetchRequest
 	long connect_timeout;
 
 	// Indicates if this is multipart/form-data or
-	// application/x-www-form-urlencoded.  POST-only.
+	// application/x-www-form-urlencoded. Not allowed for GET.
 	bool multipart = false;
 
-	//  The Method to use default = GET
-	//  Avaible methods GET, POST, PUT, DELETE
+	// Method to use
 	HttpMethod method = HTTP_GET;
 
 	// Fields of the request
 	StringMap fields;
 
-	// Raw data of the request overrides fields
+	// Raw data of the request (instead of fields, ignored if multipart)
 	std::string raw_data;
 
 	// If not empty, should contain entries such as "Accept: text/html"
 	std::vector<std::string> extra_headers;
 
-	// useragent to use
+	// User agent to send
 	std::string useragent;
 
 	HTTPFetchRequest();

@@ -1,19 +1,6 @@
---Minetest
---Copyright (C) 2023 rubenwardy
---
---This program is free software; you can redistribute it and/or modify
---it under the terms of the GNU Lesser General Public License as published by
---the Free Software Foundation; either version 2.1 of the License, or
---(at your option) any later version.
---
---This program is distributed in the hope that it will be useful,
---but WITHOUT ANY WARRANTY; without even the implied warranty of
---MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
---GNU Lesser General Public License for more details.
---
---You should have received a copy of the GNU Lesser General Public License along
---with this program; if not, write to the Free Software Foundation, Inc.,
---51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+-- Luanti
+-- Copyright (C) 2023 rubenwardy
+-- SPDX-License-Identifier: LGPL-2.1-or-later
 
 
 update_detector = {}
@@ -31,7 +18,7 @@ local cache_file_path = core.get_cache_path() .. DIR_DELIM .. "cdb" .. DIR_DELIM
 local has_fetched = false
 local latest_releases
 do
-	if check_cache_age("cdb_updates_last_checked", 3 * 3600) then
+	if check_cache_age("cdb_updates_last_checked", 24 * 3600) then
 		local f = io.open(cache_file_path, "r")
 		local data = ""
 		if f then
@@ -72,9 +59,6 @@ end
 
 
 local function has_packages_from_cdb()
-	pkgmgr.refresh_globals()
-	pkgmgr.update_gamelist()
-
 	for _, content in pairs(pkgmgr.get_all()) do
 		if pkgmgr.get_contentdb_id(content) then
 			return true
@@ -126,9 +110,6 @@ function update_detector.get_all()
 		fetch()
 		return {}
 	end
-
-	pkgmgr.refresh_globals()
-	pkgmgr.update_gamelist()
 
 	local ret = {}
 	local all_content = pkgmgr.get_all()

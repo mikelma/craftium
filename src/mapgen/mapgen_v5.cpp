@@ -1,22 +1,7 @@
-/*
-Minetest
-Copyright (C) 2014-2018 paramat
-Copyright (C) 2014-2018 kwolekr, Ryan Kwolek <kwolekr@minetest.net>
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2014-2018 paramat
+// Copyright (C) 2014-2018 kwolekr, Ryan Kwolek <kwolekr@minetest.net>
 
 
 #include "mapgen.h"
@@ -38,7 +23,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "mapgen_v5.h"
 
 
-FlagDesc flagdesc_mapgen_v5[] = {
+const FlagDesc flagdesc_mapgen_v5[] = {
 	{"caverns", MGV5_CAVERNS},
 	{NULL,      0}
 };
@@ -165,12 +150,12 @@ void MapgenV5Params::setDefaultSettings(Settings *settings)
 int MapgenV5::getSpawnLevelAtPoint(v2s16 p)
 {
 
-	float f = 0.55 + NoisePerlin2D(&noise_factor->np, p.X, p.Y, seed);
+	float f = 0.55 + NoiseFractal2D(&noise_factor->np, p.X, p.Y, seed);
 	if (f < 0.01)
 		f = 0.01;
 	else if (f >= 1.0)
 		f *= 1.6;
-	float h = NoisePerlin2D(&noise_height->np, p.X, p.Y, seed);
+	float h = NoiseFractal2D(&noise_height->np, p.X, p.Y, seed);
 
 	// noise_height 'offset' is the average level of terrain. At least 50% of
 	// terrain will be below this.
@@ -181,7 +166,7 @@ int MapgenV5::getSpawnLevelAtPoint(v2s16 p)
 	// Starting spawn search at max_spawn_y + 128 ensures 128 nodes of open
 	// space above spawn position. Avoids spawning in possibly sealed voids.
 	for (s16 y = max_spawn_y + 128; y >= water_level; y--) {
-		float n_ground = NoisePerlin3D(&noise_ground->np, p.X, y, p.Y, seed);
+		float n_ground = NoiseFractal3D(&noise_ground->np, p.X, y, p.Y, seed);
 
 		if (n_ground * f > y - h) {  // If solid
 			if (y < water_level || y > max_spawn_y)
@@ -287,9 +272,9 @@ int MapgenV5::generateBaseTerrain()
 	u32 index2d = 0;
 	int stone_surface_max_y = -MAX_MAP_GENERATION_LIMIT;
 
-	noise_factor->perlinMap2D(node_min.X, node_min.Z);
-	noise_height->perlinMap2D(node_min.X, node_min.Z);
-	noise_ground->perlinMap3D(node_min.X, node_min.Y - 1, node_min.Z);
+	noise_factor->noiseMap2D(node_min.X, node_min.Z);
+	noise_height->noiseMap2D(node_min.X, node_min.Z);
+	noise_ground->noiseMap3D(node_min.X, node_min.Y - 1, node_min.Z);
 
 	for (s16 z=node_min.Z; z<=node_max.Z; z++) {
 		for (s16 y=node_min.Y - 1; y<=node_max.Y + 1; y++) {

@@ -1,19 +1,6 @@
---Minetest
---Copyright (C) 2014 sapier
---
---This program is free software; you can redistribute it and/or modify
---it under the terms of the GNU Lesser General Public License as published by
---the Free Software Foundation; either version 2.1 of the License, or
---(at your option) any later version.
---
---This program is distributed in the hope that it will be useful,
---but WITHOUT ANY WARRANTY; without even the implied warranty of
---MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
---GNU Lesser General Public License for more details.
---
---You should have received a copy of the GNU Lesser General Public License along
---with this program; if not, write to the Free Software Foundation, Inc.,
---51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+-- Luanti
+-- Copyright (C) 2014 sapier
+-- SPDX-License-Identifier: LGPL-2.1-or-later
 
 --------------------------------------------------------------------------------
 
@@ -37,11 +24,7 @@ local function delete_content_buttonhandler(this, fields)
 				gamedata.errormessage = fgettext_ne("pkgmgr: failed to delete \"$1\"", this.data.content.path)
 			end
 
-			if this.data.content.type == "game" then
-				pkgmgr.update_gamelist()
-			else
-				pkgmgr.refresh_globals()
-			end
+			pkgmgr.reload_by_type(this.data.content.type)
 		else
 			gamedata.errormessage = fgettext_ne("pkgmgr: invalid path \"$1\"", this.data.content.path)
 		end

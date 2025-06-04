@@ -1,36 +1,21 @@
-/*
-Minetest
-Copyright (C) 2021 Liso <anlismon@gmail.com>
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2021 Liso <anlismon@gmail.com>
 
 #pragma once
-#include "irrlichttypes_extrabloated.h"
 #include <IMaterialRendererServices.h>
 #include <IShaderConstantSetCallBack.h>
 #include "client/shader.h"
 
 // Used by main game rendering
 
-class ShadowConstantSetter : public IShaderConstantSetter
+class ShadowUniformSetter : public IShaderUniformSetter
 {
 	CachedPixelShaderSetting<f32, 16> m_shadow_view_proj{"m_ShadowViewProj"};
 	CachedPixelShaderSetting<f32, 3> m_light_direction{"v_LightDirection"};
 	CachedPixelShaderSetting<f32> m_texture_res{"f_textureresolution"};
 	CachedPixelShaderSetting<f32> m_shadow_strength{"f_shadow_strength"};
+	CachedPixelShaderSetting<f32, 3> m_shadow_tint{ "shadow_tint" };
 	CachedPixelShaderSetting<f32> m_time_of_day{"f_timeofday"};
 	CachedPixelShaderSetting<f32> m_shadowfar{"f_shadowfar"};
 	CachedPixelShaderSetting<f32, 4> m_camera_pos{"CameraPos"};
@@ -48,17 +33,17 @@ class ShadowConstantSetter : public IShaderConstantSetter
 	CachedPixelShaderSetting<f32> m_perspective_zbias_pixel{"zPerspectiveBias"};
 
 public:
-	ShadowConstantSetter() = default;
-	~ShadowConstantSetter() = default;
+	ShadowUniformSetter() = default;
+	~ShadowUniformSetter() = default;
 
-	virtual void onSetConstants(video::IMaterialRendererServices *services) override;
+	virtual void onSetUniforms(video::IMaterialRendererServices *services) override;
 };
 
-class ShadowConstantSetterFactory : public IShaderConstantSetterFactory
+class ShadowUniformSetterFactory : public IShaderUniformSetterFactory
 {
 public:
-	virtual IShaderConstantSetter *create() {
-		return new ShadowConstantSetter();
+	virtual IShaderUniformSetter *create() {
+		return new ShadowUniformSetter();
 	}
 };
 

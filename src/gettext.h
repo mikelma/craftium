@@ -1,21 +1,6 @@
-/*
-Minetest
-Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #pragma once
 
@@ -36,7 +21,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 	// the USE_GETTEXT=0 case and can't assume that gettext is installed.
 	#include <locale>
 
-	#define gettext(String) String
+	#define gettext(String) (String)
+	#define ngettext(String1, String2, n) ((n) == 1 ? (String1) : (String2))
 #endif
 
 #define _(String) gettext(String)
@@ -73,6 +59,7 @@ inline std::wstring wstrgettext(const std::string &str)
  * @tparam Args Template parameter for format args
  * @param src Translation source string
  * @param args Variable format args
+ * @warning No dynamic sizing! string will be cut off if longer than 255 chars.
  * @return translated string
  */
 template <typename ...Args>
@@ -95,14 +82,19 @@ inline std::wstring fwgettext(const char *src, Args&&... args)
 template <typename ...Args>
 inline std::string fmtgettext(const char *format, Args&&... args)
 {
-	std::string buf;
-	std::size_t buf_size = 256;
-	buf.resize(buf_size);
-
 	format = gettext(format);
 
-	int len = porting::mt_snprintf(&buf[0], buf_size, format, std::forward<Args>(args)...);
-	if (len <= 0) throw std::runtime_error("gettext format error: " + std::string(format));
+	std::string buf;
+	{
+		size_t default_size = strlen(format);
+		if (default_size < 256)
+			default_size = 256;
+		buf.resize(default_size);
+	}
+
+	int len = porting::mt_snprintf(&buf[0], buf.size(), format, std::forward<Args>(args)...);
+	if (len <= 0)
+		throw std::runtime_error("gettext format error: " + std::string(format));
 	if ((size_t)len >= buf.size()) {
 		buf.resize(len+1); // extra null byte
 		porting::mt_snprintf(&buf[0], buf.size(), format, std::forward<Args>(args)...);

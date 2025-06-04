@@ -1,21 +1,6 @@
-/*
-Minetest
-Copyright (C) 2014 celeron55, Perttu Ahola <celeron55@gmail.com>
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2014 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #include "config.h"
 
@@ -32,9 +17,13 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <hiredis.h>
 #include <cassert>
 
-#if VERSION_MAJOR > 5 || VERSION_MINOR > 9
-#define DEPRECATION_PERIOD_OVER
-#endif
+/*
+ * Redis is not a good fit for Minetest and only still supported for legacy as
+ * well as advanced use case reasons, see:
+ * <https://github.com/luanti-org/luanti/issues/14822>
+ *
+ * Do NOT extend this backend with any new functionality.
+ */
 
 Database_Redis::Database_Redis(Settings &conf)
 {
@@ -70,13 +59,8 @@ Database_Redis::Database_Redis(Settings &conf)
 		freeReplyObject(reply);
 	}
 
-	warningstream << "/!\\ You are using the deprecated redis backend. "
-#ifdef DEPRECATION_PERIOD_OVER
-		<< "This backend is only still supported for migrations. /!\\\n"
-#else
-		<< "This backend will become read-only in the next release. /!\\\n"
-#endif
-		<< "Please migrate to SQLite3 or PostgreSQL instead." << std::endl;
+	dstream << "Note: When storing data in Redis you need to ensure that eviction"
+		" is disabled, or you risk DATA LOSS." << std::endl;
 }
 
 Database_Redis::~Database_Redis()
@@ -86,16 +70,12 @@ Database_Redis::~Database_Redis()
 
 void Database_Redis::beginSave()
 {
-#ifdef DEPRECATION_PERIOD_OVER
-	throw DatabaseException("Redis backend is read-only, see deprecation notice.");
-#else
 	redisReply *reply = static_cast<redisReply *>(redisCommand(ctx, "MULTI"));
 	if (!reply) {
 		throw DatabaseException(std::string(
 			"Redis command 'MULTI' failed: ") + ctx->errstr);
 	}
 	freeReplyObject(reply);
-#endif
 }
 
 void Database_Redis::endSave()

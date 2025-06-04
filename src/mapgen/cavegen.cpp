@@ -1,23 +1,8 @@
-/*
-Minetest
-Copyright (C) 2010-2020 celeron55, Perttu Ahola <celeron55@gmail.com>
-Copyright (C) 2015-2020 paramat
-Copyright (C) 2010-2016 kwolekr, Ryan Kwolek <kwolekr@minetest.net>
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2010-2020 celeron55, Perttu Ahola <celeron55@gmail.com>
+// Copyright (C) 2015-2020 paramat
+// Copyright (C) 2010-2016 kwolekr, Ryan Kwolek <kwolekr@minetest.net>
 
 #include "util/numeric.h"
 #include <cmath>
@@ -76,13 +61,11 @@ void CavesNoiseIntersection::generateCaves(MMVManip *vm,
 	assert(vm);
 	assert(biomemap);
 
-	noise_cave1->perlinMap3D(nmin.X, nmin.Y - 1, nmin.Z);
-	noise_cave2->perlinMap3D(nmin.X, nmin.Y - 1, nmin.Z);
+	noise_cave1->noiseMap3D(nmin.X, nmin.Y - 1, nmin.Z);
+	noise_cave2->noiseMap3D(nmin.X, nmin.Y - 1, nmin.Z);
 
-	const v3s16 &em = vm->m_area.getExtent();
+	const v3s32 &em = vm->m_area.getExtent();
 	u32 index2d = 0;  // Biomemap index
-
-	s16 *biome_transitions = m_bmgn->getBiomeTransitions();
 
 	for (s16 z = nmin.Z; z <= nmax.Z; z++)
 	for (s16 x = nmin.X; x <= nmax.X; x++, index2d++) {
@@ -101,8 +84,7 @@ void CavesNoiseIntersection::generateCaves(MMVManip *vm,
 		u16 depth_riverbed = biome->depth_riverbed;
 		u16 nplaced = 0;
 
-		int cur_biome_depth = 0;
-		s16 biome_y_min = biome_transitions[cur_biome_depth];
+		s16 biome_y_next = m_bmgn->getNextTransitionY(nmax.Y);
 
 		// Don't excavate the overgenerated stone at nmax.Y + 1,
 		// this creates a 'roof' over the tunnel, preventing light in
@@ -112,17 +94,14 @@ void CavesNoiseIntersection::generateCaves(MMVManip *vm,
 				index3d -= m_ystride,
 				VoxelArea::add_y(em, vi, -1)) {
 			// We need this check to make sure that biomes don't generate too far down
-			if (y < biome_y_min) {
+			if (y <= biome_y_next) {
 				biome = m_bmgn->getBiomeAtIndex(index2d, v3s16(x, y, z));
+				biome_y_next = m_bmgn->getNextTransitionY(y);
 
-				// Finding the height of the next biome
-				// On first iteration this may loop a couple times after than it should just run once
-				while (y < biome_y_min) {
-					biome_y_min = biome_transitions[++cur_biome_depth];
+				if (x == nmin.X && z == nmin.Z && false) {
+					dstream << "cavegen: biome at " << y << " is " << biome->name
+						<< ", next at " << biome_y_next << std::endl;
 				}
-
-				/*if (x == nmin.X && z == nmin.Z)
-					printf("Cave: check @ %i -> %s -> again at %i\n", y, biome->name.c_str(), biome_y_min);*/
 			}
 
 			content_t c = vm->m_data[vi].getContent();
@@ -239,7 +218,7 @@ bool CavernsNoise::generateCaverns(MMVManip *vm, v3s16 nmin, v3s16 nmax)
 	assert(vm);
 
 	// Calculate noise
-	noise_cavern->perlinMap3D(nmin.X, nmin.Y - 1, nmin.Z);
+	noise_cavern->noiseMap3D(nmin.X, nmin.Y - 1, nmin.Z);
 
 	// Cache cavern_amp values
 	float *cavern_amp = new float[m_csize.Y + 1];
@@ -251,7 +230,7 @@ bool CavernsNoise::generateCaverns(MMVManip *vm, v3s16 nmin, v3s16 nmax)
 
 	//// Place nodes
 	bool near_cavern = false;
-	const v3s16 &em = vm->m_area.getExtent();
+	const v3s32 &em = vm->m_area.getExtent();
 	u32 index2d = 0;
 
 	for (s16 z = nmin.Z; z <= nmax.Z; z++)
@@ -553,7 +532,7 @@ void CavesRandomWalk::carveRoute(v3f vec, float f, bool randomize_xz)
 			// If cave liquid not defined by biome, fallback to old hardcoded behavior.
 			// TODO 'np_caveliquids' is deprecated and should eventually be removed.
 			// Cave liquids are now defined and located using biome definitions.
-			float nval = NoisePerlin3D(np_caveliquids, startp.X,
+			float nval = NoiseFractal3D(np_caveliquids, startp.X,
 				startp.Y, startp.Z, seed);
 			liquidnode = (nval < 0.40f && node_max.Y < water_level - 256) ?
 				lavanode : waternode;

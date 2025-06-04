@@ -1,21 +1,6 @@
-/*
-Minetest
-Copyright (C) 2018 nerzhul, Loic Blot <loic.blot@unix-experience.fr>
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2018 nerzhul, Loic Blot <loic.blot@unix-experience.fr>
 
 #include "test.h"
 #include <algorithm>
@@ -34,6 +19,10 @@ public:
 	void runTests(IGameDef *gamedef);
 
 	std::string m_worlddir;
+
+	static ServerModManager makeManager(const std::string &worldpath) {
+		return ServerModManager(worldpath, findWorldSubgame(worldpath));
+	}
 
 	void testCreation();
 	void testIsConsistent();
@@ -95,34 +84,34 @@ void TestServerModManager::testCreation()
 	world_config.set("load_mod_test_mod", "true");
 	UASSERTEQ(bool, world_config.updateConfigFile(path.c_str()), true);
 
-	ServerModManager sm(m_worlddir);
+	auto sm = makeManager(m_worlddir);
 }
 
 void TestServerModManager::testGetModsWrongDir()
 {
 	// Test in non worlddir to ensure no mods are found
-	ServerModManager sm(m_worlddir + DIR_DELIM + "..");
+	auto sm = makeManager(m_worlddir + DIR_DELIM "..");
 	UASSERTEQ(bool, sm.getMods().empty(), true);
 }
 
 void TestServerModManager::testUnsatisfiedMods()
 {
-	ServerModManager sm(m_worlddir);
+	auto sm = makeManager(m_worlddir);
 	UASSERTEQ(bool, sm.getUnsatisfiedMods().empty(), true);
 }
 
 void TestServerModManager::testIsConsistent()
 {
-	ServerModManager sm(m_worlddir);
+	auto sm = makeManager(m_worlddir);
 	UASSERTEQ(bool, sm.isConsistent(), true);
 }
 
 void TestServerModManager::testGetMods()
 {
-	ServerModManager sm(m_worlddir);
+	auto sm = makeManager(m_worlddir);
 	const auto &mods = sm.getMods();
 	// `ls ./games/devtest/mods | wc -l` + 1 (test mod)
-	UASSERTEQ(std::size_t, mods.size(), 31 + 1);
+	UASSERTEQ(std::size_t, mods.size(), 35 + 1);
 
 	// Ensure we found basenodes mod (part of devtest)
 	// and test_mod (for testing MINETEST_MOD_PATH).
@@ -147,14 +136,14 @@ void TestServerModManager::testGetMods()
 
 void TestServerModManager::testGetModspec()
 {
-	ServerModManager sm(m_worlddir);
+	auto sm = makeManager(m_worlddir);
 	UASSERTEQ(const ModSpec *, sm.getModSpec("wrongmod"), NULL);
 	UASSERT(sm.getModSpec("basenodes") != NULL);
 }
 
 void TestServerModManager::testGetModNamesWrongDir()
 {
-	ServerModManager sm(m_worlddir + DIR_DELIM + "..");
+	auto sm = makeManager(m_worlddir + DIR_DELIM "..");
 	std::vector<std::string> result;
 	sm.getModNames(result);
 	UASSERTEQ(bool, result.empty(), true);
@@ -162,7 +151,7 @@ void TestServerModManager::testGetModNamesWrongDir()
 
 void TestServerModManager::testGetModNames()
 {
-	ServerModManager sm(m_worlddir);
+	auto sm = makeManager(m_worlddir);
 	std::vector<std::string> result;
 	sm.getModNames(result);
 	UASSERTEQ(bool, result.empty(), false);
@@ -171,7 +160,7 @@ void TestServerModManager::testGetModNames()
 
 void TestServerModManager::testGetModMediaPathsWrongDir()
 {
-	ServerModManager sm(m_worlddir + DIR_DELIM + "..");
+	auto sm = makeManager(m_worlddir + DIR_DELIM "..");
 	std::vector<std::string> result;
 	sm.getModsMediaPaths(result);
 	UASSERTEQ(bool, result.empty(), true);
@@ -179,7 +168,7 @@ void TestServerModManager::testGetModMediaPathsWrongDir()
 
 void TestServerModManager::testGetModMediaPaths()
 {
-	ServerModManager sm(m_worlddir);
+	auto sm = makeManager(m_worlddir);
 	std::vector<std::string> result;
 	sm.getModsMediaPaths(result);
 	UASSERTEQ(bool, result.empty(), false);

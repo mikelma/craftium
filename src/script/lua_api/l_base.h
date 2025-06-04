@@ -1,21 +1,6 @@
-/*
-Minetest
-Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #pragma once
 
@@ -30,7 +15,7 @@ extern "C" {
 #include <lauxlib.h>
 }
 
-#ifndef SERVER
+#if CHECK_CLIENT_BUILD()
 class Client;
 class GUIEngine;
 #endif
@@ -45,7 +30,7 @@ public:
 	static ScriptApiBase*   getScriptApiBase(lua_State *L);
 	static Server*          getServer(lua_State *L);
 	static ServerInventoryManager *getServerInventoryMgr(lua_State *L);
-	#ifndef SERVER
+	#if CHECK_CLIENT_BUILD()
 	static Client*          getClient(lua_State *L);
 	static GUIEngine*       getGuiEngine(lua_State *L);
 	#endif // !SERVER
@@ -75,9 +60,37 @@ public:
 			lua_CFunction func,
 			int top);
 
-	static void registerClass(lua_State *L, const char *name,
+	template<typename T>
+	static void registerClass(lua_State *L,
 			const luaL_Reg *methods,
-			const luaL_Reg *metamethods);
+			const luaL_Reg *metamethods)
+	{
+		luaL_newmetatable(L, T::className);
+		luaL_register(L, NULL, metamethods);
+		int metatable = lua_gettop(L);
+
+		lua_newtable(L);
+		luaL_register(L, NULL, methods);
+		int methodtable = lua_gettop(L);
+
+		lua_pushvalue(L, methodtable);
+		lua_setfield(L, metatable, "__index");
+
+		lua_getfield(L, metatable, "__tostring");
+		bool default_tostring = lua_isnil(L, -1);
+		lua_pop(L, 1);
+		if (default_tostring) {
+			lua_pushcfunction(L, ModApiBase::defaultToString<T>);
+			lua_setfield(L, metatable, "__tostring");
+		}
+
+		// Protect the real metatable.
+		lua_pushvalue(L, methodtable);
+		lua_setfield(L, metatable, "__metatable");
+
+		// Pop methodtable and metatable.
+		lua_pop(L, 2);
+	}
 
 	template<typename T>
 	static inline T *checkObject(lua_State *L, int narg)
@@ -99,4 +112,14 @@ public:
 	 * @return value from `func`
 	 */
 	static int l_deprecated_function(lua_State *L, const char *good, const char *bad, lua_CFunction func);
+
+private:
+
+	template<typename T>
+	static int defaultToString(lua_State *L)
+	{
+		auto *t = checkObject<T>(L, 1);
+		lua_pushfstring(L, "%s: %p", T::className, t);
+		return 1;
+	}
 };

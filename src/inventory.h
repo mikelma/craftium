@@ -1,21 +1,6 @@
-/*
-Minetest
-Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #pragma once
 
@@ -117,18 +102,27 @@ struct ItemStack
 	}
 
 	// Get tool digging properties, or those of the hand if not a tool
+	// If not hand assumes default hand ""
 	const ToolCapabilities& getToolCapabilities(
-			const IItemDefManager *itemdef) const
+			const IItemDefManager *itemdef, const ItemStack *hand = nullptr) const
 	{
-		const ToolCapabilities *item_cap =
-			itemdef->get(name).tool_capabilities;
+		const ToolCapabilities *item_cap = itemdef->get(name).tool_capabilities;
 
-		if (item_cap == NULL)
-			// Fall back to the hand's tool capabilities
-			item_cap = itemdef->get("").tool_capabilities;
+		if (item_cap) {
+			return metadata.getToolCapabilities(*item_cap); // Check for override
+		}
 
-		assert(item_cap != NULL);
-		return metadata.getToolCapabilities(*item_cap); // Check for override
+		// Fall back to the hand's tool capabilities
+		if (hand) {
+			item_cap = itemdef->get(hand->name).tool_capabilities;
+			if (item_cap) {
+				return hand->metadata.getToolCapabilities(*item_cap);
+			}
+		}
+
+		item_cap = itemdef->get("").tool_capabilities;
+		assert(item_cap);
+		return *item_cap;
 	}
 
 	const std::optional<WearBarParams> &getWearBarParams(
@@ -277,7 +271,7 @@ public:
 	// If not as many items exist as requested, removes as
 	// many as possible.
 	// Returns the items that were actually removed.
-	ItemStack removeItem(const ItemStack &item);
+	ItemStack removeItem(const ItemStack &item, bool match_meta);
 
 	// Takes some items from a slot.
 	// If there are not enough, takes as many as it can.

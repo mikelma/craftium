@@ -24,6 +24,7 @@
 #include <SDL_syswm.h>
 
 #include <memory>
+#include <unordered_map>
 
 namespace irr
 {
@@ -93,6 +94,9 @@ public:
 	//! Checks if the window could possibly be visible.
 	bool isWindowVisible() const override;
 
+	//! Checks if the Irrlicht device supports touch events.
+	bool supportsTouchEvents() const override;
+
 	//! Get the position of this window on screen
 	core::position2di getWindowPosition() override;
 
@@ -103,6 +107,14 @@ public:
 	E_DEVICE_TYPE getType() const override
 	{
 		return EIDT_SDL;
+	}
+
+	//! Get the SDL version
+	std::string getVersionString() const override
+	{
+		SDL_version ver;
+		SDL_GetVersion(&ver);
+		return std::to_string(ver.major) + "." + std::to_string(ver.minor) + "." + std::to_string(ver.patch);
 	}
 
 	//! Get the display density in dots per inch.
@@ -158,7 +170,13 @@ public:
 		//! Sets the new position of the cursor.
 		void setPosition(s32 x, s32 y) override
 		{
-			SDL_WarpMouseInWindow(Device->Window, x, y);
+#ifndef __ANDROID__
+			// On Android, this somehow results in a camera jump when enabling
+			// relative mouse mode and it isn't supported anyway.
+			SDL_WarpMouseInWindow(Device->Window,
+					static_cast<int>(x / Device->ScaleX),
+					static_cast<int>(y / Device->ScaleY));
+#endif
 
 			if (SDL_GetRelativeMouseMode()) {
 				// There won't be an event for this warp (details on libsdl-org/SDL/issues/6034)
@@ -188,10 +206,10 @@ public:
 		{
 		}
 
-		virtual void setRelativeMode(bool relative) _IRR_OVERRIDE_
+		virtual void setRelativeMode(bool relative) override
 		{
 			// Only change it when necessary, as it flushes mouse motion when enabled
-			if (relative != SDL_GetRelativeMouseMode()) {
+			if (relative != static_cast<bool>(SDL_GetRelativeMouseMode())) {
 				if (relative)
 					SDL_SetRelativeMouseMode(SDL_TRUE);
 				else
@@ -272,10 +290,13 @@ private:
 
 #endif
 	// Check if a key is a known special character with no side effects on text boxes.
-	static bool keyIsKnownSpecial(EKEY_CODE key);
+	static bool keyIsKnownSpecial(EKEY_CODE irrlichtKey);
 
 	// Return the Char that should be sent to Irrlicht for the given key (either the one passed in or 0).
-	static int findCharToPassToIrrlicht(int assumedChar, EKEY_CODE key);
+	static int findCharToPassToIrrlicht(uint32_t sdlKey, EKEY_CODE irrlichtKey, bool numlock);
+
+	std::variant<u32, EKEY_CODE> getScancodeFromKey(const Keycode &key) const override;
+	Keycode getKeyFromScancode(const u32 scancode) const override;
 
 	// Check if a text box is in focus. Enable or disable SDL_TEXTINPUT events only if in focus.
 	void resetReceiveTextInputEvents();
@@ -296,10 +317,13 @@ private:
 #endif
 
 	s32 MouseX, MouseY;
+	// these two only continue to exist for some Emscripten stuff idk about
 	s32 MouseXRel, MouseYRel;
 	u32 MouseButtonStates;
 
 	u32 Width, Height;
+	f32 ScaleX = 1.0f, ScaleY = 1.0f;
+	void updateSizeAndScale();
 
 	bool Resizable;
 
@@ -307,25 +331,9 @@ private:
 
 	core::rect<s32> lastElemPos;
 
-	struct SKeyMap
-	{
-		SKeyMap() {}
-		SKeyMap(s32 x11, s32 win32) :
-				SDLKey(x11), Win32Key(win32)
-		{
-		}
-
-		s32 SDLKey;
-		s32 Win32Key;
-
-		bool operator<(const SKeyMap &o) const
-		{
-			return SDLKey < o.SDLKey;
-		}
-	};
-
-	core::array<SKeyMap> KeyMap;
-	SDL_SysWMinfo Info;
+	// TODO: This is only used for scancode/keycode conversion with EKEY_CODE (among other things, for Luanti
+	// to display keys to users). Drop this along with EKEY_CODE.
+	std::unordered_map<SDL_Keycode, EKEY_CODE> KeyMap;
 
 	s32 CurrentTouchCount;
 	bool IsInBackground;

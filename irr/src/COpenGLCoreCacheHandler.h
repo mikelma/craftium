@@ -9,6 +9,8 @@
 
 #include "mt_opengl.h"
 
+#include <cassert>
+
 namespace irr
 {
 namespace video
@@ -84,17 +86,25 @@ class COpenGLCoreCacheHandler
 							if (curTextureType != prevTextureType) {
 								GL.BindTexture(prevTextureType, 0);
 
-#if (defined(IRR_COMPILE_GL_COMMON) || defined(IRR_COMPILE_GLES_COMMON))
-								GL.Disable(prevTextureType);
-								GL.Enable(curTextureType);
+#if defined(IRR_COMPILE_GL_COMMON)
+								// The "enable/disable texture" stuff is so legacy that
+								// it's not even allowed for multisample textures.
+								// (IRR_COMPILE_GL_COMMON is for the legacy driver.)
+								if (prevTextureType != GL_TEXTURE_2D_MULTISAMPLE)
+									GL.Disable(prevTextureType);
+								if (curTextureType != GL_TEXTURE_2D_MULTISAMPLE)
+									GL.Enable(curTextureType);
 #endif
 							}
-#if (defined(IRR_COMPILE_GL_COMMON) || defined(IRR_COMPILE_GLES_COMMON))
+#if defined(IRR_COMPILE_GL_COMMON)
 							else if (!prevTexture)
-								GL.Enable(curTextureType);
+								if (curTextureType != GL_TEXTURE_2D_MULTISAMPLE)
+									GL.Enable(curTextureType);
 #endif
 
-							GL.BindTexture(curTextureType, static_cast<const TOpenGLTexture *>(texture)->getOpenGLTextureName());
+							auto name = static_cast<const TOpenGLTexture *>(texture)->getOpenGLTextureName();
+							assert(name != 0);
+							GL.BindTexture(curTextureType, name);
 						} else {
 							texture = 0;
 
@@ -109,8 +119,9 @@ class COpenGLCoreCacheHandler
 
 						GL.BindTexture(prevTextureType, 0);
 
-#if (defined(IRR_COMPILE_GL_COMMON) || defined(IRR_COMPILE_GLES_COMMON))
-						GL.Disable(prevTextureType);
+#if defined(IRR_COMPILE_GL_COMMON)
+						if (prevTextureType != GL_TEXTURE_2D_MULTISAMPLE)
+							GL.Disable(prevTextureType);
 #endif
 					}
 
@@ -222,7 +233,7 @@ public:
 
 		Driver->irrGlActiveTexture(ActiveTexture);
 
-#if (defined(IRR_COMPILE_GL_COMMON) || defined(IRR_COMPILE_GLES_COMMON))
+#if defined(IRR_COMPILE_GL_COMMON)
 		GL.Disable(GL_TEXTURE_2D);
 #endif
 

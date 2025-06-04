@@ -1,34 +1,12 @@
-/*
-Minetest
-Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-Copyright (C) 2013 Kahrl <kahrl@gmx.net>
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
+// Copyright (C) 2013 Kahrl <kahrl@gmx.net>
 
 #include "itemdef.h"
 
 #include "nodedef.h"
 #include "tool.h"
-#include "inventory.h"
-#ifndef SERVER
-#include "client/mapblock_mesh.h"
-#include "client/mesh.h"
-#include "client/wieldmesh.h"
-#include "client/client.h"
-#endif
 #include "log.h"
 #include "settings.h"
 #include "util/serialize.h"
@@ -45,7 +23,8 @@ TouchInteraction::TouchInteraction()
 	pointed_object  = TouchInteractionMode_USER;
 }
 
-TouchInteractionMode TouchInteraction::getMode(PointedThingType pointed_type) const
+TouchInteractionMode TouchInteraction::getMode(const ItemDefinition &selected_def,
+		PointedThingType pointed_type) const
 {
 	TouchInteractionMode result;
 	switch (pointed_type) {
@@ -63,7 +42,9 @@ TouchInteractionMode TouchInteraction::getMode(PointedThingType pointed_type) co
 	}
 
 	if (result == TouchInteractionMode_USER) {
-		if (pointed_type == POINTEDTHING_OBJECT)
+		if (pointed_type == POINTEDTHING_OBJECT && !selected_def.usable)
+			// Only apply when we're actually able to punch the object, i.e. when
+			// the selected item has no on_use callback defined.
 			result = g_settings->get("touch_punch_gesture") == "long_tap" ?
 					LONG_DIG_SHORT_PLACE : SHORT_DIG_LONG_PLACE;
 		else
@@ -371,34 +352,10 @@ void ItemDefinition::deSerialize(std::istream &is, u16 protocol_version)
 
 class CItemDefManager: public IWritableItemDefManager
 {
-#ifndef SERVER
-	struct ClientCached
-	{
-		video::ITexture *inventory_texture;
-		ItemMesh wield_mesh;
-		Palette *palette;
-
-		ClientCached():
-			inventory_texture(NULL),
-			palette(NULL)
-		{}
-
-		~ClientCached() {
-			if (wield_mesh.mesh)
-				wield_mesh.mesh->drop();
-		}
-
-		DISABLE_CLASS_COPY(ClientCached);
-	};
-#endif
 
 public:
 	CItemDefManager()
 	{
-
-#ifndef SERVER
-		m_main_thread = std::this_thread::get_id();
-#endif
 		clear();
 	}
 
@@ -445,93 +402,7 @@ public:
 		// Get the definition
 		return m_item_definitions.find(name) != m_item_definitions.cend();
 	}
-#ifndef SERVER
-public:
-	ClientCached* createClientCachedDirect(const ItemStack &item, Client *client) const
-	{
-		// This is not thread-safe
-		sanity_check(std::this_thread::get_id() == m_main_thread);
 
-		const ItemDefinition &def = item.getDefinition(this);
-		std::string inventory_image = item.getInventoryImage(this);
-		std::string inventory_overlay = item.getInventoryOverlay(this);
-		std::string cache_key = def.name;
-		if (!inventory_image.empty())
-			cache_key += "/" + inventory_image;
-		if (!inventory_overlay.empty())
-			cache_key += ":" + inventory_overlay;
-
-		// Skip if already in cache
-		auto it = m_clientcached.find(cache_key);
-		if (it != m_clientcached.end())
-			return it->second.get();
-
-		infostream << "Lazily creating item texture and mesh for \""
-				<< cache_key << "\"" << std::endl;
-
-		ITextureSource *tsrc = client->getTextureSource();
-
-		// Create new ClientCached
-		auto cc = std::make_unique<ClientCached>();
-
-		cc->inventory_texture = NULL;
-		if (!inventory_image.empty())
-			cc->inventory_texture = tsrc->getTexture(inventory_image);
-		getItemMesh(client, item, &(cc->wield_mesh));
-
-		cc->palette = tsrc->getPalette(def.palette_image);
-
-		// Put in cache
-		ClientCached *ptr = cc.get();
-		m_clientcached[cache_key] = std::move(cc);
-		return ptr;
-	}
-
-	// Get item inventory texture
-	virtual video::ITexture* getInventoryTexture(const ItemStack &item,
-			Client *client) const
-	{
-		ClientCached *cc = createClientCachedDirect(item, client);
-		if (!cc)
-			return nullptr;
-		return cc->inventory_texture;
-	}
-
-	// Get item wield mesh
-	virtual ItemMesh* getWieldMesh(const ItemStack &item, Client *client) const
-	{
-		ClientCached *cc = createClientCachedDirect(item, client);
-		if (!cc)
-			return nullptr;
-		return &(cc->wield_mesh);
-	}
-
-	// Get item palette
-	virtual Palette* getPalette(const ItemStack &item, Client *client) const
-	{
-		ClientCached *cc = createClientCachedDirect(item, client);
-		if (!cc)
-			return nullptr;
-		return cc->palette;
-	}
-
-	virtual video::SColor getItemstackColor(const ItemStack &stack,
-		Client *client) const
-	{
-		// Look for direct color definition
-		const std::string &colorstring = stack.metadata.getString("color", 0);
-		video::SColor directcolor;
-		if (!colorstring.empty() && parseColorString(colorstring, directcolor, true))
-			return directcolor;
-		// See if there is a palette
-		Palette *palette = getPalette(stack, client);
-		const std::string &index = stack.metadata.getString("palette_index", 0);
-		if (palette && !index.empty())
-			return (*palette)[mystoi(index, 0, 255)];
-		// Fallback color
-		return get(stack.name).color;
-	}
-#endif
 	void applyTextureOverrides(const std::vector<TextureOverride> &overrides)
 	{
 		infostream << "ItemDefManager::applyTextureOverrides(): Applying "
@@ -675,12 +546,6 @@ private:
 	std::map<std::string, ItemDefinition*> m_item_definitions;
 	// Aliases
 	StringMap m_aliases;
-#ifndef SERVER
-	// The id of the thread that is allowed to use irrlicht directly
-	std::thread::id m_main_thread;
-	// Cached textures and meshes
-	mutable std::unordered_map<std::string, std::unique_ptr<ClientCached>> m_clientcached;
-#endif
 };
 
 IWritableItemDefManager* createItemDefManager()

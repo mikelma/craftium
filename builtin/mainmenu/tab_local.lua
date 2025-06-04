@@ -1,19 +1,6 @@
---Minetest
---Copyright (C) 2014 sapier
---
---This program is free software; you can redistribute it and/or modify
---it under the terms of the GNU Lesser General Public License as published by
---the Free Software Foundation; either version 2.1 of the License, or
---(at your option) any later version.
---
---This program is distributed in the hope that it will be useful,
---but WITHOUT ANY WARRANTY; without even the implied warranty of
---MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
---GNU Lesser General Public License for more details.
---
---You should have received a copy of the GNU Lesser General Public License along
---with this program; if not, write to the Free Software Foundation, Inc.,
---51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+-- Luanti
+-- Copyright (C) 2014 sapier
+-- SPDX-License-Identifier: LGPL-2.1-or-later
 
 
 local current_game, singleplayer_refresh_gamebar
@@ -92,10 +79,16 @@ function singleplayer_refresh_gamebar()
 		end
 	end
 
+	local TOUCH_GUI = core.settings:get_bool("touch_gui")
+
+	local gamebar_pos_y = MAIN_TAB_H
+		+ TABHEADER_H -- tabheader included in formspec size
+		+ (TOUCH_GUI and GAMEBAR_OFFSET_TOUCH or GAMEBAR_OFFSET_DESKTOP)
+
 	local btnbar = buttonbar_create(
 			"game_button_bar",
-			core.settings:get_bool("enable_touch") and {x = 0, y = 7.25} or {x = 0, y = 7.475},
-			{x = 15.5, y = 1.25},
+			{x = 0, y = gamebar_pos_y},
+			{x = MAIN_TAB_W, y = GAMEBAR_H},
 			"#000000",
 			game_buttonbar_button_handler)
 
@@ -160,8 +153,8 @@ local function get_formspec(tabview, name, tabdata)
 		local H = tabview.height
 
 		local hypertext = "<global valign=middle halign=center size=18>" ..
-				fgettext_ne("Minetest is a game-creation platform that allows you to play many different games.") .. "\n" ..
-				fgettext_ne("Minetest doesn't come with a game by default.") .. " " ..
+				fgettext_ne("Luanti is a game-creation platform that allows you to play many different games.") .. "\n" ..
+				fgettext_ne("Luanti doesn't come with a game by default.") .. " " ..
 				fgettext_ne("You need to install a game before you can create a world.")
 
 		local button_y = H * 2/3 - 0.6

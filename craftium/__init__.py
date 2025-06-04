@@ -229,7 +229,7 @@ register(
         obs_height=180,
         max_timesteps=10_000,
         init_frames=200,
-        game_id="mineclone2",
+        game_id="VoxeLibre",
         _minetest_conf=dict(
             max_block_generate_distance=3, # 16x3 blocks
             mcl_logging_mobs_spawn=True,

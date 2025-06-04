@@ -1,19 +1,6 @@
---Minetest
---Copyright (C) 2013 sapier
---
---This program is free software; you can redistribute it and/or modify
---it under the terms of the GNU Lesser General Public License as published by
---the Free Software Foundation; either version 2.1 of the License, or
---(at your option) any later version.
---
---This program is distributed in the hope that it will be useful,
---but WITHOUT ANY WARRANTY; without even the implied warranty of
---MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
---GNU Lesser General Public License for more details.
---
---You should have received a copy of the GNU Lesser General Public License along
---with this program; if not, write to the Free Software Foundation, Inc.,
---51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+-- Luanti
+-- Copyright (C) 2013 sapier
+-- SPDX-License-Identifier: LGPL-2.1-or-later
 
 --------------------------------------------------------------------------------
 
@@ -126,7 +113,7 @@ local function get_formspec(data)
 	local retval =
 		"size[11.5,7.5,true]" ..
 		"label[0.5,0;" .. fgettext("World:") .. "]" ..
-		"label[1.75,0;" .. data.worldspec.name .. "]"
+		"label[1.75,0;" .. core.formspec_escape(data.worldspec.name) .. "]"
 
 	if mod.is_modpack or mod.type == "game" then
 		local info = core.formspec_escape(
@@ -299,7 +286,7 @@ local function handle_buttons(this, fields)
 						worldfile:set("load_mod_" .. mod.name, mod.virtual_path)
 						was_set[mod.name] = true
 					elseif not was_set[mod.name] then
-						worldfile:set("load_mod_" .. mod.name, "false")
+						worldfile:remove("load_mod_" .. mod.name)
 					end
 				elseif mod.enabled then
 					gamedata.errormessage = fgettext_ne("Failed to enable mo" ..

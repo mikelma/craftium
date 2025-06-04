@@ -58,27 +58,28 @@ public:
 
 	struct SHWBufferLink_opengl : public SHWBufferLink
 	{
-		SHWBufferLink_opengl(const scene::IMeshBuffer *_MeshBuffer) :
-				SHWBufferLink(_MeshBuffer), vbo_verticesID(0), vbo_indicesID(0) {}
+		SHWBufferLink_opengl(const scene::IVertexBuffer *vb) : SHWBufferLink(vb) {}
+		SHWBufferLink_opengl(const scene::IIndexBuffer *ib) : SHWBufferLink(ib) {}
 
-		GLuint vbo_verticesID; // tmp
-		GLuint vbo_indicesID;  // tmp
-
-		GLuint vbo_verticesSize; // tmp
-		GLuint vbo_indicesSize;  // tmp
+		GLuint vbo_ID = 0;
+		u32 vbo_Size = 0;
 	};
 
 	//! updates hardware buffer if needed
 	bool updateHardwareBuffer(SHWBufferLink *HWBuffer) override;
 
-	//! Create hardware buffer from mesh
-	SHWBufferLink *createHardwareBuffer(const scene::IMeshBuffer *mb) override;
+	//! Create hardware buffer from vertex buffer
+	SHWBufferLink *createHardwareBuffer(const scene::IVertexBuffer *vb) override;
+
+	//! Create hardware buffer from index buffer
+	SHWBufferLink *createHardwareBuffer(const scene::IIndexBuffer *ib) override;
 
 	//! Delete hardware buffer (only some drivers can)
 	void deleteHardwareBuffer(SHWBufferLink *HWBuffer) override;
 
-	//! Draw hardware buffer
-	void drawHardwareBuffer(SHWBufferLink *HWBuffer) override;
+	void drawBuffers(const scene::IVertexBuffer *vb,
+		const scene::IIndexBuffer *ib, u32 primCount,
+		scene::E_PRIMITIVE_TYPE pType = scene::EPT_TRIANGLES) override;
 
 	//! Create occlusion query.
 	/** Use node for identification and mesh for occlusion test. */
@@ -106,6 +107,8 @@ public:
 
 	//! Create render target.
 	IRenderTarget *addRenderTarget() override;
+
+	void blitRenderTarget(IRenderTarget *from, IRenderTarget *to) override;
 
 	//! draws a vertex primitive list
 	virtual void drawVertexPrimitiveList(const void *vertices, u32 vertexCount,
@@ -167,9 +170,6 @@ public:
 			const core::position2d<s32> &end,
 			SColor color = SColor(255, 255, 255, 255)) override;
 
-	//! Draws a 3d box
-	void draw3DBox(const core::aabbox3d<f32> &box, SColor color = SColor(255, 255, 255, 255)) override;
-
 	//! Draws a 3d line.
 	virtual void draw3DLine(const core::vector3df &start,
 			const core::vector3df &end,
@@ -178,11 +178,6 @@ public:
 	//! \return Returns the name of the video driver. Example: In case of the Direct3D8
 	//! driver, it would return "Direct3D8.1".
 	const char *getName() const override;
-
-	//! Sets the dynamic ambient light color. The default color is
-	//! (0,0,0,0) which means it is dark.
-	//! \param color: New color of the ambient light.
-	void setAmbientLight(const SColorf &color) override;
 
 	//! sets a viewport
 	void setViewPort(const core::rect<s32> &area) override;
@@ -242,18 +237,13 @@ public:
 	//! Adds a new material renderer to the VideoDriver, using GLSL to render geometry.
 	virtual s32 addHighLevelShaderMaterial(
 			const c8 *vertexShaderProgram,
-			const c8 *vertexShaderEntryPointName,
-			E_VERTEX_SHADER_TYPE vsCompileTarget,
 			const c8 *pixelShaderProgram,
-			const c8 *pixelShaderEntryPointName,
-			E_PIXEL_SHADER_TYPE psCompileTarget,
 			const c8 *geometryShaderProgram,
-			const c8 *geometryShaderEntryPointName = "main",
-			E_GEOMETRY_SHADER_TYPE gsCompileTarget = EGST_GS_4_0,
+			const c8 *shaderName = nullptr,
 			scene::E_PRIMITIVE_TYPE inType = scene::EPT_TRIANGLES,
 			scene::E_PRIMITIVE_TYPE outType = scene::EPT_TRIANGLE_STRIP,
 			u32 verticesOut = 0,
-			IShaderConstantSetCallBack *callback = 0,
+			IShaderConstantSetCallBack *callback = nullptr,
 			E_MATERIAL_TYPE baseMaterial = video::EMT_SOLID,
 			s32 userData = 0) override;
 
@@ -268,6 +258,9 @@ public:
 
 	virtual ITexture *addRenderTargetTexture(const core::dimension2d<u32> &size,
 			const io::path &name, const ECOLOR_FORMAT format = ECF_UNKNOWN) override;
+
+	virtual ITexture *addRenderTargetTextureMs(const core::dimension2d<u32> &size, u8 msaa,
+			const io::path &name = "rt", const ECOLOR_FORMAT format = ECF_UNKNOWN) override;
 
 	//! Creates a render target texture for a cubemap
 	ITexture *addRenderTargetTextureCubemap(const irr::u32 sideLen,
@@ -284,19 +277,6 @@ public:
 	//! checks if an OpenGL error has happened and prints it (+ some internal code which is usually the line number)
 	//! for performance reasons only available in debug mode
 	bool testGLError(int code = 0);
-
-	//! Set/unset a clipping plane.
-	//! There are at least 6 clipping planes available for the user to set at will.
-	//! \param index: The plane index. Must be between 0 and MaxUserClipPlanes.
-	//! \param plane: The plane itself.
-	//! \param enable: If true, enable the clipping plane else disable it.
-	bool setClipPlane(u32 index, const core::plane3df &plane, bool enable = false) override;
-
-	//! Enable/disable a clipping plane.
-	//! There are at least 6 clipping planes available for the user to set at will.
-	//! \param index: The plane index. Must be between 0 and MaxUserClipPlanes.
-	//! \param enable: If true, enable the clipping plane else disable it.
-	void enableClipPlane(u32 index, bool enable) override;
 
 	//! Enable the 2d override material
 	void enableMaterial2D(bool enable = true) override;
@@ -343,14 +323,10 @@ private:
 	bool updateVertexHardwareBuffer(SHWBufferLink_opengl *HWBuffer);
 	bool updateIndexHardwareBuffer(SHWBufferLink_opengl *HWBuffer);
 
-	void uploadClipPlane(u32 index);
-
 	//! inits the parts of the open gl driver used on all platforms
 	bool genericDriverInit();
 
-	ITexture *createDeviceDependentTexture(const io::path &name, IImage *image) override;
-
-	ITexture *createDeviceDependentTextureCubemap(const io::path &name, const core::array<IImage *> &image) override;
+	ITexture *createDeviceDependentTexture(const io::path &name, E_TEXTURE_TYPE type, const std::vector<IImage*> &images) override;
 
 	//! creates a transposed matrix in supplied GLfloat array to pass to OpenGL
 	inline void getGLMatrix(GLfloat gl_matrix[16], const core::matrix4 &m);
@@ -403,15 +379,6 @@ private:
 	u8 AntiAlias;
 
 	SMaterial Material, LastMaterial;
-
-	struct SUserClipPlane
-	{
-		SUserClipPlane() :
-				Enabled(false) {}
-		core::plane3df Plane;
-		bool Enabled;
-	};
-	core::array<SUserClipPlane> UserClipPlanes;
 
 	core::stringc VendorName;
 

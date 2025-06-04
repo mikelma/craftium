@@ -1,103 +1,114 @@
-/*
-Minetest
-Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-Copyright (C) 2017 nerzhul, Loic Blot <loic.blot@unix-experience.fr>
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
+// Copyright (C) 2017 nerzhul, Loic Blot <loic.blot@unix-experience.fr>
 
 #include "settings.h"
 #include "util/numeric.h"
 #include "inputhandler.h"
 #include "gui/mainmenumanager.h"
-#include "gui/touchscreengui.h"
+#include "gui/touchcontrols.h"
 #include "hud.h"
+#include "log_internal.h"
+#include "client/renderingengine.h"
 
 #include "craftium.h"
 #include <cstdio>
 
-void KeyCache::populate_nonchanging()
+void MyEventReceiver::reloadKeybindings()
 {
-	key[KeyType::ESC] = EscapeKey;
-}
+	clearKeyCache();
 
-void KeyCache::populate()
-{
-	key[KeyType::FORWARD] = getKeySetting("keymap_forward");
-	key[KeyType::BACKWARD] = getKeySetting("keymap_backward");
-	key[KeyType::LEFT] = getKeySetting("keymap_left");
-	key[KeyType::RIGHT] = getKeySetting("keymap_right");
-	key[KeyType::JUMP] = getKeySetting("keymap_jump");
-	key[KeyType::AUX1] = getKeySetting("keymap_aux1");
-	key[KeyType::SNEAK] = getKeySetting("keymap_sneak");
-	key[KeyType::DIG] = getKeySetting("keymap_dig");
-	key[KeyType::PLACE] = getKeySetting("keymap_place");
+	keybindings[KeyType::FORWARD] = getKeySetting("keymap_forward");
+	keybindings[KeyType::BACKWARD] = getKeySetting("keymap_backward");
+	keybindings[KeyType::LEFT] = getKeySetting("keymap_left");
+	keybindings[KeyType::RIGHT] = getKeySetting("keymap_right");
+	keybindings[KeyType::JUMP] = getKeySetting("keymap_jump");
+	keybindings[KeyType::AUX1] = getKeySetting("keymap_aux1");
+	keybindings[KeyType::SNEAK] = getKeySetting("keymap_sneak");
+	keybindings[KeyType::DIG] = getKeySetting("keymap_dig");
+	keybindings[KeyType::PLACE] = getKeySetting("keymap_place");
 
-	key[KeyType::AUTOFORWARD] = getKeySetting("keymap_autoforward");
+	keybindings[KeyType::ESC] = EscapeKey;
 
-	key[KeyType::DROP] = getKeySetting("keymap_drop");
-	key[KeyType::INVENTORY] = getKeySetting("keymap_inventory");
-	key[KeyType::CHAT] = getKeySetting("keymap_chat");
-	key[KeyType::CMD] = getKeySetting("keymap_cmd");
-	key[KeyType::CMD_LOCAL] = getKeySetting("keymap_cmd_local");
-	key[KeyType::CONSOLE] = getKeySetting("keymap_console");
-	key[KeyType::MINIMAP] = getKeySetting("keymap_minimap");
-	key[KeyType::FREEMOVE] = getKeySetting("keymap_freemove");
-	key[KeyType::PITCHMOVE] = getKeySetting("keymap_pitchmove");
-	key[KeyType::FASTMOVE] = getKeySetting("keymap_fastmove");
-	key[KeyType::NOCLIP] = getKeySetting("keymap_noclip");
-	key[KeyType::HOTBAR_PREV] = getKeySetting("keymap_hotbar_previous");
-	key[KeyType::HOTBAR_NEXT] = getKeySetting("keymap_hotbar_next");
-	key[KeyType::MUTE] = getKeySetting("keymap_mute");
-	key[KeyType::INC_VOLUME] = getKeySetting("keymap_increase_volume");
-	key[KeyType::DEC_VOLUME] = getKeySetting("keymap_decrease_volume");
-	key[KeyType::CINEMATIC] = getKeySetting("keymap_cinematic");
-	key[KeyType::SCREENSHOT] = getKeySetting("keymap_screenshot");
-	key[KeyType::TOGGLE_BLOCK_BOUNDS] = getKeySetting("keymap_toggle_block_bounds");
-	key[KeyType::TOGGLE_HUD] = getKeySetting("keymap_toggle_hud");
-	key[KeyType::TOGGLE_CHAT] = getKeySetting("keymap_toggle_chat");
-	key[KeyType::TOGGLE_FOG] = getKeySetting("keymap_toggle_fog");
-	key[KeyType::TOGGLE_UPDATE_CAMERA] = getKeySetting("keymap_toggle_update_camera");
-	key[KeyType::TOGGLE_DEBUG] = getKeySetting("keymap_toggle_debug");
-	key[KeyType::TOGGLE_PROFILER] = getKeySetting("keymap_toggle_profiler");
-	key[KeyType::CAMERA_MODE] = getKeySetting("keymap_camera_mode");
-	key[KeyType::INCREASE_VIEWING_RANGE] =
+	keybindings[KeyType::AUTOFORWARD] = getKeySetting("keymap_autoforward");
+
+	keybindings[KeyType::DROP] = getKeySetting("keymap_drop");
+	keybindings[KeyType::INVENTORY] = getKeySetting("keymap_inventory");
+	keybindings[KeyType::CHAT] = getKeySetting("keymap_chat");
+	keybindings[KeyType::CMD] = getKeySetting("keymap_cmd");
+	keybindings[KeyType::CMD_LOCAL] = getKeySetting("keymap_cmd_local");
+	keybindings[KeyType::CONSOLE] = getKeySetting("keymap_console");
+	keybindings[KeyType::MINIMAP] = getKeySetting("keymap_minimap");
+	keybindings[KeyType::FREEMOVE] = getKeySetting("keymap_freemove");
+	keybindings[KeyType::PITCHMOVE] = getKeySetting("keymap_pitchmove");
+	keybindings[KeyType::FASTMOVE] = getKeySetting("keymap_fastmove");
+	keybindings[KeyType::NOCLIP] = getKeySetting("keymap_noclip");
+	keybindings[KeyType::HOTBAR_PREV] = getKeySetting("keymap_hotbar_previous");
+	keybindings[KeyType::HOTBAR_NEXT] = getKeySetting("keymap_hotbar_next");
+	keybindings[KeyType::MUTE] = getKeySetting("keymap_mute");
+	keybindings[KeyType::INC_VOLUME] = getKeySetting("keymap_increase_volume");
+	keybindings[KeyType::DEC_VOLUME] = getKeySetting("keymap_decrease_volume");
+	keybindings[KeyType::CINEMATIC] = getKeySetting("keymap_cinematic");
+	keybindings[KeyType::SCREENSHOT] = getKeySetting("keymap_screenshot");
+	keybindings[KeyType::TOGGLE_BLOCK_BOUNDS] = getKeySetting("keymap_toggle_block_bounds");
+	keybindings[KeyType::TOGGLE_HUD] = getKeySetting("keymap_toggle_hud");
+	keybindings[KeyType::TOGGLE_CHAT] = getKeySetting("keymap_toggle_chat");
+	keybindings[KeyType::TOGGLE_FOG] = getKeySetting("keymap_toggle_fog");
+	keybindings[KeyType::TOGGLE_UPDATE_CAMERA] = getKeySetting("keymap_toggle_update_camera");
+	keybindings[KeyType::TOGGLE_DEBUG] = getKeySetting("keymap_toggle_debug");
+	keybindings[KeyType::TOGGLE_PROFILER] = getKeySetting("keymap_toggle_profiler");
+	keybindings[KeyType::CAMERA_MODE] = getKeySetting("keymap_camera_mode");
+	keybindings[KeyType::INCREASE_VIEWING_RANGE] =
 			getKeySetting("keymap_increase_viewing_range_min");
-	key[KeyType::DECREASE_VIEWING_RANGE] =
+	keybindings[KeyType::DECREASE_VIEWING_RANGE] =
 			getKeySetting("keymap_decrease_viewing_range_min");
-	key[KeyType::RANGESELECT] = getKeySetting("keymap_rangeselect");
-	key[KeyType::ZOOM] = getKeySetting("keymap_zoom");
+	keybindings[KeyType::RANGESELECT] = getKeySetting("keymap_rangeselect");
+	keybindings[KeyType::ZOOM] = getKeySetting("keymap_zoom");
 
-	key[KeyType::QUICKTUNE_NEXT] = getKeySetting("keymap_quicktune_next");
-	key[KeyType::QUICKTUNE_PREV] = getKeySetting("keymap_quicktune_prev");
-	key[KeyType::QUICKTUNE_INC] = getKeySetting("keymap_quicktune_inc");
-	key[KeyType::QUICKTUNE_DEC] = getKeySetting("keymap_quicktune_dec");
+	keybindings[KeyType::QUICKTUNE_NEXT] = getKeySetting("keymap_quicktune_next");
+	keybindings[KeyType::QUICKTUNE_PREV] = getKeySetting("keymap_quicktune_prev");
+	keybindings[KeyType::QUICKTUNE_INC] = getKeySetting("keymap_quicktune_inc");
+	keybindings[KeyType::QUICKTUNE_DEC] = getKeySetting("keymap_quicktune_dec");
 
 	for (int i = 0; i < HUD_HOTBAR_ITEMCOUNT_MAX; i++) {
 		std::string slot_key_name = "keymap_slot" + std::to_string(i + 1);
-		key[KeyType::SLOT_1 + i] = getKeySetting(slot_key_name.c_str());
+		keybindings[KeyType::SLOT_1 + i] = getKeySetting(slot_key_name.c_str());
 	}
 
-	if (handler) {
-		// First clear all keys, then re-add the ones we listen for
-		handler->dontListenForKeys();
-		for (const KeyPress &k : key) {
-			handler->listenForKey(k);
-		}
-		handler->listenForKey(EscapeKey);
-		handler->listenForKey(CancelKey);
+	// First clear all keys, then re-add the ones we listen for
+	keysListenedFor.clear();
+	for (int i = 0; i < KeyType::INTERNAL_ENUM_COUNT; i++) {
+		listenForKey(keybindings[i], static_cast<GameKeyType>(i));
+	}
+}
+
+bool MyEventReceiver::setKeyDown(KeyPress keyCode, bool is_down)
+{
+	if (keysListenedFor.find(keyCode) == keysListenedFor.end()) // ignore irrelevant key input
+		return false;
+	auto action = keysListenedFor[keyCode];
+	if (is_down) {
+		physicalKeyDown.insert(keyCode);
+		setKeyDown(action, true);
+	} else {
+		physicalKeyDown.erase(keyCode);
+		setKeyDown(action, false);
+	}
+	return true;
+}
+
+void MyEventReceiver::setKeyDown(GameKeyType action, bool is_down)
+{
+	if (is_down) {
+		if (!IsKeyDown(action))
+			keyWasPressed.set(action);
+		keyIsDown.set(action);
+		keyWasDown.set(action);
+	} else {
+		if (IsKeyDown(action))
+			keyWasReleased.set(action);
+		keyIsDown.reset(action);
 	}
 }
 
@@ -117,49 +128,58 @@ bool MyEventReceiver::OnEvent(const SEvent &event)
 		return true;
 	}
 
+	if (event.EventType == EET_APPLICATION_EVENT &&
+			event.ApplicationEvent.EventType == EAET_DPI_CHANGED) {
+		// This is a fake setting so that we can use (de)registerChangedCallback
+		// not only to listen for gui/hud_scaling changes, but also for DPI changes.
+		g_settings->setU16("dpi_change_notifier",
+				g_settings->getU16("dpi_change_notifier") + 1);
+		return true;
+	}
+
 	// This is separate from other keyboard handling so that it also works in menus.
 	if (event.EventType == EET_KEY_INPUT_EVENT) {
-		const KeyPress keyCode(event.KeyInput);
+		KeyPress keyCode(event.KeyInput);
 		if (keyCode == getKeySetting("keymap_fullscreen")) {
 			if (event.KeyInput.PressedDown && !fullscreen_is_down) {
-				bool fullscreen = RenderingEngine::get_raw_device()->isFullscreen();
-				g_settings->setBool("fullscreen", !fullscreen);
+				IrrlichtDevice *device = RenderingEngine::get_raw_device();
+
+				bool new_fullscreen = !device->isFullscreen();
+				// Only update the setting if toggling succeeds - it always fails
+				// if Minetest was built without SDL.
+				if (device->setFullscreen(new_fullscreen)) {
+					g_settings->setBool("fullscreen", new_fullscreen);
+				}
 			}
 			fullscreen_is_down = event.KeyInput.PressedDown;
+			return true;
+		} else if (keyCode == EscapeKey &&
+				event.KeyInput.PressedDown && event.KeyInput.Shift) {
+			g_gamecallback->disconnect();
 			return true;
 		}
 	}
 
+	if (event.EventType == EET_MOUSE_INPUT_EVENT && !event.MouseInput.Simulated)
+		last_pointer_type = PointerType::Mouse;
+	else if (event.EventType == EET_TOUCH_INPUT_EVENT)
+		last_pointer_type = PointerType::Touch;
+
 	// Let the menu handle events, if one is active.
 	if (isMenuActive()) {
-		if (g_touchscreengui)
-			g_touchscreengui->setVisible(false);
+		if (g_touchcontrols)
+			g_touchcontrols->setVisible(false);
 		return g_menumgr.preprocessEvent(event);
 	}
 
 	// Remember whether each key is down or up
 	if (event.EventType == irr::EET_KEY_INPUT_EVENT) {
-		const KeyPress keyCode(event.KeyInput);
-		if (keysListenedFor[keyCode]) {
-			if (event.KeyInput.PressedDown) {
-				if (!IsKeyDown(keyCode))
-					keyWasPressed.set(keyCode);
-
-				keyIsDown.set(keyCode);
-				keyWasDown.set(keyCode);
-			} else {
-				if (IsKeyDown(keyCode))
-					keyWasReleased.set(keyCode);
-
-				keyIsDown.unset(keyCode);
-			}
-
+		KeyPress keyCode(event.KeyInput);
+		if (setKeyDown(keyCode, event.KeyInput.PressedDown))
 			return true;
-		}
-
-	} else if (g_touchscreengui && event.EventType == irr::EET_TOUCH_INPUT_EVENT) {
-		// In case of touchscreengui, we have to handle different events
-		g_touchscreengui->translateEvent(event);
+	} else if (g_touchcontrols && event.EventType == irr::EET_TOUCH_INPUT_EVENT) {
+		// In case of touchcontrols, we have to handle different events
+		g_touchcontrols->translateEvent(event);
 		return true;
 	} else if (event.EventType == irr::EET_JOYSTICK_INPUT_EVENT) {
 		// joystick may be nullptr if game is launched with '--random-input' parameter
@@ -168,31 +188,22 @@ bool MyEventReceiver::OnEvent(const SEvent &event)
 		// Handle mouse events
 		switch (event.MouseInput.Event) {
 		case EMIE_LMOUSE_PRESSED_DOWN:
-			keyIsDown.set(LMBKey);
-			keyWasDown.set(LMBKey);
-			keyWasPressed.set(LMBKey);
+			setKeyDown(LMBKey, true);
 			break;
 		case EMIE_MMOUSE_PRESSED_DOWN:
-			keyIsDown.set(MMBKey);
-			keyWasDown.set(MMBKey);
-			keyWasPressed.set(MMBKey);
+			setKeyDown(MMBKey, true);
 			break;
 		case EMIE_RMOUSE_PRESSED_DOWN:
-			keyIsDown.set(RMBKey);
-			keyWasDown.set(RMBKey);
-			keyWasPressed.set(RMBKey);
+			setKeyDown(RMBKey, true);
 			break;
 		case EMIE_LMOUSE_LEFT_UP:
-			keyIsDown.unset(LMBKey);
-			keyWasReleased.set(LMBKey);
+			setKeyDown(LMBKey, false);
 			break;
 		case EMIE_MMOUSE_LEFT_UP:
-			keyIsDown.unset(MMBKey);
-			keyWasReleased.set(MMBKey);
+			setKeyDown(MMBKey, false);
 			break;
 		case EMIE_RMOUSE_LEFT_UP:
-			keyIsDown.unset(RMBKey);
-			keyWasReleased.set(RMBKey);
+			setKeyDown(RMBKey, false);
 			break;
 		case EMIE_MOUSE_WHEEL:
 			mouse_wheel += event.MouseInput.Wheel;
@@ -210,12 +221,13 @@ bool MyEventReceiver::OnEvent(const SEvent &event)
  * RealInputHandler
  */
 
-float RealInputHandler::getMovementSpeed()
+float RealInputHandler::getJoystickSpeed()
 {
-	bool f = m_receiver->IsKeyDown(keycache.key[KeyType::FORWARD]) || virtual_key_presses[KeyType::FORWARD],
-		b = m_receiver->IsKeyDown(keycache.key[KeyType::BACKWARD]) || virtual_key_presses[KeyType::BACKWARD],
-		l = m_receiver->IsKeyDown(keycache.key[KeyType::LEFT]) || virtual_key_presses[KeyType::LEFT],
-		r = m_receiver->IsKeyDown(keycache.key[KeyType::RIGHT]) || virtual_key_presses[KeyType::RIGHT];
+	// Check if a virtual key is pressed (from Python)
+	bool f = virtual_key_presses[KeyType::FORWARD],
+		b = virtual_key_presses[KeyType::BACKWARD],
+		l = virtual_key_presses[KeyType::LEFT],
+		r = virtual_key_presses[KeyType::RIGHT];
 	if (f || b || l || r)
 	{
 		// if contradictory keys pressed, stay still
@@ -227,32 +239,59 @@ float RealInputHandler::getMovementSpeed()
 			return 0.0f;
 		return 1.0f; // If there is a keyboard event, assume maximum speed
 	}
-	if (g_touchscreengui && g_touchscreengui->getMovementSpeed())
-		return g_touchscreengui->getMovementSpeed();
+
+	if (g_touchcontrols && g_touchcontrols->getJoystickSpeed())
+		return g_touchcontrols->getJoystickSpeed();
 	return joystick.getMovementSpeed();
 }
 
-float RealInputHandler::getMovementDirection()
+float RealInputHandler::getJoystickDirection()
 {
 	float x = 0, z = 0;
 
 	/* Check keyboard for input */
-	if (m_receiver->IsKeyDown(keycache.key[KeyType::FORWARD]) || virtual_key_presses[KeyType::FORWARD])
+	if (virtual_key_presses[KeyType::FORWARD])
 		z += 1;
-	if (m_receiver->IsKeyDown(keycache.key[KeyType::BACKWARD]) || virtual_key_presses[KeyType::BACKWARD])
+	if (virtual_key_presses[KeyType::BACKWARD])
 		z -= 1;
-	if (m_receiver->IsKeyDown(keycache.key[KeyType::RIGHT]) || virtual_key_presses[KeyType::RIGHT])
+	if (virtual_key_presses[KeyType::RIGHT])
 		x += 1;
-	if (m_receiver->IsKeyDown(keycache.key[KeyType::LEFT]) || virtual_key_presses[KeyType::LEFT])
+	if (virtual_key_presses[KeyType::LEFT])
 		x -= 1;
 
 	if (x != 0 || z != 0) /* If there is a keyboard event, it takes priority */
 		return std::atan2(x, z);
-	// `getMovementDirection() == 0` means forward, so we cannot use
-	// `getMovementDirection()` as a condition.
-	else if (g_touchscreengui && g_touchscreengui->getMovementSpeed())
-		return g_touchscreengui->getMovementDirection();
+
+	// `getJoystickDirection() == 0` means forward, so we cannot use
+	// `getJoystickDirection()` as a condition.
+	if (g_touchcontrols && g_touchcontrols->getJoystickSpeed())
+		return g_touchcontrols->getJoystickDirection();
 	return joystick.getMovementDirection();
+}
+
+v2s32 RealInputHandler::getMousePos()
+{
+	auto control = RenderingEngine::get_raw_device()->getCursorControl();
+	m_mousepos.X += virtual_mouse_x;
+    m_mousepos.Y += virtual_mouse_y;
+	if (control) {
+		auto pos = control->getPosition();
+        pos.X += virtual_mouse_x;
+        pos.Y += virtual_mouse_y;
+        return pos;
+	}
+
+	return m_mousepos;
+}
+
+void RealInputHandler::setMousePos(s32 x, s32 y)
+{
+	auto control = RenderingEngine::get_raw_device()->getCursorControl();
+	if (control) {
+		control->setPosition(x, y);
+	} else {
+		m_mousepos = v2s32(x, y);
+	}
 }
 
 /*
@@ -264,7 +303,7 @@ s32 RandomInputHandler::Rand(s32 min, s32 max)
 }
 
 struct RandomInputHandlerSimData {
-	std::string key;
+	GameKeyType key;
 	float counter;
 	int time_max;
 };
@@ -272,19 +311,19 @@ struct RandomInputHandlerSimData {
 void RandomInputHandler::step(float dtime)
 {
 	static RandomInputHandlerSimData rnd_data[] = {
-		{ "keymap_jump", 0.0f, 40 },
-		{ "keymap_aux1", 0.0f, 40 },
-		{ "keymap_forward", 0.0f, 40 },
-		{ "keymap_left", 0.0f, 40 },
-		{ "keymap_dig", 0.0f, 30 },
-		{ "keymap_place", 0.0f, 15 }
+		{ KeyType::JUMP, 0.0f, 40 },
+		{ KeyType::AUX1, 0.0f, 40 },
+		{ KeyType::FORWARD, 0.0f, 40 },
+		{ KeyType::LEFT, 0.0f, 40 },
+		{ KeyType::DIG, 0.0f, 30 },
+		{ KeyType::PLACE, 0.0f, 15 }
 	};
 
 	for (auto &i : rnd_data) {
 		i.counter -= dtime;
 		if (i.counter < 0.0) {
 			i.counter = 0.1 * Rand(1, i.time_max);
-			keydown.toggle(getKeySetting(i.key.c_str()));
+			keydown.flip(i.key);
 		}
 	}
 	{
@@ -310,25 +349,11 @@ void RandomInputHandler::step(float dtime)
 		counterMovement -= dtime;
 		if (counterMovement < 0.0) {
 			counterMovement = 0.1 * Rand(1, 40);
-			movementSpeed = Rand(0,100)*0.01;
-			movementDirection = Rand(-100, 100)*0.01 * M_PI;
+			joystickSpeed = Rand(0,100)*0.01;
+			joystickDirection = Rand(-100, 100)*0.01 * M_PI;
 		}
 	} else {
-		bool f = keydown[keycache.key[KeyType::FORWARD]],
-			l = keydown[keycache.key[KeyType::LEFT]];
-		if (f || l) {
-			movementSpeed = 1.0f;
-			if (f && !l)
-				movementDirection = 0.0;
-			else if (!f && l)
-				movementDirection = -M_PI_2;
-			else if (f && l)
-				movementDirection = -M_PI_4;
-			else
-				movementDirection = 0.0;
-		} else {
-			movementSpeed = 0.0;
-			movementDirection = 0.0;
-		}
+		joystickSpeed = 0.0f;
+		joystickDirection = 0.0f;
 	}
 }
