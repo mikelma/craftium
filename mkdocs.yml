@@ -18,9 +18,9 @@ nav:
       - troubleshooting.md
       - API Reference: reference.md
       - Dev guide: dev-guide.md
-  - GitHub: https://github.com/mikelma/craftium
-  - Paper: https://arxiv.org/abs/2407.03969
-  - Luanti's main page: https://www.luanti.org/
+  - GitHub 🔗: https://github.com/mikelma/craftium
+  - Paper 🔗: https://arxiv.org/abs/2407.03969
+  - Luanti 🔗: https://www.luanti.org/
 
 theme:
   name: readthedocs

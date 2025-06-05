@@ -20,7 +20,7 @@ Check the [installation](./installation.md) instructions and the [getting starte
 
 - GitHub repository: [https://github.com/mikelma/craftium](https://github.com/mikelma/craftium)
 - Online documentation: [https://craftium.readthedocs.io/en/latest/](https://craftium.readthedocs.io/en/latest/)
-- Paper (ArXiv): [https://arxiv.org/abs/2407.03969](https://arxiv.org/abs/2407.03969)
+- Paper (**ICML 2025**): [https://arxiv.org/abs/2407.03969](https://arxiv.org/abs/2407.03969)
 
 ## Features ✨
 
@@ -41,11 +41,11 @@ Check the [installation](./installation.md) instructions and the [getting starte
 To cite Craftium in publications:
 
 ```bibtex
-@article{malagon2024craftium,
-  title={Craftium: An Extensible Framework for Creating Reinforcement Learning Environments},
+@inproceedings{malagon2025craftium,
+  title={Craftium: Bridging Flexibility and Efficiency for Rich 3D Single- and Multi-Agent Environments},
   author={Mikel Malag{\'o}n and Josu Ceberio and Jose A. Lozano},
-  journal={arXiv preprint arXiv:2407.03969},
-  year={2024}
+  booktitle={International Conference on Machine Learning (ICML)},
+  year={2025}
 }
 ```
 

@@ -6,7 +6,7 @@
 
 ✨ *Imagine the richness of Minecraft: open worlds, procedural generation, fully destructible voxel environments... but open source, without Java, easily extensible in [Lua](https://www.lua.org), and with the modern [Gymnasium](https://gymnasium.farama.org/index.html) and [PettingZoo](https://pettingzoo.farama.org/) APIs for AI single-and multi-agent research... This is* **Craftium!** ✨
 
-**[[Docs](https://craftium.readthedocs.io/en/latest/)] [[GitHub](https://github.com/mikelma/craftium/)] [[Paper (ArXiv)](https://arxiv.org/abs/2407.03969)]**
+**[[Docs](https://craftium.readthedocs.io/en/latest/)] [[GitHub](https://github.com/mikelma/craftium/)] [[Paper (ICML 2025)](https://arxiv.org/abs/2407.03969)]**
 
 <p align="left">
   <img src="../craftium-docs/imgs/env_chop_tree.gif" width="100" align="center">
@@ -35,11 +35,11 @@
 
 - **Extensive documentation 📚:** Craftium extensively [documents](https://craftium.readthedocs.io) how to [use](https://craftium.readthedocs.io/en/latest/getting-started/) existing [environments](https://craftium.readthedocs.io/en/latest/environments) and [create](https://craftium.readthedocs.io/en/latest/creating-envs/) new ones. The documentation also includes a low-level [reference](https://craftium.readthedocs.io/en/latest/reference/) of the exported Python classes and gymnasium [Wrappers](https://craftium.readthedocs.io/en/latest/wrappers/), [extensions to the Lua API](https://craftium.readthedocs.io/en/latest/lua_functions/), and [code examples](https://craftium.readthedocs.io/en/latest/lua_env_cookbook/). Moreover, Craftium greatly benefits from existing Luanti documentation like the [wiki](https://wiki.luanti.org/), [reference](https://api.luanti.org/), and [modding book](https://rubenwardy.com/minetest_modding_book/en/basics/getting_started.html).
 
-- **Modern API 🤖:** Craftium implements the well-known [Gymnasium](https://gymnasium.farama.org/index.html)'s [PettingZoo](https://pettingzoo.farama.org/) APIs, opening the door to a huge number of existing tools and libraries compatible with these APIs. For example, [stable-baselines3](https://stable-baselines3.readthedocs.io) or [CleanRL](https://github.com/vwxyzjn/cleanrl) (check [examples](#examples-) section!).
+- **Modern API 🤖:** Craftium implements the well-known [Gymnasium](https://gymnasium.farama.org/index.html) and [PettingZoo](https://pettingzoo.farama.org/) APIs, opening the door to a vast number of existing tools and libraries compatible with these APIs. For example, [stable-baselines3](https://stable-baselines3.readthedocs.io) or [CleanRL](https://github.com/vwxyzjn/cleanrl) (check [examples](#examples-) section!).
 
 - **Fully open source 🤠:** Both, craftium and Luanti are fully open-source projects. This allowed us to modify Luanti's source code to tightly integrate it with our library, reducing the number of ugly hacks.
 
-- **No more Java 👹:** The Minecraft game is written in Java, not a very friendly language for clusters and high-performance applications. Contrarily, Luanti is written in C++, much more friendly for clusters, and highly performant!
+- **No more Java 👹:** The Minecraft game is written in Java, not an especially friendly language for clusters and high-performance applications. Contrarily, Luanti is written in C++, more adequate for clusters, and highly performant!
 
 ## Installation ⚙️
 
@@ -74,7 +74,7 @@ and,
 pip install .
 ```
 
-This last command should compile Luanti, install python dependencies, and, finally, craftium. If the installation process fails, please consider submitting an issue [here](https://github.com/mikelma/craftium/issues). Note that this command only installs the minimum dependencies to run craftium, execute `pip install ".[examples]"` for installing optional dependencies (e.g., for running examples).
+This last command should compile Luanti, install Python dependencies, and, finally, craftium. If the installation process fails, please consider submitting an issue [here](https://github.com/mikelma/craftium/issues). Note that this command only installs the minimum dependencies to run craftium, execute `pip install ".[examples]"` for installing optional dependencies (e.g., for running examples).
 
 ## Getting started 💡
 
@@ -142,11 +142,11 @@ By implementing Gymnasium's API, craftium supports many existing tools and libra
 ## Citing Craftium 📑
 
 ```bibtex
-@article{malagon2024craftium,
-  title={Craftium: An Extensible Framework for Creating Reinforcement Learning Environments},
+@inproceedings{malagon2025craftium,
+  title={Craftium: Bridging Flexibility and Efficiency for Rich 3D Single- and Multi-Agent Environments},
   author={Mikel Malag{\'o}n and Josu Ceberio and Jose A. Lozano},
-  journal={arXiv preprint arXiv:2407.03969},
-  year={2024}
+  booktitle={International Conference on Machine Learning (ICML)},
+  year={2025}
 }
 ```
 
@@ -160,9 +160,8 @@ Craftium forks [Luanti](https://github.com/luanti-org/luant) and its source code
 
 ## Acknowledgements 🤗
 
-We thank the Luanti and Farama developers and community for maintaining such an excellent open-source project. We also thank [minerl](minerl.readthedocs.io/), and projects integrating Luanti with RL ([here](https://github.com/EleutherAI/minetest) and [here](https://github.com/Astera-org/minetest)) for serving as inspiration for this project.
+We thank the Luanti and Farama developers (and respective communities!) for their ongoing efforts to maintain and continuously improve these projects.
 
-We are especially grateful to:
-- [@vadel](https://github.com/vadel) for helping with obscure bugs 🐛.
-- [@abarrainkua](https://github.com/abarrainkua) for reading preliminary versions of the paper.
-- _Pascu_ for the technical support in HPC.
+We also thank [minerl](minerl.readthedocs.io/), [MineDojo](https://minedojo.org/), and projects integrating Luanti and RL ([here](https://github.com/EleutherAI/minetest) and [here](https://github.com/Astera-org/minetest)) for serving as inspiration for this project.
+
+Finally, we are especially grateful (☺️) to [@vadel](https://github.com/vadel) and [@abarrainkua](https://github.com/abarrainkua) for reading preliminary versions of the paper, and to _Pascu_ for the technical support.
