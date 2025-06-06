@@ -1,4 +1,4 @@
-[![Documentation Status](https://readthedocs.org/projects/craftium/badge/?version=latest)](https://craftium.readthedocs.io/en/latest/?badge=latest)
+[![Documentation Status](https://readthedocs.org/projects/craftium/badge/?version=latest)](https://craftium.readthedocs.io/en/latest/?badge=latest) ![Luanti version](https://img.shields.io/badge/Luanti-v5.12.0-blue)
 
 # Craftium
 
