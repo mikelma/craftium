@@ -2,6 +2,13 @@
 
 ## Problems with the SDL offscreen driver in headless mode
 
+Problems with the SDL offscreen driver are often caused by two reasons:
+
+1. The SDL library installed in the system wasn't built with offscreen driver support.
+2. There are multiple versions of SDL and Luanti isn't picking the right one.
+
+### Case 1
+
 This program can be used to list available SDL drivers.
 
 ```c
@@ -51,3 +58,15 @@ support:
   make
   sudo make install
 ```
+
+### Case 2
+
+If the program from **Case 1** lists the offscreen driver and Luanti shows an error message like this one:
+
+```text
+ERROR[Main]: Irrlicht: Unable to initialize SDL: offscreen not available
+```
+
+It's possible that you have multiple SDL versions installed in your system and that Luanti isn't choosing the right one. If this is the case, you may have to uninstall other SDL versions and keep the one built with the offscreen driver support. See issues [#3](https://github.com/mikelma/craftium/issues/3) and [#11](https://github.com/mikelma/craftium/issues/11) for additional information.
+
+If the issue still persist (😓), consider opening a new [issue in GitHub](https://github.com/mikelma/craftium/issues) detailing the error messages and followed steps.
