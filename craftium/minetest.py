@@ -156,9 +156,7 @@ class Minetest():
         self.proc = None  # holds mintest's process
         self.stderr, self.stdout = None, None
 
-        self.mt_env = {}
-        if headless:
-            self.mt_env["SDL_VIDEODRIVER"] = "offscreen"
+        self.proc_env = {"SDL_VIDEODRIVER" : "offscreen"} if headless else None
 
     def start_process(self):
         if self.pipe_proc:
@@ -173,14 +171,11 @@ class Minetest():
         else:
             kwargs = dict()
 
-        # set env vars
-        for key, value in self.mt_env.items():
-            os.environ[key] = value
-
         self.proc = subprocess.Popen(
             self.launch_cmd,
             start_new_session=True,
             cwd=self.run_dir,
+            env=self.proc_env,
             **kwargs,
         )
 
@@ -367,7 +362,7 @@ class MTServerOnly():
         self.proc = None  # holds mintest's process
         self.stderr, self.stdout = None, None
 
-        self.mt_env = {}
+        self.proc_env = {"SDL_VIDEODRIVER" : "offscreen"}
 
     def start_process(self):
         if self.pipe_proc:
@@ -390,6 +385,7 @@ class MTServerOnly():
             self.launch_cmd,
             start_new_session=True,
             cwd=self.run_dir,
+            env=self.proc_env,
             **kwargs,
         )
 
@@ -590,9 +586,7 @@ class MTClientOnly():
         self.proc = None  # holds mintest's process
         self.stderr, self.stdout = None, None
 
-        self.mt_env = {}
-        if headless:
-            self.mt_env["SDL_VIDEODRIVER"] = "offscreen"
+        self.proc_env = {"SDL_VIDEODRIVER" : "offscreen"} if headless else None
 
     def start_process(self):
         if self.pipe_proc:
@@ -615,6 +609,7 @@ class MTClientOnly():
             self.launch_cmd,
             start_new_session=True,
             cwd=self.run_dir,
+            env=self.proc_env,
             **kwargs,
         )
 

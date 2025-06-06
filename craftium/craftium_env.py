@@ -1,6 +1,5 @@
 import os
 from typing import Optional, Any
-from copy import deepcopy
 
 from .mt_channel import MtChannel
 from .minetest import Minetest
@@ -8,6 +7,7 @@ from .minetest import Minetest
 import numpy as np
 from gymnasium import Env
 from gymnasium.spaces import Dict, Discrete, Box
+import pygame
 
 # names of the actions in the order they must be sent to MT
 ACTION_ORDER = [
@@ -45,8 +45,10 @@ class CraftiumEnv(Env):
     :param gray_scale_keepdim: If `True`, a singleton dimension will be added, i.e. observations are of the shape WxHx1. Otherwise, they are of shape WxH.
     :param seed: Random seed. Affects minetest's map generation and Lua's RNG (in mods).
     :param sync_mode: If set to true, minetest's internal client and server steps are synchronized. This is useful for training models slower than realtime.
-    :param pmul: Physics multiplier. As craftium agent's take actions by frame, default movement speeds make the agent move slowly. When set to > 1, minetest's movement velocity and acceleration increase helping the agent to move at acceptable relative speeds. 
+    :param pmul: Physics multiplier. As craftium agent's take actions by frame, default movement speeds make the agent move slowly. When set to > 1, minetest's movement velocity and acceleration increase helping the agent to move at acceptable relative speeds.
     :param soft_reset: If set to true, resets will have to be handled by the Lua mod and minetest won't be killed and rerun every call to restart. **IMPORTANT:** Only set this flag to `True` in environments that support this feature.
+    :param offscreen_sdl: Whether to use the `offscreen` SDL driver or not (true by default).
+    :param human_screeen_size: Size (width, height) of the render screen when `render_mode` is set to `"human"`.
     :param _minetest_conf: The default minetest configuration provided during environment registration.
     :param _voxel_obs_available: This flag indicates environments that support voxel observations during registration (do not manually override).
     """
@@ -81,6 +83,8 @@ class CraftiumEnv(Env):
             fps_max: int = 200,
             pmul: int = 20,
             soft_reset: bool = False,
+            offscreen_sdl: bool = True,
+            human_screen_size: tuple[int, int] = (720, 720),
             _minetest_conf: dict[str, Any] = dict(),
             _voxel_obs_available: bool = False,
     ):
@@ -147,7 +151,7 @@ class CraftiumEnv(Env):
             world_name=world_name,
             run_dir=run_dir,
             run_dir_prefix=run_dir_prefix,
-            headless=render_mode != "human",
+            headless=offscreen_sdl,
             seed=seed,
             game_id=game_id,
             sync_dir=env_dir,
@@ -168,6 +172,15 @@ class CraftiumEnv(Env):
             fps_max=fps_max,
             pmul=pmul,
         )
+
+        # set up the pygame screen if `render_mode` is set to "human"
+        self.pyg_closed = False
+        if render_mode == "human":
+            pygame.init()
+            self.pyg_screen = pygame.display.set_mode(human_screen_size)
+            self.pyg_clock = pygame.time.Clock()
+            self.pyg_screen_size = human_screen_size
+            pygame.display.set_caption("Craftium")
 
         self.last_observation = None  # used in render if "rgb_array"
         self.timesteps = 0  # the timesteps counter
@@ -262,6 +275,33 @@ class CraftiumEnv(Env):
         """
         self.timesteps += 1
 
+        # render the previous observation if needed
+        if self.render_mode == "human" and not self.pyg_closed:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    self.pyg_closed = True
+
+            if not self.pyg_closed:
+                # handle different observation types converting to RGB if needed
+                if not self.rgb_observations and not self.gray_scale_keepdim:
+                    pyg_obs = self.last_observation[:, :, None].repeat(3, 2)
+                elif not self.rgb_observations:
+                    pyg_obs = self.last_observation.repeat(3, 2)
+                else:
+                    pyg_obs = self.last_observation
+
+                # render the last observation in the pygame window
+                surface = pygame.image.frombuffer(
+                    pyg_obs.tobytes(),
+                    (self.obs_width, self.obs_height),
+                    "RGB"
+                )
+                surface = pygame.transform.scale(surface, self.pyg_screen_size)
+                self.pyg_screen.blit(surface, (0, 0))
+
+                pygame.display.flip()
+                self.pyg_clock.tick(self.metadata["render_fps"])  # limits FPS
+
         # convert the action dict to a format to be sent to MT through mt_chann
         keys = [0]*21  # all commands (keys) except the mouse
         mouse_x, mouse_y = 0, 0
@@ -302,7 +342,7 @@ class CraftiumEnv(Env):
         """
         Closes the environment and removes temporary files.
 
-        :param clear: Whether to remove the MT working 
+        :param clear: Whether to remove the MT working
         directory or not.
         """
         if self.mt_chann.is_open():
@@ -310,5 +350,9 @@ class CraftiumEnv(Env):
             self.mt_chann.close()
             self.mt.close_pipes()
             self.mt.wait_close()
+
         if clear:
             self.mt.clear()
+
+        if self.render_mode == "human":
+            pygame.quit()
