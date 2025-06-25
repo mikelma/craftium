@@ -1,4 +1,4 @@
-local voxel_radius = {
+voxel_radius = {
 	x = minetest.settings:get("voxel_obs_rx"),
 	y = minetest.settings:get("voxel_obs_ry"),
 	z = minetest.settings:get("voxel_obs_rz")
