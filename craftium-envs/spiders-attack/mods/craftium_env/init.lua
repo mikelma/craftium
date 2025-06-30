@@ -9,12 +9,12 @@ if minetest.settings:has("fixed_map_seed") then
 	math.randomseed(minetest.settings:get("fixed_map_seed"))
 end
 
-max_spiders = 5
-num_spiders = 1
-dead_spiders = 0
-spawn_pos = {x = -2.5, y = 5, z = -10}
+local max_spiders = 5
+local num_spiders = 1
+local dead_spiders = 0
+local spawn_pos = {x = -2.5, y = 5, z = -10}
 
-spawn_monster = function(pos)
+local spawn_monster = function(pos)
 	minetest.after(1, function()
 		local monster = mobs:add_mob(pos, {
 			name = "craftium:my_spider",

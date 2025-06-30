@@ -4,16 +4,16 @@ voxel_radius = {
 	z = minetest.settings:get("voxel_obs_rz")
 }
 
-rwd_objective = minetest.settings:get("rwd_objective")
-rwd_kill_monster = minetest.settings:get("rwd_kill_monster")
+local rwd_objective = minetest.settings:get("rwd_objective")
+local rwd_kill_monster = minetest.settings:get("rwd_kill_monster")
 
-objective_pos = nil
-player_pos = nil
-mobs_info = {}
-spawned_mobs = {}
+local objective_pos = nil
+local player_pos = nil
+local mobs_info = {}
+local spawned_mobs = {}
 
 -- Spawn a monster of the given name in a position, disabling the infotext of the monster
-spawn_monster = function(pos, name)
+local spawn_monster = function(pos, name)
 	local obj = minetest.add_entity(pos, name)
 
 	-- Get the registered monster object
@@ -31,8 +31,8 @@ spawn_monster = function(pos, name)
 	table.insert(spawned_mobs, obj)
 end
 
-respawn_objective = function()
-	item = minetest.add_item(objective_pos, minetest.settings:get("objective_item"))
+local respawn_objective = function()
+	local item = minetest.add_item(objective_pos, minetest.settings:get("objective_item"))
 
 	-- Scale the item by some factor
 	local scale_factor = 2
@@ -69,17 +69,39 @@ minetest.register_on_joinplayer(function(player, _last_login)
 	})
 
 	-- Generate map and locate the player and monsters
-	local map, _ = minetest.settings:get("ascii_map"):gsub("\\n", "\n")
+	local map, count = minetest.settings:get("ascii_map"):gsub("\\n", "\n")
 	local material_wall = minetest.settings:get("wall_material")
 	local y = 4.5 -- The height of the terrain
 	local z = 0
+
+	-- Get the longest row from the ascii map
+	local max_line = 0
+	for line in string.gmatch(map, "[^\n]+") do
+	  if #line > max_line then max_line = #line end
+	end
+
+	-- Create a voxelmanip object between the two points
+	local minp = {
+		x = 0,
+		y = 0,
+		z = 0,
+	}
+
+	local maxp = {
+		x = max_line + 1,
+		y = y + 1,
+		z = count + 1,
+	}
+
+	local vm = core.get_voxel_manip(minp, maxp)
+
 	for row in string.gmatch(map, "[^\n]+") do
 		local x = 0
 		for c in string.gmatch(row, ".") do
 			if c == "#" then
-				minetest.set_node({x = x, y = y, z = z}, { name = material_wall })
+				vm:set_node_at({x = x, y = y, z = z}, { name = material_wall })
 			elseif c == "%" then
-				minetest.set_node({ x = x, y = y, z = z }, { name = "default:glass" })
+				vm:set_node_at({ x = x, y = y, z = z }, { name = "default:glass" })
 			elseif c == "O" then
 				objective_pos = {x = x, y = y+1, z = z}
 				respawn_objective()
@@ -115,6 +137,8 @@ minetest.register_on_joinplayer(function(player, _last_login)
 		end
 		z = z + 1
 	end
+
+	vm:write_to_map()
 end)
 
 minetest.register_on_player_hpchange(
@@ -163,9 +187,8 @@ minetest.register_globalstep(function(dtime)
 	end
 
 	-- get voxel obs
-	local player_pos = player:get_pos()
 	if minetest.settings:get("voxel_obs") then
-		local voxel_data, voxel_light_data, voxel_param2_data = voxel_api:get_voxel_data(player_pos, voxel_radius)
+		local voxel_data, voxel_light_data, voxel_param2_data = voxel_api:get_voxel_data(player:get_pos(), voxel_radius)
 		set_voxel_data(voxel_data)
 		set_voxel_light_data(voxel_light_data)
 		set_voxel_param2_data(voxel_param2_data)
