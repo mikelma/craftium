@@ -164,4 +164,10 @@ We thank the Luanti and Farama developers (and respective communities!) for thei
 
 We also thank [minerl](minerl.readthedocs.io/), [MineDojo](https://minedojo.org/), and projects integrating Luanti and RL ([here](https://github.com/EleutherAI/minetest) and [here](https://github.com/Astera-org/minetest)) for serving as inspiration for this project.
 
-Finally, we are especially grateful (☺️) to [@vadel](https://github.com/vadel) and [@abarrainkua](https://github.com/abarrainkua) for reading preliminary versions of the paper, and to _Pascu_ for the technical support.
+We are especially grateful (☺️) to [@vadel](https://github.com/vadel) and [@abarrainkua](https://github.com/abarrainkua) for reading preliminary versions of the paper, and to _Pascu_ for the technical support.
+
+Finally, we thank all Craftium contributors 🙌 for their dedication and support:
+
+- [@enebas05](https://github.com/enebas05)
+- [@francelico](https://github.com/francelico)
+- [@Wolfxyz16](https://github.com/Wolfxyz16)
