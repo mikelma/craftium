@@ -162,7 +162,7 @@ Craftium forks [Luanti](https://github.com/luanti-org/luant) and its source code
 
 We thank the Luanti and Farama developers (and respective communities!) for their ongoing efforts to maintain and continuously improve these projects.
 
-We also thank [minerl](minerl.readthedocs.io/), [MineDojo](https://minedojo.org/), and projects integrating Luanti and RL ([here](https://github.com/EleutherAI/minetest) and [here](https://github.com/Astera-org/minetest)) for serving as inspiration for this project.
+We also thank [minerl](https://minerl.readthedocs.io/), [MineDojo](https://minedojo.org/), and projects integrating Luanti and RL ([here](https://github.com/EleutherAI/minetest) and [here](https://github.com/Astera-org/minetest)) for serving as inspiration for this project.
 
 We are especially grateful (☺️) to [@vadel](https://github.com/vadel) and [@abarrainkua](https://github.com/abarrainkua) for reading preliminary versions of the paper, and to _Pascu_ for the technical support.
 
