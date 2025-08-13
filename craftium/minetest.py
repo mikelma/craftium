@@ -156,7 +156,7 @@ class Minetest():
         self.proc = None  # holds mintest's process
         self.stderr, self.stdout = None, None
 
-        self.proc_env = {"SDL_VIDEODRIVER" : "offscreen"} if headless else None
+        self.proc_env = {"SDL_VIDEODRIVER": "offscreen"} if headless else None
 
     def start_process(self):
         if self.pipe_proc:
@@ -199,7 +199,8 @@ class Minetest():
     def overwrite_config(self, new_partial_config: dict[str, Any]):
         for key, value in new_partial_config.items():
             self.config[key] = value
-        self._write_config(self.config, os.path.join(self.run_dir, "minetest.conf"))
+        self._write_config(self.config, os.path.join(
+            self.run_dir, "minetest.conf"))
 
     def _write_config(self, config: dict[str, Any], path: os.PathLike):
         with open(path, "w") as f:
@@ -362,7 +363,7 @@ class MTServerOnly():
         self.proc = None  # holds mintest's process
         self.stderr, self.stdout = None, None
 
-        self.proc_env = {"SDL_VIDEODRIVER" : "offscreen"}
+        self.proc_env = {"SDL_VIDEODRIVER": "offscreen"}
 
     def start_process(self):
         if self.pipe_proc:
@@ -376,10 +377,6 @@ class MTServerOnly():
             )
         else:
             kwargs = dict()
-
-        # set env vars
-        for key, value in self.mt_env.items():
-            os.environ[key] = value
 
         self.proc = subprocess.Popen(
             self.launch_cmd,
@@ -409,7 +406,8 @@ class MTServerOnly():
     def overwrite_config(self, new_partial_config: dict[str, Any]):
         for key, value in new_partial_config.items():
             self.config[key] = value
-        self._write_config(self.config, os.path.join(self.run_dir, "minetest.conf"))
+        self._write_config(self.config, os.path.join(
+            self.run_dir, "minetest.conf"))
 
     def _write_config(self, config: dict[str, Any], path: os.PathLike):
         with open(path, "w") as f:
@@ -586,7 +584,7 @@ class MTClientOnly():
         self.proc = None  # holds mintest's process
         self.stderr, self.stdout = None, None
 
-        self.proc_env = {"SDL_VIDEODRIVER" : "offscreen"} if headless else None
+        self.proc_env = {"SDL_VIDEODRIVER": "offscreen"} if headless else None
 
     def start_process(self):
         if self.pipe_proc:
@@ -600,10 +598,6 @@ class MTClientOnly():
             )
         else:
             kwargs = dict()
-
-        # set env vars
-        for key, value in self.mt_env.items():
-            os.environ[key] = value
 
         self.proc = subprocess.Popen(
             self.launch_cmd,
