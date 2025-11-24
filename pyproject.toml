@@ -32,4 +32,4 @@ examples = ["stable_baselines3>=2.3.2", "torch>=2.6.0", "tyro>=0.8.5"]
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["craftium"]
+include = ["craftium-pkg"]
