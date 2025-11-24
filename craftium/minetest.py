@@ -137,7 +137,7 @@ class Minetest():
                 root_path = os.getcwd()
             else:  # in this case, this module might be running as an installed python package
                 # get the path location of the parent of this module
-                root_path = os.path.dirname(__file__)
+                root_path = os.path.join(os.path.dirname(__file__), "luanti")
         else:
             root_path = minetest_dir
 
@@ -147,7 +147,7 @@ class Minetest():
 
         # compose the launch command
         self.launch_cmd = [
-            "./bin/minetest",
+            "./bin/luanti",
             "--go",  # Disable main menu, directly start the game
             "--gameid", game_id,  # Select the game ID
             "--worldname", world_name,

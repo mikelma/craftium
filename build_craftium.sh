@@ -9,4 +9,7 @@ bash build_standalone.sh standalone_luanti
 
 cp -r standalone_luanti craftium/luanti
 
+cp -r craftium-envs craftium/
+
 echo "recursive-include craftium/luanti *" > MANIFEST.in
+echo "recursive-include craftium/craftium-envs *" >> MANIFEST.in
