@@ -9,8 +9,8 @@ STANDALONE_BIN_DIR = "./standalone_luanti"
 
 if not os.path.exists(STANDALONE_BIN_DIR):
     raise RuntimeError(
-        f"{STANDALONE_BIN_DIR} directory is missing. "
-        "Run ./build_engine.sh first."
+        f"\n\n{STANDALONE_BIN_DIR} directory is missing. "
+        "Run ./build_craftium.sh first.\n\n"
     )
 
 
