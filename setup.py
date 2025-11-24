@@ -1,6 +1,5 @@
 import os
 import shutil
-import subprocess
 from setuptools import setup, Extension
 import numpy
 from setuptools.command.build_ext import build_ext
@@ -8,18 +7,11 @@ from setuptools.command.build_ext import build_ext
 
 STANDALONE_BIN_DIR = "./standalone_luanti"
 
-def build_minetest():
-    if not os.path.exists(STANDALONE_BIN_DIR):
-        subprocess.check_call(["cmake", ".", "-DRUN_IN_PLACE=TRUE", "-DCMAKE_BUILD_TYPE=Release"])
-
-        # default to using all available CPU cores except two
-        num_cores = os.getenv("BUILD_THREADS", max(os.cpu_count()-2, 2))
-
-        print("Building Luanti (may take few minutes)...")
-        subprocess.check_call(["make", f"-j{num_cores}"])
-
-        print("Patching Luanti and copying system libraries...")
-        subprocess.check_call(["bash", "build_standalone.sh", STANDALONE_BIN_DIR])
+if not os.path.exists(STANDALONE_BIN_DIR):
+    raise RuntimeError(
+        f"{STANDALONE_BIN_DIR} directory is missing. "
+        "Run ./build_engine.sh first."
+    )
 
 
 def setup_irr_shaders_dir():
@@ -62,10 +54,10 @@ def create_data_dir():
 
 class BuildMinetest(build_ext):
     def run(self):
-        build_minetest()
         setup_irr_shaders_dir()
         create_data_dir()
         super().run()
+
 
 module = Extension("mt_server",
                    sources=["mt_server.c"],
