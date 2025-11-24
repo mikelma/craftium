@@ -30,6 +30,13 @@ dependencies = [
 # Packages needed to run the Deep RL examples
 examples = ["stable_baselines3>=2.3.2", "torch>=2.6.0", "tyro>=0.8.5"]
 
+
+[tool.setuptools]
+# include all package files
+package-dir = {"" = "."}
+
 [tool.setuptools.packages.find]
-where = ["."]
-include = ["craftium-pkg"]
+include = ["craftium"]
+
+[tool.setuptools.package-data]
+"craftium" = ["luanti/*"]

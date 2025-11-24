@@ -58,6 +58,6 @@ for lib in "$LIB_DIR"/*.so*; do
 done
 
 # --- MOVING REQUIRED ASSETS ---
-# cp -r builtin client fonts locale textures $DEST
+cp -r builtin client fonts locale textures $DEST
 
 echo "🎉 Done! Your portable Luanti is ready in $DEST"
