@@ -19,7 +19,7 @@ keywords = [
     "artificial intelligence",
 ]
 requires-python = ">=3.11"
-
+ 
 dependencies = [
     "gymnasium==0.29.1",
     "pygame>=2.6.1",
@@ -33,3 +33,12 @@ examples = ["stable_baselines3>=2.3.2", "torch>=2.6.0", "tyro>=0.8.5"]
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["craftium"]
+
+[tool.cibuildwheel]
+manylinux-x86_64-image = "manylinux_2_34"
+# before-all = """
+# yum install -y cmake make automake gcc gcc-c++ kernel-devel libcurl-devel openal-soft-devel libpng-devel libjpeg-devel libvorbis-devel libogg-devel freetype-devel mesa-libGL-devel zlib-devel jsoncpp-devel gmp-devel sqlite-devel luajit-devel leveldb-devel ncurses-devel spatialindex-devel libzstd-devel gettext SDL2-devel python3-devel && bash build_craftium.sh
+# """
+before-all = """
+yum install -y kernel-devel libcurl-devel openal-soft-devel libpng-devel libjpeg-devel libvorbis-devel libogg-devel freetype-devel mesa-libGL-devel zlib-devel jsoncpp-devel gmp-devel sqlite-devel luajit-devel leveldb-devel ncurses-devel spatialindex-devel libzstd-devel gettext SDL2-devel python3-devel && bash build_craftium.sh
+"""

@@ -5,9 +5,20 @@ set -e
 cmake . -DRUN_IN_PLACE=TRUE -DCMAKE_BUILD_TYPE=Release
 make -j$(nproc)
 
-bash build_standalone.sh standalone_luanti
+# cmake3 -B . \
+# 	-DCMAKE_BUILD_TYPE=Release \
+# 	-DENABLE_LTO=FALSE \
+# 	-DRUN_IN_PLACE=TRUE \
+# 	-DENABLE_GETTEXT=TRUE \
+# 	-DBUILD_SERVER=TRUE \
+# 	${CMAKE_FLAGS}
 
-cp -r standalone_luanti craftium/luanti
+# cmake3 --clean-first --build . --parallel $(($(nproc) + 1))
+
+# bash build_standalone.sh standalone_luanti
+# cp -r standalone_luanti craftium/luanti
+mkdir -p craftium/luanti
+cp -r bin craftium/luanti
 
 cp -r craftium-envs craftium/
 
