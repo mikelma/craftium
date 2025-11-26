@@ -15,6 +15,10 @@ def is_minetest_build_dir(path: os.PathLike) -> bool:
     return True
 
 
+def is_inside_python_pkg():
+    return "site-packages" in __file__
+
+
 class Minetest():
     def __init__(
             self,
@@ -44,9 +48,17 @@ class Minetest():
     ):
         self.pipe_proc = pipe_proc
 
+
         # create a dedicated directory for this run
         if run_dir is None:
-            self.run_dir = f"minetest-run-{uuid4()}"
+            if is_inside_python_pkg():
+                # NOTE: We have to nest the run dir in three subdirectories as the luanti binary
+                # (patched by auditwheel when creating the python wheel) is patched to expect the
+                # dynamic libs in the directory `../../../craftium.libs`.
+                # Also see: `self._create_mt_dirs(...)`.
+                self.run_dir = f"minetest-run-{uuid4()}/luanti/a"
+            else:
+                self.run_dir = f"minetest-run-{uuid4()}"
             if run_dir_prefix is not None:
                 self.run_dir = os.path.join(run_dir_prefix, self.run_dir)
         else:
@@ -230,6 +242,12 @@ class Minetest():
         link_dir("fonts")
         link_dir("locale")
         link_dir("textures")
+
+        if is_inside_python_pkg():
+            craftium_dir = os.path.split(__file__)[0]
+            print("Carftium dir:", craftium_dir, target_dir)
+            os.symlink(os.path.join(craftium_dir, "../craftium.libs"),
+                       os.path.join(target_dir, "../../craftium.libs"))
 
         copy_dir("bin")
         copy_dir("client")
