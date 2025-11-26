@@ -2,7 +2,10 @@
  
 set -e
 
-cmake . -DRUN_IN_PLACE=TRUE -DCMAKE_BUILD_TYPE=Release
+CC="gcc -march=x86-64 -mtune=generic"
+CPP="g++ -march=x86-64 -mtune=generic"
+
+cmake . -DRUN_IN_PLACE=TRUE -DCMAKE_BUILD_TYPE=Release -DBUILD_UNITTESTS=OFF -DENABLE_GETTEXT=OFF -DCMAKE_C_COMPILER=$CC -DCMAKE_CXX_COMPILER=$CPP
 make -j$(nproc)
 
 # cmake3 -B . \
