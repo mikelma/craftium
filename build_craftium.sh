@@ -2,10 +2,10 @@
  
 set -e
 
-CC="gcc -march=x86-64 -mtune=generic"
-CPP="g++ -march=x86-64 -mtune=generic"
+sed -i '/$<$<BOOL:${USE_SDL2_SHARED}>:SDL2::SDL2>/,/$<$<BOOL:${USE_SDL2_STATIC}>:SDL2::SDL2-static>/c\ \ \ \ \ \ \ \ -L/usr/lib64 -lSDL2' irr/src/CMakeLists.txt
 
-cmake . -DRUN_IN_PLACE=TRUE -DCMAKE_BUILD_TYPE=Release -DBUILD_UNITTESTS=OFF -DENABLE_GETTEXT=OFF -DCMAKE_C_COMPILER=$CC -DCMAKE_CXX_COMPILER=$CPP
+# cmake . -DRUN_IN_PLACE=TRUE -DCMAKE_BUILD_TYPE=Release -DBUILD_UNITTESTS=OFF -DENABLE_GETTEXT=OFF -DSDL2_LIBRARIES="/usr/lib64/libSDL2.so" -DSDL2_INCLUDE_DIRS="/usr/include/SDL2"
+cmake . -DRUN_IN_PLACE=TRUE -DCMAKE_BUILD_TYPE=Release -DSDL2_LIBRARIES="/usr/lib64/libSDL2.so" -DUSE_SDL2_SHARED=TRUE
 make -j$(nproc)
 
 # cmake3 -B . \
