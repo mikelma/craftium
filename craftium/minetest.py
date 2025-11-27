@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 from typing import Optional, Any
 import subprocess
 from uuid import uuid4
@@ -56,9 +57,9 @@ class Minetest():
                 # (patched by auditwheel when creating the python wheel) is patched to expect the
                 # dynamic libs in the directory `../../../craftium.libs`.
                 # Also see: `self._create_mt_dirs(...)`.
-                self.run_dir = f"minetest-run-{uuid4()}/luanti/a"
+                self.run_dir = f"luanti-run-{uuid4()}/luanti/a"
             else:
-                self.run_dir = f"minetest-run-{uuid4()}"
+                self.run_dir = f"luanti-run-{uuid4()}"
             if run_dir_prefix is not None:
                 self.run_dir = os.path.join(run_dir_prefix, self.run_dir)
         else:
@@ -68,7 +69,8 @@ class Minetest():
             shutil.rmtree(self.run_dir)
         os.makedirs(self.run_dir)
 
-        print(f"==> Creating Minetest run directory: {self.run_dir}")
+        ppath = Path(self.run_dir) if not is_inside_python_pkg() else Path(self.run_dir).parent.parent
+        print(f"==> Creating Luanti run directory at {ppath}")
 
         port = mt_port if mt_port is not None else random.randint(49152, 65535)
 
@@ -204,9 +206,11 @@ class Minetest():
             self.stdout.close()
 
     def clear(self):
+        run_dir = Path(self.run_dir)
         # delete the run's directory
-        if os.path.exists(self.run_dir):
-            shutil.rmtree(self.run_dir)
+        dir = run_dir if not is_inside_python_pkg() else run_dir.parent.parent
+        if os.path.exists(dir):
+            shutil.rmtree(dir)
 
     def overwrite_config(self, new_partial_config: dict[str, Any]):
         for key, value in new_partial_config.items():
@@ -245,7 +249,6 @@ class Minetest():
 
         if is_inside_python_pkg():
             craftium_dir = os.path.split(__file__)[0]
-            print("Carftium dir:", craftium_dir, target_dir)
             os.symlink(os.path.join(craftium_dir, "../craftium.libs"),
                        os.path.join(target_dir, "../../craftium.libs"))
 
