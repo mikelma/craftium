@@ -43,6 +43,27 @@
 
 ## Installation ⚙️
 
+### Using a pre-built package
+
+You can install a pre-built craftium wheel directly from the GitHub [releases](https://github.com/mikelma/craftium/releases/) page. For example, if using python 3.12 you can just run:
+
+```bash
+pip install https://github.com/mikelma/craftium/releases/download/v0.0.1/craftium-0.0.1-cp312-cp312-manylinux_2_28_x86_64.whl
+```
+
+This command will install craftium, all required dependencies, and the default environments automatically.
+
+### Using Docker
+
+We also provide a minimal Dockerfile that sets up a minimal environment and installs a pre-built craftium wheel.
+To build the container, just:
+
+```bash
+docker build -t craftium-manylinux -f Dockerfile.craftium .
+```
+
+### Building from source
+
 First, clone craftium using the `--recurse-submodules` flag (**important**: the flag fetches submodules needed by the library) and `cd` into the project's main directory:
 
 ```bash
