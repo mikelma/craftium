@@ -19,8 +19,8 @@ keywords = [
     "artificial intelligence",
 ]
 classifiers = [
+    "Operating System :: POSIX",
     "Programming Language :: Python :: 3",
-    "Operating System :: Linux",
 ]
 requires-python = ">=3.11"
  
