@@ -238,7 +238,7 @@ class Minetest():
             for item in os.listdir(sync_dir):
                 src = os.path.join(sync_dir, item)
                 tgt = os.path.join(target_dir, item)
-                if os.path.isfile(item):  # if it's a file
+                if os.path.isfile(src):  # if it's a file
                     shutil.copy(src, tgt)
                 else:  # is a directory
                     shutil.copytree(src, tgt, dirs_exist_ok=True)
