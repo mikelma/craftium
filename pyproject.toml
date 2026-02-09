@@ -50,3 +50,10 @@ yum install -y wget kernel-devel libcurl-devel openal-soft-devel libpng-devel li
 bash build_sdl2.sh && \
 bash build_craftium.sh
 """
+
+[dependency-groups]
+docs = [
+    "mkdocs>=1.6.1",
+    "mkdocstrings>=1.0.3",
+    "mkdocstrings-python>=2.0.2",
+]
