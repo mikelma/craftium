@@ -5,7 +5,7 @@ requires = ["numpy>=2.0.1", "setuptools>=66.1.1", "pybind11==2.13.1"]
 [project]
 name = "craftium"
 version = "0.0.1"
-description = "A Gymnasium wrapper for the minetest game engine"
+description = "Create custom Gymnasium environments using the Luanti game engine"
 readme = "craftium-readme.md"
 license = { file = "LICENSE.txt" }
 keywords = [
@@ -18,13 +18,22 @@ keywords = [
     "machine learning",
     "artificial intelligence",
 ]
+classifiers = [
+    "Operating System :: POSIX",
+    "Programming Language :: Python :: 3",
+]
 requires-python = ">=3.11"
-
+ 
 dependencies = [
     "gymnasium==0.29.1",
     "pygame>=2.6.1",
     "PyYAML>=6.0.1",
 ]
+
+[project.urls]
+Homepage = "https://github.com/mikelma/craftium"
+Documentation = "https://craftium.readthedocs.io"
+Issues = "https://github.com/mikelma/craftium/issues"
 
 [project.optional-dependencies]
 # Packages needed to run the Deep RL examples
@@ -33,3 +42,18 @@ examples = ["stable_baselines3>=2.3.2", "torch>=2.6.0", "tyro>=0.8.5"]
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["craftium"]
+
+[tool.cibuildwheel]
+manylinux-x86_64-image = "manylinux_2_28"
+before-all = """
+yum install -y wget kernel-devel libcurl-devel openal-soft-devel libpng-devel libjpeg-devel libvorbis-devel libogg-devel freetype-devel mesa-libGL-devel zlib-devel jsoncpp-devel gmp-devel sqlite-devel luajit-devel leveldb-devel ncurses-devel spatialindex-devel libzstd-devel gettext SDL2-devel python3-devel && \
+bash build_sdl2.sh && \
+bash build_craftium.sh
+"""
+
+[dependency-groups]
+docs = [
+    "mkdocs>=1.6.1",
+    "mkdocstrings>=1.0.3",
+    "mkdocstrings-python>=2.0.2",
+]

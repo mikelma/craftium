@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 from typing import Optional, Any
 import subprocess
 from uuid import uuid4
@@ -13,6 +14,10 @@ def is_minetest_build_dir(path: os.PathLike) -> bool:
         if not os.path.exists(os.path.join(path, rd)):
             return False
     return True
+
+
+def is_inside_python_pkg():
+    return "site-packages" in __file__
 
 
 class Minetest():
@@ -44,9 +49,17 @@ class Minetest():
     ):
         self.pipe_proc = pipe_proc
 
+
         # create a dedicated directory for this run
         if run_dir is None:
-            self.run_dir = f"minetest-run-{uuid4()}"
+            if is_inside_python_pkg():
+                # NOTE: We have to nest the run dir in three subdirectories as the luanti binary
+                # (patched by auditwheel when creating the python wheel) is patched to expect the
+                # dynamic libs in the directory `../../../craftium.libs`.
+                # Also see: `self._create_mt_dirs(...)`.
+                self.run_dir = f"luanti-run-{uuid4()}/luanti/a"
+            else:
+                self.run_dir = f"luanti-run-{uuid4()}"
             if run_dir_prefix is not None:
                 self.run_dir = os.path.join(run_dir_prefix, self.run_dir)
         else:
@@ -56,7 +69,8 @@ class Minetest():
             shutil.rmtree(self.run_dir)
         os.makedirs(self.run_dir)
 
-        print(f"==> Creating Minetest run directory: {self.run_dir}")
+        ppath = Path(self.run_dir) if not is_inside_python_pkg() else Path(self.run_dir).parent.parent
+        print(f"==> Creating Luanti run directory at {ppath}")
 
         port = mt_port if mt_port is not None else random.randint(49152, 65535)
 
@@ -137,7 +151,7 @@ class Minetest():
                 root_path = os.getcwd()
             else:  # in this case, this module might be running as an installed python package
                 # get the path location of the parent of this module
-                root_path = os.path.dirname(__file__)
+                root_path = os.path.join(os.path.dirname(__file__), "luanti")
         else:
             root_path = minetest_dir
 
@@ -147,7 +161,7 @@ class Minetest():
 
         # compose the launch command
         self.launch_cmd = [
-            "./bin/minetest",
+            "./bin/luanti",
             "--go",  # Disable main menu, directly start the game
             "--gameid", game_id,  # Select the game ID
             "--worldname", world_name,
@@ -192,9 +206,11 @@ class Minetest():
             self.stdout.close()
 
     def clear(self):
+        run_dir = Path(self.run_dir)
         # delete the run's directory
-        if os.path.exists(self.run_dir):
-            shutil.rmtree(self.run_dir)
+        dir = run_dir if not is_inside_python_pkg() else run_dir.parent.parent
+        if os.path.exists(dir):
+            shutil.rmtree(dir)
 
     def overwrite_config(self, new_partial_config: dict[str, Any]):
         for key, value in new_partial_config.items():
@@ -230,6 +246,11 @@ class Minetest():
         link_dir("fonts")
         link_dir("locale")
         link_dir("textures")
+
+        if is_inside_python_pkg():
+            craftium_dir = os.path.split(__file__)[0]
+            os.symlink(os.path.join(craftium_dir, "../craftium.libs"),
+                       os.path.join(target_dir, "../../craftium.libs"))
 
         copy_dir("bin")
         copy_dir("client")

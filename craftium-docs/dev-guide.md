@@ -50,3 +50,20 @@ Luanti, the game engine Craftium is based on, gets updated Instructions to updat
     This last command will merge as many changes as possible, but some might conflict with the Craftium's modifications to Luanti. Check the command's output to get the list of conflicts. You can also check conflicts from the `Unmerged paths` section of `git status`.
 
 4. After resolving the conflicts, check that all Craftium functionalities continue to work and commit the changes. Note that Craftium doesn't have unit tests yet, so any pull request updating Craftium to a new Luanti version will have to be manually checked.
+
+
+## Building Craftium as a Python wheel
+
+This method employs [`uv`](https://docs.astral.sh/uv/) and [`docker`](https://www.docker.com/), so please be sure to have a proper installation of both tools in your system before trying to build the wheel.
+
+Once `uv` and `docker` are set up, just call `CIBW_SKIP="*-musllinux_*" uvx cibuildwheel --platform linux` inside the cloned craftium repo. After a while (+ 10mins), the Python wheels will be located inside a new `wheelhouse/` directory in the current path.
+
+## Locally serving the docs
+
+To serve craftium's docs locally, run:
+
+```bash
+uv run --group docs mkdocs serve
+```
+
+This command will serve craftium's documentation in `http://127.0.0.1:8000/` by default.

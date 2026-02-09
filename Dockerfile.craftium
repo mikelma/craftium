@@ -1,0 +1,15 @@
+FROM quay.io/pypa/manylinux_2_28_x86_64:latest
+
+ENV PIP=/opt/python/cp312-cp312/bin/pip
+ENV PYTHON=/opt/python/cp312-cp312/bin/python
+
+RUN yum install -y mesa-dri-drivers mesa-libEGL mesa-libGL
+
+RUN ln -s $PYTHON /usr/local/bin/python && \
+    ln -s $PIP /usr/local/bin/pip
+
+RUN pip install --upgrade pip
+
+RUN pip install https://github.com/mikelma/craftium/releases/download/v0.0.1/craftium-0.0.1-cp312-cp312-manylinux_2_28_x86_64.whl
+
+CMD ["/bin/bash"]
