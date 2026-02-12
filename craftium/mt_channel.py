@@ -38,7 +38,7 @@ class MtChannel():
                           + self.voxel_obs_dx*self.voxel_obs_dy*self.voxel_obs_dz*self.n_vox_chan*4)
 
     def receive(self):
-        img, vox_obs, pos, vel, pitch, yaw, dtime, reward, termination = mt_server.server_recv(
+        img, vox_obs, pos, vel, pitch, yaw, dtime, reward, termination, info = mt_server.server_recv(
             self.connfd,
             self.rec_bytes,
             self.img_width,
@@ -49,7 +49,7 @@ class MtChannel():
             self.voxel_obs_dy,
             self.voxel_obs_dz,
         )
-        return img, vox_obs, pos/1000., vel/1000., pitch/100., yaw/100., dtime, reward, termination # pos,vel / 1000 to match 1 unit = 1 node.
+        return img, vox_obs, pos/1000., vel/1000., pitch/100., yaw/100., dtime, reward, termination, info # pos,vel / 1000 to match 1 unit = 1 node.
 
     def send(self, keys: list[int], mouse_x: int, mouse_y: int, soft_reset: bool = False, kill: bool = False):
         assert len(keys) == 21, f"Keys list must be of length 21 and is {len(keys)}"

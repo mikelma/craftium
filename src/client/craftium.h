@@ -18,6 +18,11 @@
 #include "../settings.h"
 
 
+#include <string>
+#include <unordered_map>
+#include <variant>
+
+
 inline char actions[27];
 
 /*
@@ -175,6 +180,12 @@ inline bool g_soft_reset = false; /* Global variable with the termination flag *
 inline std::vector<uint32_t> g_voxel_data = std::vector<uint32_t>(1,0);
 inline std::vector<uint32_t> g_voxel_light_data = std::vector<uint32_t>(1,0);
 inline std::vector<uint32_t> g_voxel_param2_data = std::vector<uint32_t>(1,0);
+using Value = std::variant<bool, int, float, double, std::string>;
+using List = std::vector<Value>;
+using Dict = std::unordered_map<std::string, Value>;
+using InfoMap = std::unordered_map<std::string, std::variant<List, Dict, bool, int, float, double, std::string>>;
+
+inline InfoMap g_info;  /* Global variable with the information dictionary */
 
 extern "C" {
 #include <lualib.h>
@@ -261,4 +272,279 @@ inline static int lua_set_voxel_light_data(lua_State* L) {
 inline static int lua_set_voxel_param2_data(lua_State* L) {
 	g_voxel_param2_data = lua_set_array_uint32_t(L);
 	return 0;
+
+inline static int lua_set_info(lua_State *L) {
+
+    const char *key = lua_tostring(L, 1);
+    if (!key){
+        return 0;
+    }
+    if (lua_type(L,2) == LUA_TBOOLEAN){
+        bool val = lua_toboolean(L, 2);
+        g_info[key] = val;
+        return 0; /* number of results */
+    } else if (lua_type(L, 2) == LUA_TNUMBER) {
+        lua_Number num = lua_tonumber(L, 2);
+        if (static_cast<lua_Integer>(num) == num) {
+            g_info[key] = static_cast<int>(num);
+        } else if (static_cast<float>(num) == num) {
+            g_info[key] = static_cast<float>(num);
+        } else {
+            g_info[key] = static_cast<double>(num);
+        }
+        return 0; /* number of results */
+    } else if (lua_type(L, 2) == LUA_TSTRING) {
+        std::string val = lua_tostring(L, 2);
+        g_info[key] = val;
+        return 0; /* number of results */
+    } else {
+        return 0;
+    }
+}
+
+
+inline static int lua_reset_info(lua_State *L) {
+    g_info.clear();
+    return 0; /* number of results */
+}
+
+
+inline static int lua_get_from_info(lua_State *L) {
+
+    const char *key = lua_tostring(L,1);
+    if (!key) {
+        lua_pushnil(L);
+        return 1;
+    }
+
+    auto iter = g_info.find(key);
+    if (iter == g_info.end()){
+        lua_pushnil(L);
+        return 1;
+    }
+
+    if (std::holds_alternative<List>(iter->second) || std::holds_alternative<Dict>(iter->second)){
+        lua_pushnil(L);
+        return 1;
+    }
+
+
+
+    if (std::holds_alternative<bool>(iter->second)){
+        lua_pushboolean(L, std::get<bool>(iter->second));
+    } else if (std::holds_alternative<int>(iter->second)) {
+        lua_pushinteger(L,std::get<int>(iter->second));
+    } else if (std::holds_alternative<float>(iter->second)) {
+        lua_pushnumber(L,std::get<float>(iter->second));
+    } else if (std::holds_alternative<double>(iter->second)) {
+        lua_pushnumber(L, std::get<double>(iter->second));
+    } else if (std::holds_alternative<std::string>(iter->second)) {
+        lua_pushstring(L,std::get<std::string>(iter->second).c_str());
+    } else {
+        lua_pushnil(L);
+    }
+
+    return 1; /* number of results */
+}
+
+
+inline static int lua_remove_from_info(lua_State *L){
+
+    auto iter = g_info.find(lua_tostring(L, 1));
+
+    // Delete the pair with key if found
+    if (iter != g_info.end()) {
+        g_info.erase(iter);
+    }
+
+    return 0; /* number of results */
+}
+
+inline static int lua_info_contains(lua_State *L){
+
+    auto iter = g_info.find(lua_tostring(L, 1));
+
+    lua_pushboolean(L, iter != g_info.end());
+
+    return 1; /* number of results */
+}
+
+inline static int lua_set_empty_list(lua_State *L){
+    const char *key = lua_tostring(L, 1);
+    if (!key){
+        return 0;
+    }
+
+    g_info[key] = List();
+    return 0; /* number of results */
+
+}
+
+inline static int lua_add_to_list(lua_State *L){
+    const char *key = lua_tostring(L, 1);
+    if (!key){
+        return 0;
+    }
+
+    Value val;
+
+    if (lua_type(L,2) == LUA_TBOOLEAN){
+        val = lua_toboolean(L, 2);
+    } else if (lua_type(L, 2) == LUA_TNUMBER) {
+        lua_Number num = lua_tonumber(L, 2);
+        if (static_cast<lua_Integer>(num) == num) {
+            val = static_cast<int>(num);
+        } else if (static_cast<float>(num) == num) {
+            val = static_cast<float>(num);
+        } else {
+            val = static_cast<double>(num);
+        }
+    } else if (lua_type(L, 2) == LUA_TSTRING) {
+        val = lua_tostring(L, 2);
+    } else {
+        return 0;
+    }
+
+    auto iter = g_info.find(key);
+    if (iter == g_info.end()){
+        g_info[key] = List{val};
+        return 0;
+    } else if (!std::holds_alternative<List>(iter->second)){
+        return 0;
+    }
+
+    std::get<List>(iter->second).push_back(val);
+
+    return 0;
+
+}
+
+inline static int lua_set_empty_dict(lua_State *L){
+    const char *key = lua_tostring(L, 1);
+    if (!key){
+        return 0;
+    }
+
+    g_info[key] = Dict();
+    return 0; /* number of results */
+
+}
+
+inline static int lua_add_to_dict(lua_State *L){
+    const char *key = lua_tostring(L, 1);
+    const char *key2 = lua_tostring(L, 2);
+    if (!key || !key2) {
+        return 0;
+    }
+
+    Value val;
+    switch (lua_type(L, 3)) {
+        case LUA_TBOOLEAN:
+            val = static_cast<bool>(lua_toboolean(L, 3));
+            break;
+        case LUA_TNUMBER: {
+            lua_Number num = lua_tonumber(L, 3);
+            if (static_cast<lua_Integer>(num) == num) {
+                val = static_cast<int>(num);
+            } else {
+                val = static_cast<double>(num);
+            }
+            break;
+        }
+        case LUA_TSTRING:
+            val = std::string(lua_tostring(L, 3));
+            break;
+        default:
+            return 0;
+    }
+
+    auto iter = g_info.find(key);
+    if (iter == g_info.end()) {
+        g_info[key] = Dict{{key2, val}};
+    } else if (std::holds_alternative<Dict>(iter->second)) {
+        std::get<Dict>(iter->second)[key2] = val;
+    }
+
+    return 0;
+}
+
+
+
+inline static int lua_dict_contains(lua_State *L){
+    const char *key = lua_tostring(L, 1);
+    if (!key){
+        lua_pushnil(L);
+        return 1;
+    }
+
+    const char *key2 = lua_tostring(L, 2);
+    if (!key2){
+        lua_pushnil(L);
+        return 1;
+    }
+
+    auto iter = g_info.find(key);
+    if (iter == g_info.end()){
+        lua_pushnil(L);
+        return 1;
+    }
+
+    if (!std::holds_alternative<Dict>(iter->second)){
+        lua_pushnil(L);
+        return 1;
+    }
+
+    auto iter2 = std::get<Dict>(iter->second).find(key2);
+
+    lua_pushboolean(L, iter2 != std::get<Dict>(iter->second).end());
+
+    return 1; /* number of results */
+}
+
+inline static int lua_get_from_dict(lua_State *L) {
+
+    const char *key = lua_tostring(L,1);
+    if (!key) {
+        lua_pushnil(L);
+        return 1;
+    }
+
+    const char *key2 = lua_tostring(L,2);
+    if (!key2) {
+        lua_pushnil(L);
+        return 1;
+    }
+
+    auto iter = g_info.find(key);
+    if (iter == g_info.end()){
+        lua_pushnil(L);
+        return 1;
+    }
+
+    if (!std::holds_alternative<Dict>(iter->second)){
+        lua_pushnil(L);
+        return 1;
+    }
+
+    auto iter2 = std::get<Dict>(iter->second).find(key2);
+    if (iter2 == std::get<Dict>(iter->second).end()){
+        lua_pushnil(L);
+        return 1;
+    }
+
+    if (std::holds_alternative<bool>(iter2->second)){
+        lua_pushboolean(L, std::get<bool>(iter2->second));
+    } else if (std::holds_alternative<int>(iter2->second)) {
+        lua_pushinteger(L,std::get<int>(iter2->second));
+    } else if (std::holds_alternative<float>(iter2->second)) {
+        lua_pushnumber(L,std::get<float>(iter2->second));
+    } else if (std::holds_alternative<double>(iter2->second)) {
+        lua_pushnumber(L, std::get<double>(iter2->second));
+    } else if (std::holds_alternative<std::string>(iter2->second)) {
+        lua_pushstring(L,std::get<std::string>(iter2->second).c_str());
+    } else {
+        lua_pushnil(L);
+    }
+
+    return 1; /* number of results */
 }

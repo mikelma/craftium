@@ -491,6 +491,7 @@ private:
         int py_sockfd = 0;
         struct sockaddr_in *py_servaddr = nullptr;
         unsigned char *obs_rwd_buffer = 0;
+		int last_obs_rwd_buffer_size = 0;
         void startPyConn();
         void pyConnStep(LocalPlayer *player, float dtime);
 

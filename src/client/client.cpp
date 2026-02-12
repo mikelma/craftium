@@ -60,7 +60,117 @@
 #include "gui/mainmenumanager.h"
 #include <chrono>
 
+#include <msgpack.hpp>
+#include <unordered_map>
+#include <vector>
+#include <variant>
+#include <string>
+
 extern gui::IGUIEnvironment* guienv;
+
+// Specialization of msgpack::adaptor::pack for serializing std::variant
+// Ensures MsgPack correct serialization of variant types
+
+using Value = std::variant<bool, int, float, double, std::string>;
+using List = std::vector<Value>;
+using Dict = std::unordered_map<std::string, Value>;
+using InfoMap = std::unordered_map<std::string, std::variant<List, Dict, bool, int, float, double, std::string>>;
+
+namespace msgpack {
+    MSGPACK_API_VERSION_NAMESPACE(MSGPACK_DEFAULT_API_NS) {
+        namespace adaptor {
+			// for packing InfoMap (variant<List, Dict, bool, int, float, double, std::string>)
+            template <>
+            struct pack<std::variant<List, Dict, bool, int, float, double, std::string>> {
+                template <typename Stream>
+                packer<Stream>& operator()(msgpack::packer<Stream>& o, const std::variant<List, Dict, bool, int, float, double, std::string>& v) const {
+                    if (std::holds_alternative<bool>(v)) {
+                        o.pack(std::get<bool>(v));
+                    } else if (std::holds_alternative<int>(v)){
+                        o.pack(std::get<int>(v));
+                    }else if (std::holds_alternative<float>(v)){
+                        o.pack(std::get<float>(v));
+                    }else if (std::holds_alternative<double>(v)){
+                        o.pack(std::get<double>(v));
+                    }else if (std::holds_alternative<std::string>(v)){
+                        o.pack(std::get<std::string>(v));
+                    }else if (std::holds_alternative<List>(v)){
+                        o.pack(std::get<List>(v));
+                    } else if (std::holds_alternative<Dict>(v)){
+                        o.pack(std::get<Dict>(v));
+                    }
+                    return o;
+                }
+            };
+
+			// for packing Value (variant<bool, int, float, double, std::string>)
+            template <>
+            struct pack<std::variant<bool, int, float, double, std::string>> {
+                template <typename Stream>
+                packer<Stream>& operator()(msgpack::packer<Stream>& o, const std::variant<bool, int, float, double, std::string>& v) const {
+                    if (std::holds_alternative<bool>(v)) {
+                        o.pack(std::get<bool>(v));
+                    } else if (std::holds_alternative<int>(v)){
+                        o.pack(std::get<int>(v));
+                    }else if (std::holds_alternative<float>(v)){
+                        o.pack(std::get<float>(v));
+                    }else if (std::holds_alternative<double>(v)){
+                        o.pack(std::get<double>(v));
+                    }else if (std::holds_alternative<std::string>(v)){
+                        o.pack(std::get<std::string>(v));
+                    }
+                    return o;
+                }
+            };
+        }
+    }
+}
+
+void printValue(const Value& value) {
+    std::visit([](const auto& val) {
+        std::cout << val;
+    }, value);
+}
+
+void printList(const List& list) {
+    std::cout << "[";
+    for (size_t i = 0; i < list.size(); ++i) {
+        printValue(list[i]);
+        if (i + 1 < list.size())
+            std::cout << ", ";
+    }
+    std::cout << "]";
+}
+
+void printDict(const Dict& dict) {
+    std::cout << "{";
+    size_t count = 0;
+    for (const auto& [key, val] : dict) {
+        std::cout << "\"" << key << "\": ";
+        printValue(val);
+        if (++count < dict.size())
+            std::cout << ", ";
+    }
+    std::cout << "}";
+}
+
+void printInfoMap(const InfoMap& infoMap) {
+    std::cout << "{\n";
+    for (const auto& [key, val] : infoMap) {
+        std::cout << "  \"" << key << "\": ";
+        std::visit([&](const auto& v) {
+            using T = std::decay_t<decltype(v)>;
+            if constexpr (std::is_same_v<T, List>)
+                printList(v);
+            else if constexpr (std::is_same_v<T, Dict>)
+                printDict(v);
+            else
+                std::cout << v;
+        }, val);
+        std::cout << "\n";
+    }
+    std::cout << "}\n";
+}
 
 /*
 	Utility classes
@@ -237,15 +347,29 @@ void Client::pyConnStep(LocalPlayer *myplayer, float dtime){
     W = dims.Width;
     H = dims.Height;
 
+
+	// msgpack buffer for info
+	msgpack::sbuffer info_buffer;
+
+	/* Encode the info_buffer's size into obs_rwd_buffer*/
+	int infoSize;
+	if (g_info.size() == 0){
+		infoSize = 0;
+	}else{
+		/* Serialize the info unordered_map using msgpack*/
+		msgpack::pack(info_buffer, g_info);
+		infoSize = info_buffer.size();
+	}
+
+
     /*
-      W*H*3 for the WxH RGB image, +8 for the reward value (a double),
-      and +1 for the episode termination flag
+      W*H*3 for the WxH RGB image, +8 for the reward value (a double), +1 for the episode termination flag and + 4 for the size of the information buffer (integer) + size of infobufer
     */
     // [RGB, (pos,vel,pitch,yaw), dtime, reward, termination]
     if (g_settings->getBool("rgb_frames")) {
-        obs_rwd_buffer_size = W*H*3 + 32 + 4 + 8 + 1; // full RGB images
+        obs_rwd_buffer_size = W*H*3 + 32 + 4 + 8 + 1 + 4 + infoSize; // full RGB images
     } else {
-        obs_rwd_buffer_size = W*H + 32 + 4 + 8 + 1; // grayscale images
+        obs_rwd_buffer_size = W*H + 32 + 4 + 8 + 1 + 4 + infoSize; // grayscale images
     }
 
 	Xv = 2 * g_settings->getU32("voxel_obs_rx") + 1;
@@ -256,15 +380,25 @@ void Client::pyConnStep(LocalPlayer *myplayer, float dtime){
 	}
 
     /* If obs_rwd_buffer is not initialized, allocate memory for it now */
-    if (!obs_rwd_buffer) {
-        obs_rwd_buffer = (unsigned char*) malloc(obs_rwd_buffer_size);
-    }
+
+	if (!obs_rwd_buffer || last_obs_rwd_buffer_size != obs_rwd_buffer_size){
+		free(obs_rwd_buffer);
+		obs_rwd_buffer = (unsigned char*) malloc(obs_rwd_buffer_size);
+		last_obs_rwd_buffer_size = obs_rwd_buffer_size;
+	}
 
     if (!raw_image)
         return;
 
     /* Copy RGB image into a flat u8 array (obs_rwd_buffer) */
     int i = 0;
+
+	unsigned char *infoSizeBytes = (unsigned char*)&infoSize;
+	for (int j=0; j<4; j++) {
+        obs_rwd_buffer[i] = infoSizeBytes[j];
+        i++;
+    }
+
     if (g_settings->getBool("rgb_frames")) {
         for (int h=0; h<H; h++) {
             for (int w=0; w<W; w++) {
@@ -341,6 +475,15 @@ void Client::pyConnStep(LocalPlayer *myplayer, float dtime){
     } else {
         obs_rwd_buffer[i] = 0;
     }
+	i++;
+
+	if (g_info.size() != 0){
+		char *info_data = info_buffer.data();
+		for (int j=0; j<infoSize; j++) {
+			obs_rwd_buffer[i] = info_data[j];
+			i++;
+    	}
+	}
 
     /* Send the obs_rwd_buffer over TCP to Python */
     n_send = send(py_sockfd, obs_rwd_buffer, obs_rwd_buffer_size, 0);
@@ -382,7 +525,7 @@ void Client::pyConnStep(LocalPlayer *myplayer, float dtime){
     /* Handle mouse events when menu is open */
     if (!g_menumgr.m_stack.empty()) {
         SEvent mouse_event{};
-	mouse_event.EventType = EET_MOUSE_INPUT_EVENT;
+		mouse_event.EventType = EET_MOUSE_INPUT_EVENT;
 
         auto control = RenderingEngine::get_raw_device()->getCursorControl();
         auto pos = control->getPosition();

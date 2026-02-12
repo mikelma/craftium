@@ -28,11 +28,63 @@ minetest.register_on_joinplayer(function(player, _last_login)
 	end
 
 	-- set player's initial position
-	player:set_pos({x = 120, z = 92, y = 16.5 })
+	player:set_pos({ x = 120, z = 92, y = 16.5 })
+
+	-- initialize values and dictionaries
+	set_info("damage_taken",0.0)
+	set_info("damage_dealt",0.0)
+	set_info("healed_amount",0.0)
+    set_info("cause_of_death","")
+	set_info("equiped","None")
+	set_empty_dict("mined_nodes")
+	set_empty_dict("placed_nodes")
+	set_empty_dict("defeated_enemies")
+	set_empty_dict("hunted_animals")
 end)
 
 -- turn on the termination flag if the agent dies
 minetest.register_on_dieplayer(function(ObjectRef, reason)
+	-- get cause of death
+    if reason then
+        if reason.type == "punch" then
+            if reason.object then
+                if reason.object:is_player() then
+                    cause_msg = "Was slain by another player"
+                else
+                    local entity = reason.object:get_luaentity()
+                    if entity and entity.name then
+                        cause_msg = "was killed by a mob or entity: " .. entity.name .. "."
+                    else
+                        cause_msg = "was killed by an unknown entity."
+                    end
+                end
+            else
+                cause_msg = "was punched to death."
+            end
+
+        elseif reason.type == "fall" then
+            cause_msg = "fell from a high place."
+
+        elseif reason.type == "drown" then
+            cause_msg = "drowned."
+
+        elseif reason.type == "node_damage" then
+            if reason.node then
+                local nodedef = minetest.registered_nodes[reason.node.name]
+                local nodename = nodedef and nodedef.description or reason.node.name
+                cause_msg = "died due to contact with " .. nodename .. "."
+            else
+                cause_msg = "was hurt by a damaging node."
+            end
+
+        elseif reason.type == "set_hp" then
+            cause_msg = "died due to a script or mod setting their HP to 0."
+
+        else
+            cause_msg = "died from an unknown cause (" .. reason.type .. ")."
+        end
+    end
+	set_info("cause_of_death", cause_msg)
 	set_termination()
 end)
 
@@ -44,7 +96,7 @@ minetest.register_globalstep(function(dtime)
 	minetest.set_timeofday(timeofday)
 	timeofday = timeofday + timeofday_step
 
-	local player = minetest.get_connected_players()[1]
+	local player = core.get_connected_players()[1]
 
 	-- if the player is not connected end here
 	if player == nil then
@@ -59,6 +111,39 @@ minetest.register_globalstep(function(dtime)
 		set_voxel_light_data(voxel_light_data)
 		set_voxel_param2_data(voxel_param2_data)
 	end
+
+	-- get the position of the player
+	local player_pos = player:get_pos()
+	set_info("y",player_pos.y)
+	set_info("z",player_pos.z)
+	set_info("x",player_pos.x)
+
+	-- get the health of the player
+	set_info("health",player:get_hp())
+
+	-- get stage and stage progress
+	set_info("stage",curr_stage)
+	set_info("progress",stages[curr_stage + 1].current)
+
+	-- get the current equiped tool or item
+	local itemstack = player:get_wielded_item()
+	local item_name = itemstack:get_name()
+
+	if item_name == "" then
+		set_info("equiped","Currently you are not holding anything.")
+	else
+		set_info("equiped","Currently you are holding: \"" .. item_name .."\".")
+	end
+
+	-- -- get inventory
+	-- set_empty_dict("inventory")
+	-- local inv = player:get_inventory()
+	-- local list = inv:get_list("main")
+	-- for i, itemstack in ipairs(list) do
+	-- 	if not itemstack:is_empty() then
+	-- 		add_to_dict("inventory",itemstack:get_name(),itemstack:get_count())
+	-- 	end
+	-- end
 end)
 
 --
@@ -109,6 +194,13 @@ stages = {
 curr_stage = 1 -- index of the current stage
 
 minetest.register_on_dignode(function(pos, node)
+	-- update table of mined nodes of info
+	if dict_contains("mined_nodes", node["name"]) then
+		add_to_dict("mined_nodes",node["name"],get_from_dict("mined_nodes",node["name"])+1)
+	else
+		add_to_dict("mined_nodes",node["name"],1)
+	end
+
 	-- table of the next stage
 	local snext = stages[curr_stage+1]
 
@@ -147,6 +239,15 @@ minetest.register_on_dignode(function(pos, node)
 end)
 
 
+minetest.register_on_placenode(function(pos, newnode, placer, oldnode, itemstack, pointed_thing)
+    -- update table of placed nodes in the info dict
+	if dict_contains("placed_nodes", newnode["name"]) then
+		add_to_dict("placed_nodes", newnode["name"], get_from_dict("placed_nodes", newnode["name"]) + 1)
+	else
+		add_to_dict("placed_nodes", newnode["name"], 1)
+	end
+end)
+
 --
 -- Hunt and Defend
 -- ~~~~~~~~~~~~~~~
@@ -157,8 +258,12 @@ for name, _ in pairs(mcl_mobs.spawning_mobs) do -- for all mobs that spawn
 	local mob_type = mob_def.type
 	local old_on_punch = mob_def.on_punch
 	mob_def.on_punch = function(self, puncher, time_from_last_punch, tool_capabilities, dir)
-		local damage = tool_capabilities.damage_groups
-			and tool_capabilities.damage_groups.fleshy or 1
+		local damage = tool_capabilities.damage_groups and tool_capabilities.damage_groups.fleshy or 1
+		if puncher then
+			self.last_puncher_is_player = puncher:is_player()
+		end
+		-- update damage dealt in info
+		set_info("damage_dealt",get_from_info("damage_dealt")+damage)
 		-- provide a different reward for each type of punched mob
 		if mob_type == "monster" then
 			set_reward_once(damage, 0.0)
@@ -172,4 +277,39 @@ for name, _ in pairs(mcl_mobs.spawning_mobs) do -- for all mobs that spawn
 			old_on_punch(self, puncher, time_from_last_punch, tool_capabilities, dir)
 		end
 	end
+
+	-- update the table of defeated enemies of info
+	local old_on_die = mob_def.on_die
+	mob_def.on_die = function(self, killer)
+		if self.last_puncher_is_player then
+			if mob_type == "monster" then
+				if dict_contains("defeated_enemies", name) then
+					add_to_dict("defeated_enemies",name,get_from_dict("defeated_enemies",name)+1)
+				else
+					add_to_dict("defeated_enemies",name,1)
+				end
+			elseif mob_type == "animal" then
+				if dict_contains("hunted_animals", name) then
+					add_to_dict("hunted_animals",name,get_from_dict("hunted_animals",name)+1)
+				else
+					add_to_dict("hunted_animals",name,1)
+				end
+			end
+		end
+
+		-- Call the original on_die function
+		if old_on_die ~= nil then
+			old_on_die(self, killer)
+		end
+	end
 end
+
+minetest.register_on_player_hpchange(function(player, hp_change, reason)
+    if hp_change < 0 then
+        set_info("damage_taken",get_from_info("damage_taken")-hp_change)
+    end
+	if hp_change > 0 then
+        set_info("healed_amount",get_from_info("healed_amount")+hp_change)
+    end
+    return hp_change
+end, true)

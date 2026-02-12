@@ -13,6 +13,7 @@
 #include <unistd.h> // read(), write(), close()
 #include <poll.h>
 #include <stdint.h>
+#include <msgpack.h>
 
 #define SA struct sockaddr
 
@@ -152,7 +153,21 @@ static PyObject* server_listen(PyObject* self, PyObject* args) {
 
 #define BUFFER_SIZE 8192
 
-int read_large_from_socket(int socket_fd, char *buffer, int total_size) {
+int read_large_from_socket(int socket_fd, char **buffer_ptr, int total_size) {
+    int info_size = 0;
+    int bytes_received_info = recv(socket_fd, &info_size, 4, 0);
+    assert(bytes_received_info == 4);
+
+    total_size += info_size;
+
+    // Create the buffer where the received image+data will be stored
+    char* buffer = (char*)malloc(total_size);
+    if (buffer == NULL) {
+      PyErr_SetString(PyExc_RuntimeError, "Could not allocate memory for info buffer");
+      return 0;
+    }
+    *buffer_ptr = buffer;
+
     int bytes_received = 0;
     int total_bytes = 0;
 
@@ -180,6 +195,121 @@ int read_large_from_socket(int socket_fd, char *buffer, int total_size) {
     return total_bytes;
 }
 
+static PyObject* python_dict_from_msgpack_map(msgpack_object_map map);
+
+static PyObject* python_list_from_msgpack_array(msgpack_object_array array){
+  PyObject* py_list = PyList_New(array.size);
+
+  PyObject* py_elem = 0;
+
+  for (size_t i = 0; i < array.size; i++) {
+    msgpack_object elem = array.ptr[i];
+
+    if (elem.type == MSGPACK_OBJECT_BOOLEAN){
+      py_elem = PyBool_FromLong(elem.via.boolean);
+      PyList_SetItem(py_list, i, py_elem);
+    } else if (elem.type == MSGPACK_OBJECT_POSITIVE_INTEGER){
+      py_elem = PyLong_FromUnsignedLongLong(elem.via.u64);
+      PyList_SetItem(py_list, i, py_elem);
+    } else if (elem.type == MSGPACK_OBJECT_NEGATIVE_INTEGER){
+      py_elem = PyLong_FromLongLong(elem.via.i64);
+      PyList_SetItem(py_list, i, py_elem);
+    } else if(elem.type == MSGPACK_OBJECT_FLOAT32){
+      py_elem = PyFloat_FromDouble(elem.via.f64);
+      PyList_SetItem(py_list, i, py_elem);
+    } else if(elem.type == MSGPACK_OBJECT_FLOAT64){
+      py_elem = PyFloat_FromDouble(elem.via.f64);
+      PyList_SetItem(py_list, i, py_elem);
+    } else if (elem.type == MSGPACK_OBJECT_STR){
+      char *elem_str = strndup(elem.via.str.ptr, elem.via.str.size);
+      py_elem = PyUnicode_FromString(elem_str);
+      PyList_SetItem(py_list, i, py_elem);
+      free(elem_str);
+    } else if (elem.type == MSGPACK_OBJECT_ARRAY){
+      py_elem = python_list_from_msgpack_array(elem.via.array);
+      if(py_elem == NULL){
+        return NULL;
+      }
+      PyList_SetItem(py_list, i, py_elem);
+      Py_DECREF(py_elem);
+    } else if (elem.type == MSGPACK_OBJECT_MAP){
+      py_elem = python_dict_from_msgpack_map(elem.via.map);
+      if(py_elem == NULL){
+        return NULL;
+      }
+      PyList_SetItem(py_list, i, py_elem);
+      Py_DECREF(py_elem);
+    } else {
+      PyErr_Format(PyExc_RuntimeError, "Unsuported type received: %d", elem.type);
+      return NULL;
+    }
+  }
+
+  return py_list;
+}
+
+static PyObject* python_dict_from_msgpack_map(msgpack_object_map map){
+  PyObject* py_dict = PyDict_New();
+
+  PyObject* py_value = 0;
+
+  for (size_t i = 0; i < map.size; i++) {
+    msgpack_object key = map.ptr[i].key;
+    msgpack_object value = map.ptr[i].val;
+
+    char *key_str = strndup(key.via.str.ptr, key.via.str.size);
+
+    if (value.type == MSGPACK_OBJECT_BOOLEAN){
+      py_value = PyBool_FromLong(value.via.boolean);
+      PyDict_SetItemString(py_dict, key_str, py_value);
+      Py_DECREF(py_value);
+    } else if (value.type == MSGPACK_OBJECT_POSITIVE_INTEGER){
+      py_value = PyLong_FromUnsignedLongLong(value.via.u64);
+      PyDict_SetItemString(py_dict, key_str, py_value);
+      Py_DECREF(py_value);
+    } else if (value.type == MSGPACK_OBJECT_NEGATIVE_INTEGER){
+      py_value = PyLong_FromLongLong(value.via.i64);
+      PyDict_SetItemString(py_dict, key_str, py_value);
+      Py_DECREF(py_value);
+    } else if(value.type == MSGPACK_OBJECT_FLOAT32){
+      py_value = PyFloat_FromDouble(value.via.f64);
+      PyDict_SetItemString(py_dict, key_str, py_value);
+      Py_DECREF(py_value);
+    } else if(value.type == MSGPACK_OBJECT_FLOAT64){
+      py_value = PyFloat_FromDouble(value.via.f64);
+      PyDict_SetItemString(py_dict, key_str, py_value);
+      Py_DECREF(py_value);
+    } else if (value.type == MSGPACK_OBJECT_STR){
+      char *val_str = strndup(value.via.str.ptr, value.via.str.size);
+      py_value = PyUnicode_FromString(val_str);
+      PyDict_SetItemString(py_dict, key_str, py_value);
+      Py_DECREF(py_value);
+      free(val_str);
+    } else if (value.type == MSGPACK_OBJECT_ARRAY){
+      py_value = python_list_from_msgpack_array(value.via.array);
+      if(py_value == NULL){
+        return NULL;
+      }
+      PyDict_SetItemString(py_dict, key_str, py_value);
+      Py_DECREF(py_value);
+    } else if (value.type == MSGPACK_OBJECT_MAP){
+      py_value = python_dict_from_msgpack_map(value.via.map);
+      if(py_value == NULL){
+        return NULL;
+      }
+      PyDict_SetItemString(py_dict, key_str, py_value);
+      Py_DECREF(py_value);
+    } else {
+      PyErr_Format(PyExc_RuntimeError, "Unsuported type received: %d", value.type);
+      return NULL;
+    }
+    free(key_str);
+  }
+  return py_dict;
+}
+
+
+
 static PyObject* server_recv(PyObject* self, PyObject* args) {
   int connfd, n_bytes, obs_width, obs_height, n_read, n_channels, n_vox_channels, voxel_x, voxel_y, voxel_z;
   float dtime;
@@ -193,15 +323,7 @@ static PyObject* server_recv(PyObject* self, PyObject* args) {
     return NULL;
   }
 
-  // Create the buffer where the received image+data will be stored
-  buff = (char*)malloc(n_bytes);
-  if (buff == NULL) {
-    PyErr_SetString(PyExc_Exception, "Failed to allocate memory for recv buffer");
-    return NULL;
-  }
-
-  n_read = read_large_from_socket(connfd, buff, n_bytes);
-
+  n_read = read_large_from_socket(connfd, &buff, n_bytes);
   if (n_read < 0) {
     free(buff);
     PyErr_SetString(PyExc_ConnectionError, "Failed to receive from MT, error reading from socket.");
@@ -213,7 +335,9 @@ static PyObject* server_recv(PyObject* self, PyObject* args) {
     return NULL;
   }
 
-  // Retrieve the termination flag and reward
+  // Retrieve size of the info buffer (last 4 bytes) the termination flag (1 byte) and reward (8 bytes)
+  int n_bytes_info = n_read-n_bytes;
+
   int termination = (int) buff[n_bytes-1];
   PyObject* py_termination = PyBool_FromLong(termination);
 
@@ -264,9 +388,6 @@ static PyObject* server_recv(PyObject* self, PyObject* args) {
   memcpy(array_vox_data, buff + obs_height * obs_width * n_channels,
          voxel_x * voxel_y * voxel_z * n_vox_channels * sizeof(uint32_t));
 
-  // Free the original buffer as we no longer need it
-  free(buff);
-
   // Create the numpy arrays with their own separate memory
   npy_intp dims[3] = {obs_height, obs_width, n_channels};
   PyObject* pyarray_rgb = PyArray_SimpleNewFromData(3, dims, NPY_UINT8, array_rgb_data);
@@ -275,6 +396,7 @@ static PyObject* server_recv(PyObject* self, PyObject* args) {
   PyObject* pyarray_vox = PyArray_SimpleNewFromData(4, dims_vox, NPY_UINT32, array_vox_data);
 
   if (!pyarray_rgb || !pyarray_vox) {
+	free(buff);
     free(array_rgb_data);
     free(array_vox_data);
     Py_XDECREF(pyarray_rgb);
@@ -296,7 +418,52 @@ static PyObject* server_recv(PyObject* self, PyObject* args) {
   PyArray_ENABLEFLAGS((PyArrayObject*)pyarray_rgb, NPY_ARRAY_OWNDATA);
   PyArray_ENABLEFLAGS((PyArrayObject*)pyarray_vox, NPY_ARRAY_OWNDATA);
 
-  PyObject* tuple = PyTuple_Pack(9, pyarray_rgb, pyarray_vox, pyarray_pos, pyarray_vel, py_pitch, py_yaw, py_dtime, py_reward, py_termination);
+  PyObject* py_info = 0;
+
+  if (n_bytes_info > 0){
+
+    // Info can be found at end of buffer
+
+    // deserialize the information buffer and crate a python dictionary
+    msgpack_unpacked info;
+    msgpack_unpacked_init(&info);
+
+    if (msgpack_unpack_next(&info, buff+n_bytes, n_bytes_info, NULL)) {
+      msgpack_object obj = info.data;
+
+      if (obj.type == MSGPACK_OBJECT_MAP) {
+        msgpack_object_map map = obj.via.map;
+
+        py_info = python_dict_from_msgpack_map(map);
+        if(py_info == NULL){
+          return NULL;
+        }
+
+      } else {
+        PyErr_SetString(PyExc_RuntimeError, "Expected a map but got a different type");
+        msgpack_unpacked_destroy(&info);
+        free(buff);
+        return NULL;
+      }
+    } else {
+      PyErr_SetString(PyExc_RuntimeError, "Failed to unpack data");
+      msgpack_unpacked_destroy(&info);
+      free(buff);
+      return NULL;
+    }
+
+    msgpack_unpacked_destroy(&info);
+
+  } else {
+    // No info will be sent
+    // Info is just empty dict
+    py_info = PyDict_New();
+  }
+
+  // Free the original buffer as we no longer need it
+  free(buff);
+
+  PyObject* tuple = PyTuple_Pack(10, pyarray_rgb, pyarray_vox, pyarray_pos, pyarray_vel, py_pitch, py_yaw, py_dtime, py_reward, py_termination, py_info);
 
   // Safe to DECREF everything as tuple has increased their reference counts
   Py_DECREF(py_reward);
@@ -308,6 +475,7 @@ static PyObject* server_recv(PyObject* self, PyObject* args) {
   Py_DECREF(py_yaw);
   Py_DECREF(pyarray_rgb);
   Py_DECREF(pyarray_vox);
+  Py_DECREF(py_info);
 
   return tuple;
 }

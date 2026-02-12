@@ -78,6 +78,17 @@ ServerScripting::ServerScripting(Server* server):
         lua_register(L, "set_voxel_data", lua_set_voxel_data);
         lua_register(L, "set_voxel_light_data", lua_set_voxel_light_data);
         lua_register(L, "set_voxel_param2_data", lua_set_voxel_param2_data);
+        lua_register(L, "set_info", lua_set_info);
+		lua_register(L, "reset_info", lua_reset_info);
+		lua_register(L, "get_from_info", lua_get_from_info);
+		lua_register(L, "remove_from_info", lua_remove_from_info);
+		lua_register(L, "info_contains", lua_info_contains);
+		lua_register(L, "set_empty_list", lua_set_empty_list);
+		lua_register(L, "add_to_list", lua_add_to_list);
+		lua_register(L, "set_empty_dict", lua_set_empty_dict);
+		lua_register(L, "add_to_dict", lua_add_to_dict);
+		lua_register(L, "dict_contains", lua_dict_contains);
+		lua_register(L, "get_from_dict", lua_get_from_dict);
 
 	// Initialize our lua_api modules
 	InitializeModApi(L, top);
