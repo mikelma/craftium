@@ -22,7 +22,6 @@
 #include <unordered_map>
 #include <variant>
 
-
 inline char actions[27];
 
 /*
@@ -272,6 +271,7 @@ inline static int lua_set_voxel_light_data(lua_State* L) {
 inline static int lua_set_voxel_param2_data(lua_State* L) {
 	g_voxel_param2_data = lua_set_array_uint32_t(L);
 	return 0;
+}
 
 inline static int lua_set_info(lua_State *L) {
 
