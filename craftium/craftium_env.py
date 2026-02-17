@@ -48,6 +48,7 @@ class CraftiumEnv(Env):
     :param pmul: Physics multiplier. As craftium agent's take actions by frame, default movement speeds make the agent move slowly. When set to > 1, minetest's movement velocity and acceleration increase helping the agent to move at acceptable relative speeds.
     :param soft_reset: If set to true, resets will have to be handled by the Lua mod and minetest won't be killed and rerun every call to restart. **IMPORTANT:** Only set this flag to `True` in environments that support this feature.
     :param offscreen_sdl: Whether to use the `offscreen` SDL driver or not (true by default).
+    :param gpu_id: If a GPU id was passed, set `SDL_HINT_EGL_DEVICE` to render the environment using that GPU.
     :param human_screeen_size: Size (width, height) of the render screen when `render_mode` is set to `"human"`.
     :param _minetest_conf: The default minetest configuration provided during environment registration.
     :param _voxel_obs_available: This flag indicates environments that support voxel observations during registration (do not manually override).
