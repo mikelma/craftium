@@ -27,6 +27,7 @@ class Minetest():
             run_dir: Optional[os.PathLike] = None,
             run_dir_prefix: Optional[os.PathLike] = None,
             headless: bool = False,
+            gpu_id: Optional[int] = None,
             seed: Optional[int] = None,
             game_id: str = "minetest",
             world_name: str = "world",
@@ -170,7 +171,15 @@ class Minetest():
         self.proc = None  # holds mintest's process
         self.stderr, self.stdout = None, None
 
-        self.proc_env = {"SDL_VIDEODRIVER": "offscreen"} if headless else None
+        if headless:
+            self.proc_env = {"SDL_VIDEODRIVER": "offscreen"}
+            # If a GPU id was passed, set this environment variable to tell SDL to render using that GPU.
+            # Different env variables might need to be set on different systems. 
+            if gpu_id is not None:
+                print(f"==> Setting Luanti to render on GPU {gpu_id} by setting SDL_HINT_EGL_DEVICE={gpu_id}")
+                self.proc_env["SDL_HINT_EGL_DEVICE"] = f"{gpu_id}"
+        else:
+            self.proc_env = None
 
     def start_process(self):
         if self.pipe_proc:
