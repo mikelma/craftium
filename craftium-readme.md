@@ -156,9 +156,9 @@ print(map_str.split("-")[1])
 
 By implementing Gymnasium's API, craftium supports many existing tools and libraries. Check these scripts for some examples:
 
-- **Stable baselines3**: [sb3_train.py](https://github.com/mikelma/craftium/blob/main/sb3_train.py)
-- **Ray rllib**: [ray_train.py](https://github.com/mikelma/craftium/blob/main/ray_train.py)
-- **CleanRL**: [cleanrl_ppo_train.py](https://github.com/mikelma/craftium/blob/main/cleanrl_ppo_train.py)
+- **Stable baselines3**: [sb3_train.py](https://github.com/mikelma/craftium/blob/main/craftium-examples/sb3_train.py)
+- **Ray rllib**: [ray_train.py](https://github.com/mikelma/craftium/blob/main/craftium-examples/ray_train.py)
+- **CleanRL**: [cleanrl_ppo_train.py](https://github.com/mikelma/craftium/blob/main/craftium-examples/cleanrl_ppo_train.py)
 
 ## Citing Craftium 📑
 
