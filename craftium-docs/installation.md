@@ -36,10 +36,10 @@ This last command should compile Luanti, install python dependencies, and, final
 ## macOS
 
 Craftium also builds and runs natively on macOS (Apple Silicon and Intel),
-with one difference: environments render in a visible window, as SDL's
-`offscreen` video driver has no OpenGL support on macOS (see
-[troubleshooting](troubleshooting.md)). There are no pre-built wheels for
-macOS, so craftium is installed from source.
+with one difference: SDL's `offscreen` video driver has no OpenGL support on
+macOS, so environments render to a hidden window of the default cocoa driver
+instead (see [troubleshooting](troubleshooting.md)). There are no pre-built
+wheels for macOS, so craftium is installed from source.
 
 Install the build dependencies with [Homebrew](https://brew.sh):
 

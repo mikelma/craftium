@@ -82,9 +82,10 @@ WARNING[Main]: Irrlicht: Could not create window: Could not initialize OpenGL / 
 ERROR[Main]: Could not initialize the device with any supported video driver
 ```
 
-For this reason craftium ignores `offscreen_sdl=True` on macOS and runs with
-the default windowed (cocoa) driver: a Luanti window is visible while
-environments run. Truly headless training is currently Linux-only.
+For this reason, on macOS craftium maps `offscreen_sdl=True` to the default
+cocoa driver with a *hidden* window (the `window_hidden` engine setting): no
+window appears on screen, while OpenGL keeps rendering into the window's
+framebuffer. The offscreen SDL driver itself remains Linux-only.
 
 The `CRAFTIUM_SDL_VIDEODRIVER` environment variable overrides craftium's
 automatic driver selection on any platform, e.g.:

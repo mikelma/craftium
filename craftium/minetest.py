@@ -44,9 +44,9 @@ def build_proc_env(
         return env
     if sys.platform == "darwin":
         if is_client:
-            print("==> NOTE: headless mode is not supported on macOS (SDL's "
-                  "offscreen driver cannot create OpenGL contexts). Running "
-                  "windowed. Set CRAFTIUM_SDL_VIDEODRIVER to override.")
+            print("==> NOTE: SDL's offscreen driver cannot create OpenGL "
+                  "contexts on macOS. Rendering to a hidden window instead. "
+                  "Set CRAFTIUM_SDL_VIDEODRIVER to override.")
         return env
     env["SDL_VIDEODRIVER"] = "offscreen"
     if gpu_id is not None:
@@ -136,6 +136,10 @@ class Minetest():
             # port used for MT's internal client<->server comm.
             port=port,
             remote_port=port,
+
+            # never show the engine window in headless mode (only relevant
+            # where a windowed SDL driver is used, e.g. cocoa on macOS)
+            window_hidden=headless,
 
             sync_env_mode=sync_mode,
 
@@ -573,6 +577,10 @@ class MTClientOnly():
             # port used for MT's internal client<->server comm.
             port=mt_server_port,
             remote_port=mt_server_port,
+
+            # never show the engine window in headless mode (only relevant
+            # where a windowed SDL driver is used, e.g. cocoa on macOS)
+            window_hidden=headless,
 
             sync_env_mode=sync_mode,
 

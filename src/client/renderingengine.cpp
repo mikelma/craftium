@@ -194,6 +194,7 @@ RenderingEngine::RenderingEngine(MyEventReceiver *receiver)
 	params.AntiAlias = fsaa;
 	params.Fullscreen = fullscreen;
 	params.WindowMaximized = window_maximized;
+	params.WindowHidden = g_settings->getBool("window_hidden");
 	params.WindowResizable = 1; // 1 means always (required for window_maximized)
 	params.Stencilbuffer = false;
 	params.Vsync = vsync;
