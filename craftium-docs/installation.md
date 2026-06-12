@@ -32,3 +32,29 @@ pip install .
 ```
 
 This last command should compile Luanti, install python dependencies, and, finally, craftium. If the installation process fails, please consider submitting an issue [here](https://github.com/mikelma/craftium/issues). Note that this command only installs the minimum dependencies to run craftium, execute `pip install ".[examples]"` for installing optional dependencies (e.g., for running examples).
+
+## macOS
+
+Craftium also builds and runs natively on macOS (Apple Silicon and Intel),
+with one difference: environments render in a visible window, as SDL's
+`offscreen` video driver has no OpenGL support on macOS (see
+[troubleshooting](troubleshooting.md)). There are no pre-built wheels for
+macOS, so craftium is installed from source.
+
+Install the build dependencies with [Homebrew](https://brew.sh):
+
+```bash
+brew install cmake freetype gettext gmp jpeg-turbo jsoncpp libpng libogg libvorbis luajit openal-soft sdl2 zstd
+```
+
+Clone the repo as described above and, inside it, build the Luanti engine and
+install craftium into a virtual environment (Python >= 3.11):
+
+```bash
+bash build_craftium.sh
+
+python3.11 -m venv .venv
+source .venv/bin/activate
+pip install -U setuptools
+pip install .
+```
