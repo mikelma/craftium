@@ -291,6 +291,14 @@ class Minetest():
             craftium_dir = os.path.split(__file__)[0]
             os.symlink(os.path.join(craftium_dir, "../craftium.libs"),
                        os.path.join(target_dir, "../../craftium.libs"))
+            # macOS wheels: delocate places the bundled dylibs in
+            # craftium/.dylibs and rewrites the luanti binary to load them
+            # from @loader_path/../../.dylibs, which resolves here once the
+            # binary is copied into <run_dir>/bin
+            dylibs_dir = os.path.join(craftium_dir, ".dylibs")
+            if os.path.exists(dylibs_dir):
+                os.symlink(dylibs_dir,
+                           os.path.join(target_dir, "../.dylibs"))
 
         copy_dir("bin")
         copy_dir("client")
