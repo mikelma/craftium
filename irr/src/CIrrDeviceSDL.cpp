@@ -541,6 +541,8 @@ bool CIrrDeviceSDL::createWindowWithContext()
 		SDL_Flags |= SDL_WINDOW_RESIZABLE;
 	if (CreationParams.WindowMaximized)
 		SDL_Flags |= SDL_WINDOW_MAXIMIZED;
+	if (CreationParams.WindowHidden)
+		SDL_Flags |= SDL_WINDOW_HIDDEN;
 	SDL_Flags |= SDL_WINDOW_OPENGL;
 
 	SDL_GL_ResetAttributes();

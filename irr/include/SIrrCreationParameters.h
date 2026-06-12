@@ -29,6 +29,7 @@ struct SIrrlichtCreationParameters
 			ZBufferBits(24),
 			Fullscreen(false),
 			WindowMaximized(false),
+			WindowHidden(false),
 			WindowResizable(2),
 			Stencilbuffer(true),
 			Vsync(false),
@@ -85,6 +86,9 @@ struct SIrrlichtCreationParameters
 
 	//! Maximised window. (Only supported on SDL.) Default: false
 	bool WindowMaximized;
+
+	//! Create the window hidden, i.e. never shown on screen. (Only supported on SDL.) Default: false
+	bool WindowHidden;
 
 	//! Should a non-fullscreen window be resizable.
 	/** Might not be supported by all devices. Ignored when Fullscreen is true.

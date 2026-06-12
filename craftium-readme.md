@@ -64,6 +64,8 @@ docker build -t craftium-manylinux -f Dockerfile.craftium .
 
 ### Building from source
 
+> **macOS:** craftium also builds and runs natively on macOS (rendering to a hidden window). See the [installation docs](https://craftium.readthedocs.io/en/latest/installation/#macos) for the Homebrew-based steps.
+
 First, clone craftium using the `--recurse-submodules` flag (**important**: the flag fetches submodules needed by the library) and `cd` into the project's main directory:
 
 ```bash

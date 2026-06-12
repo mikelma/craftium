@@ -267,6 +267,7 @@ void set_default_settings()
 	settings->setDefault("screen_w", "1024");
 	settings->setDefault("screen_h", "600");
 	settings->setDefault("window_maximized", "false");
+	settings->setDefault("window_hidden", "false");
 	settings->setDefault("autosave_screensize", "true");
 	settings->setDefault("fullscreen", bool_to_cstr(has_touch));
 	settings->setDefault("vsync", "false");
