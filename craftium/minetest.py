@@ -1,4 +1,5 @@
 import os
+import sys
 from pathlib import Path
 from typing import Optional, Any
 import subprocess
@@ -18,6 +19,40 @@ def is_minetest_build_dir(path: os.PathLike) -> bool:
 
 def is_inside_python_pkg():
     return "site-packages" in __file__
+
+
+def build_proc_env(
+        headless: bool,
+        gpu_id: Optional[int] = None,
+        is_client: bool = True,
+) -> dict[str, str]:
+    """Build the environment for the Luanti subprocess.
+
+    Extends (never replaces) the parent process environment. In headless mode
+    the SDL `offscreen` video driver is selected, except on macOS, where SDL's
+    offscreen driver cannot create OpenGL contexts (no EGL): rendering clients
+    fall back to the default windowed (cocoa) driver there. Setting the
+    CRAFTIUM_SDL_VIDEODRIVER environment variable overrides any automatic
+    driver selection.
+    """
+    env = os.environ.copy()
+    custom_driver = env.get("CRAFTIUM_SDL_VIDEODRIVER")
+    if custom_driver:
+        env["SDL_VIDEODRIVER"] = custom_driver
+        return env
+    if not headless:
+        return env
+    if sys.platform == "darwin":
+        if is_client:
+            print("==> NOTE: headless mode is not supported on macOS (SDL's "
+                  "offscreen driver cannot create OpenGL contexts). Running "
+                  "windowed. Set CRAFTIUM_SDL_VIDEODRIVER to override.")
+        return env
+    env["SDL_VIDEODRIVER"] = "offscreen"
+    if gpu_id is not None:
+        print(f"==> Setting Luanti to render on GPU {gpu_id} by setting SDL_HINT_EGL_DEVICE={gpu_id}")
+        env["SDL_HINT_EGL_DEVICE"] = f"{gpu_id}"
+    return env
 
 
 class Minetest():
@@ -171,15 +206,7 @@ class Minetest():
         self.proc = None  # holds mintest's process
         self.stderr, self.stdout = None, None
 
-        if headless:
-            self.proc_env = {"SDL_VIDEODRIVER": "offscreen"}
-            # If a GPU id was passed, set this environment variable to tell SDL to render using that GPU.
-            # Different env variables might need to be set on different systems. 
-            if gpu_id is not None:
-                print(f"==> Setting Luanti to render on GPU {gpu_id} by setting SDL_HINT_EGL_DEVICE={gpu_id}")
-                self.proc_env["SDL_HINT_EGL_DEVICE"] = f"{gpu_id}"
-        else:
-            self.proc_env = None
+        self.proc_env = build_proc_env(headless, gpu_id=gpu_id)
 
     def start_process(self):
         if self.pipe_proc:
@@ -384,7 +411,7 @@ class MTServerOnly():
 
         # compose the launch command
         self.launch_cmd = [
-            "./bin/minetest",
+            "./bin/luanti",
             "--server",  # Disable main menu, directly start the game
             "--gameid", game_id,  # Select the game ID
             "--worldname", world_name,
@@ -393,7 +420,7 @@ class MTServerOnly():
         self.proc = None  # holds mintest's process
         self.stderr, self.stdout = None, None
 
-        self.proc_env = {"SDL_VIDEODRIVER": "offscreen"}
+        self.proc_env = build_proc_env(headless=True, is_client=False)
 
     def start_process(self):
         if self.pipe_proc:
@@ -604,7 +631,7 @@ class MTClientOnly():
 
         # compose the launch command
         self.launch_cmd = [
-            "./bin/minetest",
+            "./bin/luanti",
             "--address", "127.0.0.1",
             "--port", str(mt_server_port),
             "--name", client_name,
@@ -614,7 +641,7 @@ class MTClientOnly():
         self.proc = None  # holds mintest's process
         self.stderr, self.stdout = None, None
 
-        self.proc_env = {"SDL_VIDEODRIVER": "offscreen"} if headless else None
+        self.proc_env = build_proc_env(headless)
 
     def start_process(self):
         if self.pipe_proc:
