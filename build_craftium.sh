@@ -12,7 +12,8 @@ if [[ "$(uname -s)" == "Darwin" ]]; then
             -DCMAKE_BUILD_TYPE=RelWithDebInfo \
             -DCMAKE_FIND_FRAMEWORK=LAST \
             -DUSE_SDL2_SHARED=TRUE \
-            -DOPENGL_gl_LIBRARY=/System/Library/Frameworks/OpenGL.framework
+            -DOPENGL_gl_LIBRARY=/System/Library/Frameworks/OpenGL.framework \
+            -DOPENGL_glu_LIBRARY=/System/Library/Frameworks/OpenGL.framework
 
     make -j"$(sysctl -n hw.ncpu)"
 else
